@@ -76,8 +76,9 @@ router.get('/home', userController.getHomePage);
 router.get('/profile',userController.getProfile)
 router.get('/profile/edit',userController.getEditProfile);
 router.post('/edit-profile/:id', upload.single('profileImage'), userController.editProfile);
-router.get('/verify-email-otp', userController.getVerifyEmailOTP); 
+router.get('/verify-email-otp', userController.getVerifyEmailOTP);
 router.post('/verify-email-otp', userController.verifyEmailOTP);
+router.post('/resend-email-otp', userController.resendEmailOTP);
 // router.get('/change-password', userController.getChangePassword);
 // router.post('/change-password', userController.handleChangePassword);
 // router.get('/verify-password-otp', userController.verifyPasswordOTP); 

@@ -50,7 +50,7 @@ exports.handleSignupPage = async (req, res) => {
 
 
         const otp = Math.floor(1000 + Math.random() * 9000);
-        otpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
+        signupOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
 
         console.log(`Generated OTP for ${email}: ${otp}`);
 
@@ -70,13 +70,13 @@ exports.handleSignupPage = async (req, res) => {
 exports.verifySignupOTP = (req, res) => {
     const { email, otp, fullName, phone, password } = req.body;
 
-    if (!otpStore.has(email)) {
+    if (!signupOtpStore.has(email)) {
         return res.render('user/verifySignupOTP', { error: 'OTP expired or invalid', email, fullName, phone, password });
     }
 
-    const storedOTPData = otpStore.get(email);
+    const storedOTPData = signupOtpStore.get(email);
     if (Date.now() > storedOTPData.expiresAt) {
-        otpStore.delete(email);
+        signupOtpStore.delete(email);
         return res.render('user/verifySignupOTP', { error: 'OTP expired. Please try again.', email, fullName, phone, password });
     }
 
@@ -84,7 +84,7 @@ exports.verifySignupOTP = (req, res) => {
         return res.render('user/verifySignupOTP', { error: 'Invalid OTP. Please try again.', email, fullName, phone, password });
     }
 
-    otpStore.delete(email);
+    signupOtpStore.delete(email);
 
     bcrypt.hash(password, 10, async (err, hashedPassword) => {
         if (err) {
@@ -168,8 +168,10 @@ exports.handleLoginPage = async (req, res) => {
 
  //forgot page contoller
 
-const nodemailer = require('nodemailer')//for sending otp 
-const otpStore = new Map();
+const nodemailer = require('nodemailer')//for sending otp
+const otpStore = new Map(); // For password reset OTP
+const emailOtpStore = new Map(); // For email verification OTP
+const signupOtpStore = new Map(); // For signup OTP
 
  exports.getForgotPage = (req,res) => {
     res.render('user/forgotPassword',{error:null})
@@ -427,17 +429,22 @@ exports.editProfile = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email is required' });
         }
 
-        // Check if email is changed
-        if (email !== user.email) {
-            const existingUser = await User.findOne({ email });
+        // Check if email is changed (normalize for comparison)
+        const normalizedNewEmail = email.trim().toLowerCase();
+        const normalizedCurrentEmail = user.email.trim().toLowerCase();
+
+        console.log(`Email comparison: new="${normalizedNewEmail}", current="${normalizedCurrentEmail}"`);
+
+        if (normalizedNewEmail !== normalizedCurrentEmail) {
+            const existingUser = await User.findOne({ email: normalizedNewEmail });
             if (existingUser) {
                 return res.status(400).json({ success: false, message: 'Email already exists' });
             }
 
-            // Generate OTP and store in session
+            // Generate OTP and store in email OTP store
             const otp = generateOTP();
             console.log(`OTP for ${email}: ${otp}`); // Log OTP to console
-            otpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
+            emailOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
             req.session.pendingProfileUpdate = { fullName, email, profileImage: req.file ? req.file.filename : user.profileImage };
 
             // Send OTP to new email
@@ -484,9 +491,15 @@ exports.editProfile = async (req, res) => {
 exports.getVerifyEmailOTP = async (req, res) => {
     try {
         const { email } = req.query;
+        console.log(`getVerifyEmailOTP called with email: ${email}`);
+        console.log(`Query params:`, req.query, );
+
         if (!email) {
+            console.log(`No email provided, redirecting to profile edit`);
             return res.redirect('/profile/edit');
         }
+
+        console.log(`Rendering verifyEmailOTP page for email: ${email}`);
         res.render('user/verifyEmailOTP', {
             email,
             userName: req.session.userName || null,
@@ -506,20 +519,36 @@ exports.getVerifyEmailOTP = async (req, res) => {
 // Verify Email OTP
 exports.verifyEmailOTP = async (req, res) => {
     try {
+        console.log(`verifyEmailOTP called`);
+        console.log(`Request body:`, req.body);
+        console.log(`Request headers:`, req.headers);
+        console.log(`Request method:`, req.method);
+
         const { email, otp } = req.body;
         const userId = req.session.userId;
 
-        if (!otpStore.has(email)) {
+        console.log(`Verifying OTP for email: ${email}, OTP: ${otp}, userId: ${userId}`);
+        console.log(`Email OTP Store has email: ${emailOtpStore.has(email)}`);
+        console.log(`Email OTP Store contents:`, Array.from(emailOtpStore.entries()));
+
+        if (!emailOtpStore.has(email)) {
+            console.log(`OTP not found in store for email: ${email}`);
             return res.status(400).json({ success: false, message: 'OTP expired or invalid' });
         }
 
-        const storedOTPData = otpStore.get(email);
+        const storedOTPData = emailOtpStore.get(email);
+        console.log(`Stored OTP data:`, storedOTPData);
+        console.log(`Current time: ${Date.now()}, Expires at: ${storedOTPData.expiresAt}`);
+
         if (Date.now() > storedOTPData.expiresAt) {
-            otpStore.delete(email);
+            console.log(`OTP expired for email: ${email}`);
+            emailOtpStore.delete(email);
             return res.status(400).json({ success: false, message: 'OTP expired. Please try again.' });
         }
 
+        console.log(`Comparing OTPs: stored="${storedOTPData.otp}", provided="${otp}"`);
         if (storedOTPData.otp.toString() !== otp.toString()) {
+            console.log(`OTP mismatch for email: ${email}`);
             return res.status(400).json({ success: false, message: 'Invalid OTP. Please try again.' });
         }
 
@@ -530,7 +559,10 @@ exports.verifyEmailOTP = async (req, res) => {
 
         // Update user with pending changes
         const pendingUpdate = req.session.pendingProfileUpdate;
+        console.log(`Pending update data:`, pendingUpdate);
+
         if (pendingUpdate) {
+            console.log(`Updating user: ${user.email} -> ${pendingUpdate.email}`);
             user.fullName = pendingUpdate.fullName;
             user.email = pendingUpdate.email;
             if (pendingUpdate.profileImage) {
@@ -541,8 +573,9 @@ exports.verifyEmailOTP = async (req, res) => {
             delete req.session.pendingProfileUpdate;
         }
         await user.save();
+        console.log(`User updated successfully with new email: ${user.email}`);
 
-        otpStore.delete(email);
+        emailOtpStore.delete(email);
         return res.json({ success: true, redirect: '/profile' });
     } catch (error) {
         console.error('Error verifying OTP:', error);
@@ -566,7 +599,7 @@ exports.resendEmailOTP = async (req, res) => {
         // Generate new OTP
         const otp = generateOTP();
         console.log(`Resent OTP for ${email}: ${otp}`); // Log OTP to console
-        otpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
+        emailOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
 
         // Send OTP to email
         const transporter = nodemailer.createTransport({

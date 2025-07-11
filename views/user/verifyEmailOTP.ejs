@@ -501,7 +501,7 @@
         // Resend OTP Handler
         resendButton.addEventListener('click', function() {
             if (!resendButton.disabled) {
-                fetch('/resendOTP', {
+                fetch('/resend-email-otp', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -550,16 +550,39 @@
             }
         });
 
-        // Toastify Form Submission
+        // Enhanced Form Submission with fallback
         document.getElementById('verifyOTPForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;
-            const formData = new FormData(form);
-            console.log('Submitting OTP form data:', Object.fromEntries(formData)); // Log form data
 
+            // Get form values directly
+            const email = form.querySelector('input[name="email"]').value;
+            const otp = form.querySelector('input[name="otp"]').value;
+
+            console.log('Form submission - Email:', email, 'OTP:', otp);
+
+            // Validate that we have the required data
+            if (!email || !otp) {
+                console.error('Missing email or OTP data');
+                Toastify({
+                    text: 'Please enter the OTP code.',
+                    duration: 3000,
+                    close: true,
+                    gravity: 'top',
+                    position: 'right',
+                    backgroundColor: '#f44336',
+                    stopOnFocus: true
+                }).showToast();
+                return;
+            }
+
+            // Try JSON first, fallback to form submission
             fetch(form.action, {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email, otp: otp })
             })
             .then(response => response.json())
             .then(data => {
@@ -591,15 +614,11 @@
             })
             .catch(error => {
                 console.error('Error verifying OTP:', error);
-                Toastify({
-                    text: 'An error occurred. Please try again.',
-                    duration: 3000,
-                    close: true,
-                    gravity: 'top',
-                    position: 'right',
-                    backgroundColor: '#f44336',
-                    stopOnFocus: true
-                }).showToast();
+                console.log('Falling back to form submission');
+
+                // Fallback: submit form normally
+                form.removeEventListener('submit', arguments.callee);
+                form.submit();
             });
         });
 
