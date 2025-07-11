@@ -195,6 +195,12 @@
                         <span class="nav-text">Products</span>
                     </li>
                 </a>
+                <a href="/admin/inventory">
+                    <li>
+                        <i class="fas fa-warehouse"></i>
+                        <span class="nav-text">Inventory</span>
+                    </li>
+                </a>
                 <a href="/admin/categoryManagement">
                     <li>
                         <i class="fas fa-folder"></i>
@@ -284,6 +290,12 @@
                     <p><strong>Date:</strong> <%= new Date(order.orderDate).toLocaleString() %></p>
                     <p><strong>User:</strong> <%= order.userId ? order.userId.fullName : 'N/A' %> (<span style="color: var(--icon-color);"><%= order.userId ? order.userId.email : '' %></span>)</p>
                     <p><strong>Status:</strong> <span class="status-badge status-<%= order.status.toLowerCase().replace(' ', '-') %>"><%= order.status %></span></p>
+                    <% if (order.cancelReason) { %>
+                        <p><strong>Cancellation Reason:</strong> <span style="color: #dc2626; font-style: italic;"><%= order.cancelReason %></span></p>
+                    <% } %>
+                    <% if (order.returnReason) { %>
+                        <p><strong>Return Reason:</strong> <span style="color: #f59e0b; font-style: italic;"><%= order.returnReason %></span></p>
+                    <% } %>
                     <p><strong>Payment:</strong> <%= order.paymentMethod %></p>
                     <p><strong>Total:</strong> ₹<%= order.total.toFixed(2) %></p>
                     <h3>Shipping Address</h3>
@@ -315,24 +327,62 @@
                         </table>
                     </div>
                     <h3>Change Order Status</h3>
-                    <form method="post" action="/admin/orders/<%= order._id %>/status" id="statusForm" class="status-form">
-                        <select name="status" id="statusSelect">
-                            <% ['Pending','Shipped','Out for Delivery','Delivered','Canceled'].forEach(st => { %>
-                                <option value="<%= st %>" <%= order.status===st?'selected':'' %>><%= st %></option>
-                            <% }) %>
-                        </select>
-                        <button type="submit" class="btn btn-primary">Update Status</button>
-                    </form>
+                    <% if (order.status === 'Canceled' || order.status === 'Delivered' || order.status === 'Returned') { %>
+                        <div style="background-color: rgba(156, 163, 175, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #9ca3af;">
+                            <p style="margin: 0; color: #6b7280; font-style: italic;">
+                                <i class="fas fa-lock" style="margin-right: 8px;"></i>
+                                Status cannot be changed for <%= order.status.toLowerCase() %> orders.
+                            </p>
+                        </div>
+                    <% } else { %>
+                        <form method="post" action="/admin/orders/<%= order._id %>/status" id="statusForm" class="status-form">
+                            <select name="status" id="statusSelect">
+                                <%
+                                let availableStatuses = [];
+                                if (order.status === 'Pending') {
+                                    availableStatuses = ['Pending', 'Shipped', 'Canceled'];
+                                } else if (order.status === 'Shipped') {
+                                    availableStatuses = ['Shipped', 'Out for Delivery'];
+                                } else if (order.status === 'Out for Delivery') {
+                                    availableStatuses = ['Out for Delivery', 'Delivered'];
+                                } else if (order.status === 'Return Requested') {
+                                    availableStatuses = ['Return Requested'];
+                                } else {
+                                    availableStatuses = ['Pending', 'Shipped', 'Out for Delivery', 'Delivered', 'Canceled'];
+                                }
+                                %>
+                                <% availableStatuses.forEach(st => { %>
+                                    <option value="<%= st %>" <%= order.status===st?'selected':'' %>><%= st %></option>
+                                <% }) %>
+                            </select>
+                            <button type="submit" class="btn btn-primary">Update Status</button>
+                        </form>
+                    <% } %>
                     <% if (order.status === 'Return Requested') { %>
                         <h3>Return Request</h3>
-                        <form method="post" action="/admin/orders/<%= order._id %>/verify-return" class="return-form">
+                        <div style="background-color: rgba(251, 191, 36, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
+                            <p style="margin: 0; color: #92400e;">
+                                <i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>
+                                <strong>Customer Return Reason:</strong> <%= order.returnReason %>
+                            </p>
+                        </div>
+                        <form method="post" action="/admin/orders/<%= order._id %>/verify-return" class="return-form" id="acceptReturnForm">
                             <input type="hidden" name="action" value="accept">
-                            <button type="submit" class="btn btn-accept">Accept Return</button>
+                            <button type="submit" class="btn btn-accept">Accept Return & Refund</button>
                         </form>
-                        <form method="post" action="/admin/orders/<%= order._id %>/verify-return" class="return-form">
+                        <form method="post" action="/admin/orders/<%= order._id %>/verify-return" class="return-form" id="rejectReturnForm">
                             <input type="hidden" name="action" value="reject">
+                            <input type="hidden" name="rejectionReason" id="rejectionReasonInput">
                             <button type="submit" class="btn btn-reject">Reject Return</button>
                         </form>
+                    <% } %>
+                    <% if (order.rejectionReason) { %>
+                        <div style="background-color: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #dc2626;">
+                            <p style="margin: 0; color: #dc2626;">
+                                <i class="fas fa-times-circle" style="margin-right: 8px;"></i>
+                                <strong>Return Rejection Reason:</strong> <%= order.rejectionReason %>
+                            </p>
+                        </div>
                     <% } %>
                     <div>
                         <a href="/admin/orders" class="back-btn">Back to Orders</a>
@@ -341,6 +391,9 @@
             </div>
         </div>
     </main>
+
+    <!-- Sweet Alert CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         // Toggle sidebar collapse
@@ -403,46 +456,113 @@
         });
 
         // Return form submission with SweetAlert
-        document.querySelectorAll('.return-form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const action = this.querySelector('input[name="action"]').value;
-                Swal.fire({
-                    title: `Are you sure?`,
-                    text: action === 'accept' ? 'Accept and refund to wallet?' : 'Reject return request?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes',
-                    cancelButtonText: 'No'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        fetch(this.action, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: new URLSearchParams(new FormData(this))
-                        })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.message) {
-                                Swal.fire({
-                                    title: 'Success',
-                                    text: data.message,
-                                    icon: 'success',
-                                    confirmButtonText: 'OK'
-                                }).then(() => {
-                                    if (!data.error) location.reload();
-                                });
-                            } else if (data.error) {
-                                Swal.fire({
-                                    title: 'Error',
-                                    text: data.error,
-                                    icon: 'error',
-                                    confirmButtonText: 'OK'
-                                });
-                            }
-                        });
+        document.getElementById('acceptReturnForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this; // Capture form reference
+            const actionUrl = form.getAttribute('action'); // Explicitly get action attribute
+            console.log('Accept form action URL:', actionUrl); // Debug log
+
+            Swal.fire({
+                title: 'Accept Return Request?',
+                text: 'This will refund the amount to customer\'s wallet.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Accept & Refund',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#6b7280'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(actionUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(new FormData(form))
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.message) {
+                            Swal.fire({
+                                title: 'Return Accepted!',
+                                text: data.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                if (!data.error) location.reload();
+                            });
+                        } else if (data.error) {
+                            Swal.fire({
+                                title: 'Error',
+                                text: data.error,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        document.getElementById('rejectReturnForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const actionUrl = form.getAttribute('action'); // Explicitly get action attribute
+            console.log('Reject form action URL:', actionUrl); // Debug log
+
+            Swal.fire({
+                title: 'Reject Return Request',
+                input: 'textarea',
+                inputLabel: 'Rejection Reason (Required)',
+                inputPlaceholder: 'Please provide a reason for rejecting this return request',
+                inputAttributes: {
+                    'aria-label': 'Type rejection reason here'
+                },
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Rejection reason is required!'
                     }
-                });
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Reject Return',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                preConfirm: (reason) => {
+                    // Set the rejection reason in the hidden input
+                    document.getElementById('rejectionReasonInput').value = reason;
+
+                    return fetch(actionUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(new FormData(form))
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.error);
+                        }
+                        return data;
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage(`Request failed: ${error.message}`);
+                    });
+                },
+                allowOutsideClick: () => !Swal.isLoading()
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Return Rejected!',
+                        text: 'The return request has been rejected.',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
+                }
             });
         });
     </script>

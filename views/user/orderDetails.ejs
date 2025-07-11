@@ -137,18 +137,59 @@
     <a href="/orders/invoice/<%= order._id %>">Download Invoice</a>
   </div>
 
+  <!-- Sweet Alert CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <script>
     function cancelItem(orderId, itemId) {
-      const reason = prompt('Enter cancellation reason (optional):');
-      fetch(`/orders/cancel-item/${orderId}/${itemId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancelReason: reason })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        if (data.success) window.location.reload();
+      Swal.fire({
+        title: 'Cancel Item',
+        input: 'textarea',
+        inputLabel: 'Cancellation Reason',
+        inputPlaceholder: 'Please enter the reason for cancelling this item (optional)',
+        inputAttributes: {
+          'aria-label': 'Type your cancellation reason here'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Cancel Item',
+        cancelButtonText: 'Keep Item',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        preConfirm: (reason) => {
+          return fetch(`/orders/cancel-item/${orderId}/${itemId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cancelReason: reason || 'No reason provided' })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (!data.success) {
+              throw new Error(data.message || 'Failed to cancel item');
+            }
+            return data;
+          })
+          .catch(error => {
+            Swal.showValidationMessage(`Request failed: ${error.message}`);
+          });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'Cancelled!',
+            text: 'The item has been cancelled successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.reload();
+          });
+        }
       });
     }
   </script>

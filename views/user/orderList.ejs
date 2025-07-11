@@ -309,8 +309,9 @@
                 <% } %>
                 <% if (order.status === 'Delivered') { %>
                   <button onclick="returnOrder('<%= order._id %>')">Return</button>
+                  <a href="/orders/invoice/<%= order._id %>">Invoice</a>
                 <% } %>
-                <a href="/orders/invoice/<%= order._id %>">Invoice</a>
+                
               </td>
             </tr>
           <% }) %>
@@ -329,36 +330,116 @@
       </div>
     </main>
   </div>
+  <!-- Sweet Alert CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <script>
-    
+
     function cancelOrder(orderId) {
-      const reason = prompt('Enter cancellation reason (optional):');
-      fetch(`/orders/cancel/${orderId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancelReason: reason })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        if (data.success) window.location.reload();
+      Swal.fire({
+        title: 'Cancel Order',
+        input: 'textarea',
+        inputLabel: 'Cancellation Reason',
+        inputPlaceholder: 'Please enter the reason for cancellation (optional)',
+        inputAttributes: {
+          'aria-label': 'Type your cancellation reason here'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Cancel Order',
+        cancelButtonText: 'Keep Order',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        preConfirm: (reason) => {
+          return fetch(`/orders/cancel/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cancelReason: reason || 'No reason provided' })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (!data.success) {
+              throw new Error(data.message || 'Failed to cancel order');
+            }
+            return data;
+          })
+          .catch(error => {
+            Swal.showValidationMessage(`Request failed: ${error.message}`);
+          });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'Cancelled!',
+            text: 'Your order has been cancelled successfully.',
+            icon: 'success',
+            timer: 2000,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.reload();
+          });
+        }
       });
     }
     function returnOrder(orderId) {
-      const reason = prompt('Enter return reason (required):');
-      if (!reason) {
-        alert('Return reason is required');
-        return;
-      }
-      fetch(`/orders/return/${orderId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ returnReason: reason })
-      })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message);
-        if (data.success) window.location.reload();
+      Swal.fire({
+        title: 'Return Order',
+        input: 'textarea',
+        inputLabel: 'Return Reason (Required)',
+        inputPlaceholder: 'Please enter the reason for returning this order',
+        inputAttributes: {
+          'aria-label': 'Type your return reason here'
+        },
+        inputValidator: (value) => {
+          if (!value) {
+            return 'Return reason is required!'
+          }
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Submit Return Request',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#3085d6',
+        preConfirm: (reason) => {
+          return fetch(`/orders/return/${orderId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ returnReason: reason })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (!data.success) {
+              throw new Error(data.message || 'Failed to submit return request');
+            }
+            return data;
+          })
+          .catch(error => {
+            Swal.showValidationMessage(`Request failed: ${error.message}`);
+          });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'Return Request Submitted!',
+            text: 'Your return request has been submitted successfully. We will review it shortly.',
+            icon: 'success',
+            timer: 3000,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.reload();
+          });
+        }
       });
     }
     (function() {

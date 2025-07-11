@@ -1010,6 +1010,187 @@ body.dark-mode .user-role {
     color: var(--text-color); /* Use light gray for all text elements */
 }
 
+/* Inventory Management Styles */
+.filters-container {
+  background-color: var(--card-color);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.filters-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  align-items: end;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--secondary-color);
+}
+
+.filter-select {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: var(--card-color);
+  color: var(--secondary-color);
+  transition: var(--transition);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.stock-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-quantity {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.stock-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stock-badge.low-stock {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.stock-badge.out-of-stock {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.stock-badge.high-stock {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.product-name {
+  font-weight: 500;
+  color: var(--secondary-color);
+}
+
+.product-id {
+  font-size: 12px;
+  color: var(--icon-color);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.action-icon {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--icon-color);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon:hover {
+  background-color: var(--background-color);
+  color: var(--accent-color);
+}
+
+.selected-products-list {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.selected-product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.selected-product-item:last-child {
+  border-bottom: none;
+}
+
+.current-stock {
+  font-size: 12px;
+  color: var(--icon-color);
+}
+
+.icon-red {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.no-data-message {
+  text-align: center;
+  padding: 40px;
+  color: var(--icon-color);
+}
+
+.no-data-message i {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.no-data-message h3 {
+  margin-bottom: 8px;
+  color: var(--secondary-color);
+}
+
+/* Responsive adjustments for inventory */
+@media (max-width: 768px) {
+  .filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+
 body.dark-mode .status-badge {
     color: var(--text-color); /* Ensure status badges have readable text */
 }

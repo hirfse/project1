@@ -73,6 +73,11 @@ router.get('/orders/:id', adminController.getOrderDetail);
 router.post('/orders/:id/status', adminController.changeOrderStatus);
 router.post('/orders/:id/verify-return', adminController.verifyReturnRequest);
 
+//   Inventory Management
+router.get('/inventory', adminController.getInventoryManagement);
+router.post('/inventory/update-stock/:productId', adminController.updateStock);
+router.post('/inventory/bulk-update', adminController.bulkUpdateStock);
+
 // Custom Product Management
 
 router.get('/custom-products',adminController.getCustomProductList);

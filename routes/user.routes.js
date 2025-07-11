@@ -127,6 +127,9 @@ router.post('/orders/cancel-item/:orderId/:itemId', userController.cancelOrderIt
 router.post('/orders/return/:id', userController.returnOrder);
 router.get('/orders/invoice/:id', userController.downloadInvoice);
 
+// Wallet Management
+router.get('/wallet', userController.getWallet);
+
 
 //   Logout Route
 

@@ -4,6 +4,11 @@ const User = require('../models/user.model');
 exports.checkUserStatus = async (req, res, next) => {
   if (req.session.userId) {
     try {
+      // Skip validation for admin sessions
+      if (req.session.role === 'admin' && req.session.userId === 'admin') {
+        return next();
+      }
+
       // Ensure userId is valid before querying
       if (!mongoose.isValidObjectId(req.session.userId)) {
         console.warn('Invalid userId in session:', req.session.userId);

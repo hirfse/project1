@@ -169,6 +169,7 @@ exports.handleLoginPage = async (req, res) => {
  //forgot page contoller
 
 const nodemailer = require('nodemailer')//for sending otp
+const Wallet = require('../../models/wallet.model'); // Add wallet model
 const otpStore = new Map(); // For password reset OTP
 const emailOtpStore = new Map(); // For email verification OTP
 const signupOtpStore = new Map(); // For signup OTP
@@ -1994,7 +1995,7 @@ exports.cancelOrder = async (req, res) => {
             const product = await Product.findById(item.productId);
             if (product) {
                 product.quantity += item.quantity;
-                product.status = product.quantity > 0 ? 'In Stock' : product.status;
+                product.status = product.quantity > 0 ? 'Available' : 'Out of Stock';
                 await product.save();
             }
         }
@@ -2040,7 +2041,7 @@ exports.cancelOrderItem = async (req, res) => {
         const product = await Product.findById(item.productId);
         if (product) {
             product.quantity += item.quantity;
-            product.status = product.quantity > 0 ? 'In Stock' : product.status;
+            product.status = product.quantity > 0 ? 'Available' : 'Out of Stock';
             await product.save();
         }
 
@@ -2404,7 +2405,39 @@ exports.handleLogout = (req,res) =>{
       console.error('Error destroying session:', err);
       return res.redirect('/home');
     }
-    res.clearCookie('connect.sid'); 
+    res.clearCookie('connect.sid');
     res.redirect('/login');
   });
 }
+
+// Wallet Management
+exports.getWallet = async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        const categories = await Category.find({ isListed: true });
+
+        let wallet = await Wallet.findOne({ userId });
+        if (!wallet) {
+            wallet = new Wallet({ userId, balance: 0, transactions: [] });
+            await wallet.save();
+        }
+
+        // Sort transactions by date (newest first)
+        wallet.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        res.render('user/wallet', {
+            wallet,
+            userName: req.session.userName || null,
+            categories,
+            error: null
+        });
+    } catch (error) {
+        console.error('Error fetching wallet:', error);
+        res.render('user/wallet', {
+            wallet: { balance: 0, transactions: [] },
+            userName: req.session.userName || null,
+            categories: await Category.find({ isListed: true }),
+            error: 'Failed to load wallet information'
+        });
+    }
+};
