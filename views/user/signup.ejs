@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup - U-Craft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/auth.css">
+    <style>
+        
+ body {
+    background-image: url(/images/background/milad-fakurian-2sICkGsJRQY-unsplash.jpg);
+}
+
+.form-header h2 {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 5px;
+    margin-top: 5px;
+}
+
+.auth-form-container {
+    height: auto; /* Changed from 90% to auto */
+    min-height: 80vh; /* Added minimum height */
+    padding: 20px 30px; /* Increased padding */
+}
+
+.form-body {
+    margin: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.form-body h4 {
+    margin-bottom: 10px;
+    color: #fefefe;
+    font-size: 17px;
+    width: 100%;
+    text-align: left;
+}
+
+.form-body form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; /* Increased from 5px */
+    width: 100%;
+    align-items: center;
+}
+
+.form-body input {
+    background-color: rgba(255, 255, 255, 0.464);
+    margin-top: 2px;
+    margin-bottom: 2px;
+    border: 2px solid rgba(255, 255, 255, 0.551);
+    font-size: 14px;
+}
+
+.form-body input[type="text"], .form-body input[type="password"], .form-body input[type="tel"] {
+    outline: none;
+}
+
+.name-inputs {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.name-inputs input {
+    width: 50%;
+}
+
+.social-login {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 15px; 
+    width: 95%; 
+    margin-bottom: 15px; 
+}
+
+.social-login button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 40px;
+    font-size: 14px;
+    background-color: transparent;
+    border-radius: 50px;
+    border: 2px solid rgba(128, 128, 128, 0.551);
+    margin-bottom: 12px; 
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.social-login button img {
+    height: 20px;
+    margin-right: 10px;
+}
+
+.switch-link {
+    border: none !important;
+    color: #992828;
+    font-size: 13px !important;
+    height: 25px !important;
+    margin-top: 5px; 
+}
+
+label {
+    font-size: 13px;
+    color: #f7f7f7;
+    margin-top: 2px;
+    display: block;
+    width: 100%;
+    text-align: left;
+}
+
+.input-group {
+    margin-bottom: 8px; 
+    width: 95%; 
+}
+
+
+.auth-container {
+    height: auto;
+    min-height: 85vh;
+}
+
+.form-body button[type="submit"] {
+    width: 95%;
+    max-width: 100%;
+}
+.error-message{
+    color: red
+}
+
+@media only screen and (max-width: 768px) {
+    .form-body input::placeholder {
+        color: white;
+    }
+
+    .name-inputs {
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+    }
+
+    .name-inputs input {
+        width: 100%;
+    }
+    
+    .auth-form-container {
+        padding: 20px; 
+    }
+    
+    .auth-container {
+        height: auto;
+        min-height: 70vh;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <%- include('../partials/header') %>
+
+
+    <main class="main">
+        <div class="auth-container">
+            <div class="auth-image-container">
+                <img class="auth-image" src="/images/background/linevector.png" alt="Decorative background">
+            </div>
+            <div class="auth-form-container">
+                <div class="form-header">
+                    <img src="/images/background/U-Craft_logo.png" alt="U-Craft Logo" class="form-logo">
+                    <h2>Get Started</h2>
+                </div>
+                <div class="form-body">
+                    <h4>Enter your details below</h4>
+                    <% if(error) {%>
+                        <div class="error-message"><%= error %></div>
+                        <% } %>
+                    <form action="/signup" method="post" onsubmit="return signupValidation(event)">
+                        <div class="input-group">
+                            <label for="fullName">Enter Full Name</label>
+
+                                <input type="text" id="fullName" name="fullName" placeholder="Full Name">
+  
+                            <div id="errorName" class="error-message" ></div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="phone">Phone No.</label>
+                            <input type="tel" id="phone" name="phone" placeholder="Phone">
+                            <div id="errorPhone" class="error-message"></div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="email">Email</label>
+                            <input type="text" id="email" name="email" placeholder="Email" >
+                            <div id="errorEmail" class="error-message"></div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" placeholder="Password" >
+                            <div id="errorPass" class="error-message"></div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="confirmPassword">Confirm Password</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password">
+                            <div id="errorPass2" class="error-message"></div>
+                        </div>
+                        
+                        <div class="input-group">
+                            <button type="submit">Sign Up</button>
+                        </div>
+                    </form>
+                    <div class="social-login">
+                        <a href="/auth/google" style="text-decoration: none">
+                            <button type="button">
+                                <img src="/images/project_icons/googleicon.png" alt="Google Icon">
+                                Sign up with Google
+                            </button>
+                        </a>
+                        <button class="switch-link"><a href="/login">Already have an account? Login</a></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('../partials/footer') %>
+</body>
+    <script>
+        function signupValidation(event) {
+    event.preventDefault(); // Prevent default submission initially
+
+    const fullName = document.getElementById('fullName').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+    const emailRegex = /^[a-zA-Z0-9.!#$%&'+/=?^_{|}~-]+@[a-zA-Z0-9-]+(\.[a-zA-Z]{2,})+$/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+
+    let isValid = true;
+
+    // Name validation
+    if (!fullName) {
+        displayError('errorName', "Don't leave me alone :(");
+        isValid = false;
+    } else if (fullName.length < 3) {
+        displayError('errorName', 'Name should contain more than 2 characters!');
+        isValid = false;
+    } else {
+        clearError('errorName');
+    }
+
+    // Phone validation
+    if (!phone) {
+        displayError('errorPhone', "Don't leave me alone :(");
+        isValid = false;
+    } else if (phone.length !== 10 || isNaN(phone)) {
+        displayError('errorPhone', "Phone number should contain exactly 10 digits!");
+        isValid = false;
+    } else {
+        clearError('errorPhone');
+    }
+
+    // Email validation
+    if (!email) {
+        displayError('errorEmail', "Don't leave me alone :(");
+        isValid = false;
+    } else if (!emailRegex.test(email)) {
+        displayError('errorEmail', "Invalid email format!");
+        isValid = false;
+    } else {
+        clearError('errorEmail');
+    }
+
+    // Password validation
+    if (!password) {
+        displayError('errorPass', "Don't leave me alone :(");
+        isValid = false;
+    } else if (password.length < 8) {
+        displayError('errorPass', "Password must contain at least 8 characters!");
+        isValid = false;
+    } else if (!passwordRegex.test(password)) {
+        displayError('errorPass', "Password must contain at least one uppercase letter, one lowercase letter, and one number!");
+        isValid = false;
+    } else {
+        clearError('errorPass');
+    }
+
+    // Confirm Password validation
+    if (!confirmPassword) {
+        displayError('errorPass2', "Confirm your password!");
+        isValid = false;
+    } else if (password !== confirmPassword) {
+        displayError('errorPass2', "Passwords do not match!");
+        isValid = false;
+    } else {
+        clearError('errorPass2');
+    }
+
+    if (isValid) {
+        document.querySelector('form').submit(); // Submit only if valid
+    }
+}
+
+// Display error message
+function displayError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    errorElement.textContent = message;
+    errorElement.style.display = "block";
+}
+
+// Clear error message
+function clearError(elementId) {
+    const errorElement = document.getElementById(elementId);
+    errorElement.textContent = "";
+    errorElement.style.display = "none";
+}
+
+
+    </script>
+</html>

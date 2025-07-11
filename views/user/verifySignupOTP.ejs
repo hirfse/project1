@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/auth.css">
+    <style>
+        body {
+            background-image: url("/images/background/loginBackgroud.jpg");
+        }
+
+        #rightHeader h2 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            margin-top: 10px;
+            text-align: center;
+            color: white;
+        }
+
+        #rightHeader p {
+            color: white;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        #rightBody form {
+            align-items: center;
+        }
+
+        .input-group {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group input {
+            width: 70%;
+        }
+
+        .input-group button {
+            background-color: transparent;
+            color: white;
+            border: none;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 5px 10px;
+        }
+
+        .input-group button:hover {
+            color: #ddd;
+        }
+
+        #verify-button {
+            width: 90%;
+        }
+
+        #loginButton {
+            width: 90%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        #loginButton p {
+            color: white;
+            cursor: pointer;
+        }
+
+        @media only screen and (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .input-group input {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .input-group button {
+                align-self: flex-end;
+                padding-right: 0;
+            }
+
+            #verify-button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <p>U-Craft .</p>
+        <nav>
+            <ul>
+                <li>Home</li>
+                <li>About</li>
+                <li>Explore</li>
+                <li>Contact</li>
+            </ul>
+        </nav>
+        <div class="buttons">
+            <button id="login" type="submit">Log in</button>
+            <button id="signup" type="submit">Sign up</button>
+        </div>
+    </header>
+    <main>
+        <div id="loginContainer">
+            <div id="loginLeft">
+                <img id="loginImage" src="/images/background/linevector.png" alt="Login Image">
+            </div>
+            <div id="loginRight">
+                <div id="rightHeader">
+                    <img src="/images/background/U-Craft_logo.png" alt="Logo" id="loginHeadLogo">
+                    <h2>Enter the OTP</h2>
+                    <p>The OTP has been sent to your registered email</p>
+                </div>
+                <div id="rightBody">
+                    <form action="/verifySignupOTP" method="post">
+                        <input type="hidden" name="email" value="<%= email %>" />
+                        <input type="hidden" name="fullName" value="<%= fullName %>" />
+                        <input type="hidden" name="phone" value="<%= phone %>" />
+                        <input type="hidden" name="password" value="<%= password %>" />
+                        
+                        <% if (error) { %>
+                            <div class="error-message"><%= error %></div>
+                        <% } %>
+                        
+                        <div class="input-group">
+                            <input type="text" id="otp" name="otp" placeholder="Enter the OTP">
+                            <button type="button" id="resend-otp">Resend OTP</button>
+                        </div>
+                        <button id="verify-button" type="submit">Verify</button>
+                    </form>
+                    <div id="loginButton">
+                        <a href="/login"><button type="submit">Login</button></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const resendButton = document.getElementById("resend-otp");
+
+            // Extract email from the hidden input field
+            const userEmail = document.querySelector('input[name="email"]').value;
+
+            if (!userEmail) {
+                console.error("Error: Email parameter missing.");
+                return;
+            }
+
+            function startTimer(duration) {
+                let timeLeft = duration;
+                resendButton.disabled = true;
+
+                const timerInterval = setInterval(() => {
+                    resendButton.innerText = `Resend OTP (${timeLeft}s)`;
+                    timeLeft--;
+
+                    if (timeLeft < 0) {
+                        clearInterval(timerInterval);
+                        resendButton.disabled = false;
+                        resendButton.innerText = "Resend OTP";
+                    }
+                }, 1000);
+            }
+
+            // Start the timer on page load (60 seconds)
+            startTimer(60);
+
+            // Handle Resend OTP Click
+            resendButton.addEventListener("click", function () {
+                resendButton.disabled = true;
+                startTimer(60); // Restart timer on click
+
+                fetch("/resendOTP", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: userEmail }) // Ensure email is passed correctly
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert("New OTP has been sent!");
+                        } else {
+                            alert("Failed to resend OTP. Try again later.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error resending OTP:", error);
+                        alert("An error occurred. Please try again.");
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

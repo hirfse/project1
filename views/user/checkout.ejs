@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - U-Craft</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <style>
+        body {
+    height: 100%;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background-image: url('/images/background/gray-wood-texture.jpg');
+    background-size: contain;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header styles */
+header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+header .container {
+    max-width: 1200px;
+}
+
+header h1 {
+    font-weight: 700;
+    color: #333;
+}
+
+header nav a {
+    font-size: 1rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+header nav a:hover {
+    color: #000;
+}
+
+/* Breadcrumbs */
+#breadcrumbs ol {
+    list-style: none;
+    display: flex;
+    gap: 5px;
+    font-size: 14px;
+    color: #888;
+    margin: 18px 0 0 30px;
+}
+
+#breadcrumbs a {
+    color: #888;
+    text-decoration: none;
+}
+
+#breadcrumbs a:hover {
+    color: #333;
+}
+
+#breadcrumbs li:last-child {
+    color: #333;
+}
+
+/* Main content */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    flex: 1;
+}
+
+main h2 {
+    font-weight: 700;
+    color: #333;
+}
+
+/* Address section */
+.address-section {
+    background-color: #ffffff4c;
+    border-radius: 8px;
+    box-shadow: 0 8px 9px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+}
+
+.address-section h3 {
+    font-weight: 600;
+    color: #333;
+}
+
+.address-section .border-blue-500 {
+    border: 2px solid #3b82f6;
+}
+
+.address-section .border-gray-200 {
+    border: 1px solid #ddd;
+}
+
+.address-section input[type="radio"] {
+    accent-color: #333;
+}
+
+.address-section label p {
+    color: #333;
+    font-size: 1rem;
+}
+
+.address-section a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.address-section a:hover {
+    text-decoration: underline;
+}
+
+.address-section button {
+    background-color: #2563eb;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 4px;
+    padding: 8px 16px;
+    transition: background-color 0.3s ease;
+}
+
+.address-section button:hover {
+    background-color: #1d4ed8;
+}
+
+/* Payment method section */
+.payment-method-section {
+    margin-top: 32px;
+}
+
+.payment-method-section h3 {
+    font-weight: 600;
+    color: #333;
+}
+
+.payment-method-section label {
+    color: #333;
+    font-size: 1rem;
+}
+
+.payment-method-section input[type="radio"] {
+    accent-color: #333;
+}
+
+/* Order summary section */
+.order-summary-section {
+    background-color: #ffffff4c;
+    border-radius: 8px;
+    box-shadow: 0 8px 9px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+}
+
+.order-summary-section h3 {
+    font-weight: 600;
+    color: #333;
+}
+
+.order-summary-section img {
+    border-radius: 4px;
+}
+
+.order-summary-section h4 {
+    font-weight: 600;
+    color: #333;
+}
+
+.order-summary-section p {
+    color: #333;
+}
+
+.order-summary-section button {
+    background-color: #e5e7eb;
+    color: #333;
+    border-radius: 4px;
+    padding: 4px 8px;
+    transition: background-color 0.3s ease;
+}
+
+.order-summary-section button:hover {
+    background-color: #d1d5db;
+}
+
+.order-summary-section .font-semibold {
+    color: #333;
+}
+
+.order-summary-section .text-green-600 {
+    color: #16a34a;
+}
+
+.order-summary-section .place-order-btn {
+    background-color: #16a34a;
+    color: #fff;
+    font-weight: 500;
+    border-radius: 4px;
+    padding: 8px 16px;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.order-summary-section .place-order-btn:hover {
+    background-color: #15803d;
+}
+
+.order-summary-section .place-order-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Error message */
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+/* Footer */
+footer {
+    background-color: #000;
+    color: #fff;
+    padding: 40px 0;
+    margin-top: auto;
+    width: 100%;
+}
+
+footer p {
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .flex-col.md\:flex-row {
+        flex-direction: column;
+    }
+
+    .address-section, .order-summary-section {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    main {
+        padding: 0 10px;
+    }
+
+    #breadcrumbs {
+        margin: 10px 0 0 10px;
+    }
+}
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- Header -->
+    <header class="bg-white shadow">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">U-Craft</h1>
+            <nav>
+                <a href="/home" class="text-gray-600 hover:text-gray-900 mx-2">Home</a>
+                <a href="/cart" class="text-gray-600 hover:text-gray-900 mx-2">Cart</a>
+                <a href="/profile" class="text-gray-600 hover:text-gray-900 mx-2">Profile</a>
+                <a href="/logout" class="text-red-600 hover:text-red-800 mx-2">Logout</a>
+            </nav>
+        </div>
+    </header>
+    <!-- Breadcrumbs -->
+    <nav id="breadcrumbs" style="margin: 18px 0 0 30px;"></nav>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-semibold mb-6">Checkout</h2>
+
+        <% if (error) { %>
+            <div class="bg-red-100 text-red-700 p-4 rounded mb-6">
+                <%= error %>
+            </div>
+        <% } %>
+
+        <div class="flex flex-col md:flex-row gap-8">
+            <!-- Address Section -->
+            <div class="w-full md:w-1/2 bg-white p-6 rounded-lg shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-semibold">Delivery Address</h3>
+                    <a href="/addresses/add" class="text-blue-600 hover:underline">Add New Address</a>
+                </div>
+
+                <% if (!addresses || addresses.length === 0) { %>
+                    <p class="text-gray-600">No addresses found. Please add an address to proceed.</p>
+                <% } else { %>
+                    <form id="addressForm" action="/checkout/select-address" method="POST">
+                        <% addresses.forEach((address, index) => { %>
+                            <div class="border p-4 rounded-lg mb-4 <%= address.isDefault ? 'border-blue-500' : 'border-gray-200' %>">
+                                <label class="flex items-center">
+                                    <input type="radio" name="selectedAddress" value="<%= address._id %>" <%= address.isDefault ? 'checked' : '' %> class="mr-2">
+                                    <div>
+                                        <p class="font-semibold"><%= address.fullName %> (<%= address.addressType %>)</p>
+                                        <p><%= address.houseName %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></p>
+                                        <p>Phone: <%= address.phone %> <% if (address.secPhone) { %>, Alt: <%= address.secPhone %><% } %></p>
+                                        <p>Landmark: <%= address.landMark %></p>
+                                        <a href="/addresses/edit/<%= address._id %>" class="text-blue-600 hover:underline">Edit</a>
+                                    </div>
+                                </label>
+                            </div>
+                        <% }) %>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save Address Selection</button>
+                    </form>
+                <% } %>
+
+                <!-- Payment Method Section -->
+                <div class="mt-8">
+                    <h3 class="text-xl font-semibold mb-2">Payment Method</h3>
+                    <form id="paymentMethodForm">
+                        <div class="flex flex-col gap-2">
+                            <label class="flex items-center">
+                                <input type="radio" name="paymentMethod" value="cod" class="mr-2" checked>
+                                Cash on Delivery
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="paymentMethod" value="card" class="mr-2">
+                                Card (Coming Soon)
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="paymentMethod" value="upi" class="mr-2">
+                                UPI (Coming Soon)
+                            </label>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Order Summary Section -->
+            <div class="w-full md:w-1/2 bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold mb-4">Order Summary</h3>
+
+                <% if (!cart || !cart.items.length) { %>
+                    <p class="text-gray-600">Your cart is empty.</p>
+                <% } else { %>
+                    <div class="space-y-4">
+                        <% cart.items.forEach(item => { %>
+                            <div class="flex items-center border-b pb-4">
+                                <img src="/uploads/product-images/<%= item.productId.productImage[0] %>" alt="<%= item.productId.productName %>" class="w-20 h-20 object-cover rounded mr-4">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold"><%= item.productId.productName %></h4>
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" class="bg-gray-200 px-2 py-1 rounded" onclick="updateQuantity('<%= item.productId._id %>', 'decrement')">-</button>
+                                        <span id="qty-<%= item.productId._id %>"><%= item.quantity %></span>
+                                        <button type="button" class="bg-gray-200 px-2 py-1 rounded" onclick="updateQuantity('<%= item.productId._id %>', 'increment')">+</button>
+                                    </div>
+                                    <p class="text-gray-600">Price: Rs. <%= item.productId.salePrice.toFixed(2) %></p>
+                                    <p class="font-semibold">Total: Rs. <span id="total-<%= item.productId._id %>"><%= (item.quantity * item.productId.salePrice).toFixed(2) %></span></p>
+                                </div>
+                            </div>
+                        <% }) %>
+
+                        <!-- Price Summary -->
+                        <div class="mt-6">
+                            <div class="flex justify-between">
+                                <span>Subtotal</span>
+                                <span>Rs. <%= subtotal.toFixed(2) %></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Shipping</span>
+                                <span>Rs. <%= shipping.toFixed(2) %></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Tax (5%)</span>
+                                <span>Rs. <%= tax.toFixed(2) %></span>
+                            </div>
+                            <% if (discount > 0) { %>
+                                <div class="flex justify-between text-green-600">
+                                    <span>Discount</span>
+                                    <span>- Rs. <%= discount.toFixed(2) %></span>
+                                </div>
+                            <% } %>
+                            <div class="flex justify-between font-semibold text-lg mt-4">
+                                <span>Total</span>
+                                <span>Rs. <%= total.toFixed(2) %></span>
+                            </div>
+                        </div>
+
+                        <!-- Place Order Button -->
+                        <form id="placeOrderForm" action="/place-order" method="POST">
+                            <input type="hidden" name="selectedAddress" value="<%= selectedAddress ? selectedAddress._id : '' %>">
+                            <input type="hidden" name="paymentMethod" id="paymentMethodInput" value="cod">
+                            <button type="submit" class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-4" <%= !selectedAddress ? 'disabled' : '' %>>Place Order</button>
+                        </form>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-4 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 U-Craft. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Client-side validation for address selection
+        document.getElementById('addressForm')?.addEventListener('submit', function(e) {
+            const selected = document.querySelector('input[name="selectedAddress"]:checked');
+            if (!selected) {
+                e.preventDefault();
+                alert('Please select a delivery address.');
+            }
+        });
+
+        function updateQuantity(productId, action) {
+            fetch('/cart/update-quantity/' + productId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Reload the page to update totals and quantities
+                    location.reload();
+                } else {
+                    alert(data.message || 'Failed to update quantity');
+                }
+            })
+            .catch(() => alert('Failed to update quantity'));
+        }
+
+        // Dynamic Breadcrumbs
+        (function() {
+            const prettyNames = {
+                '': 'Home',
+                'home': 'Home',
+                'productlisting': 'Shop',
+                'customlisting': 'Custom',
+                'profile': 'Profile',
+                'cart': 'Cart',
+                'wishlist': 'Wishlist',
+                'addresses': 'Addresses',
+                'orders': 'Orders',
+                'checkout': 'Checkout',
+                'about': 'About',
+                'contact': 'Contact'
+            };
+            function toTitle(str) {
+                return prettyNames[str.toLowerCase()] || str.charAt(0).toUpperCase() + str.slice(1);
+            }
+            const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+            let crumbs = [];
+            let url = '';
+            for (let i = 0; i < path.length; i++) {
+                url += '/' + path[i];
+                crumbs.push({
+                    name: toTitle(path[i]),
+                    url: i < path.length - 1 ? url : null
+                });
+            }
+            if (crumbs.length === 0 || crumbs[0].name !== 'Home') {
+                crumbs.unshift({ name: 'Home', url: '/' });
+            }
+            const nav = document.getElementById('breadcrumbs');
+            if (nav) {
+                nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
+                    crumbs.map((crumb, idx) => {
+                        if (crumb.url) {
+                            return `<li><a href="${crumb.url}" style="color:#888;text-decoration:none;">${crumb.name}</a></li>` +
+                                (idx < crumbs.length - 1 ? '<li style="color:#888;">/</li>' : '');
+                        } else {
+                            return `<li style="color:#333;">${crumb.name}</li>`;
+                        }
+                    }).join('') +
+                    '</ol>';
+            }
+        })();
+
+        // Payment method selection logic
+        const paymentForm = document.getElementById('paymentMethodForm');
+        const paymentMethodInput = document.getElementById('paymentMethodInput');
+        if (paymentForm && paymentMethodInput) {
+            paymentForm.addEventListener('change', function(e) {
+                const selected = paymentForm.querySelector('input[name="paymentMethod"]:checked');
+                if (selected) {
+                    paymentMethodInput.value = selected.value;
+                }
+            });
+        }
+
+        // Place order form logic
+        const placeOrderForm = document.getElementById('placeOrderForm');
+        if (placeOrderForm) {
+            placeOrderForm.addEventListener('submit', function(e) {
+                const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+                if (!selectedPayment) {
+                    e.preventDefault();
+                    Toastify({
+                        text: "Please select a payment method.",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#f87171"
+                    }).showToast();
+                    return;
+                }
+                if (selectedPayment.value !== 'cod') {
+                    e.preventDefault();
+                    Toastify({
+                        text: "Coming soon!",
+                        duration: 3000,
+                        gravity: "top",
+                        position: "right",
+                        backgroundColor: "#f59e42"
+                    }).showToast();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Management - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" />
+    <style>
+        /* Ensure modal content is scrollable */
+        .modal-content {
+            max-height: 80vh; /* Limit to 80% of viewport height */
+            overflow-y: auto; /* Enable vertical scrollbar */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Constrain cropper container */
+        .image-cropper {
+            max-height: 400px; /* Limit cropper height */
+            overflow: hidden; /* Hide overflow */
+        }
+
+        .image-cropper img {
+            max-width: 100%; /* Ensure image scales to fit container */
+            max-height: 350px; /* Limit image height within cropper */
+            object-fit: contain; /* Maintain aspect ratio */
+        }
+
+        /* Ensure modal header and actions remain fixed */
+        .modal-header, .modal-actions {
+            position: sticky;
+            background: #fff; /* Match modal background */
+            z-index: 1;
+        }
+
+        .modal-header {
+            top: 0;
+        }
+
+        .modal-actions {
+            bottom: 0;
+            padding-top: 10px;
+        }
+
+        /* Adjust modal overlay to handle scrolling */
+        .modal-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal {
+            max-width: 800px;
+            width: 90%;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <header id="sidebar">
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <span class="logo-text">AdminPro</span>
+            </div>
+            <button class="collapse-btn" id="collapseBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+
+        <nav>
+            <ul>
+                <a href="/admin/adminHome">
+                    <li>
+                        <i class="fas fa-home"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </li>
+                </a>
+                <a href="/admin/userManagement">
+                    <li>
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text">Users</span>
+                    </li>
+                </a>
+                <a href="/admin/category">
+                    <li>
+                        <i class="fas fa-folder"></i>
+                        <span class="nav-text">Categories</span>
+                    </li>
+                </a>
+                <a href="/admin/products" class="active">
+                    <li>
+                        <i class="fas fa-box"></i>
+                        <span class="nav-text">Products</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="nav-text">Orders</span>
+                        <span class="nav-badge">7</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-chart-pie"></i>
+                        <span class="nav-text">Sales</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-tag"></i>
+                        <span class="nav-text">Coupons</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-image"></i>
+                        <span class="nav-text">Banners</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-gift"></i>
+                        <span class="nav-text">Offers</span>
+                    </li>
+                </a>
+            </ul>
+        </nav>
+
+        <div class="footer-section">
+            <a href="/admin/adminLogout">
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span class="logout-text">Logout</span>
+                </button>
+            </a>
+        </div>
+    </header>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search products...">
+        </div>
+
+        <div class="user-actions">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div class="notification-bell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </div>
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div class="user-info">
+                    <div class="user-name">Admin</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        <div class="page-header">
+            <div class="page-title">
+                <h1><a href="/admin/products" style="text-decoration: none;">Product Management</a></h1>
+                <aside><a href="/admin/custom-products"  style="text-decoration: none;" ><h1>Custom Product Management</h1></a></aside>
+            </div>
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="addProductBtn">
+                    <i class="fas fa-plus"></i> Add Product
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <form action="/admin/products" method="GET" class="filter-form">
+                <div class="form-group">
+                    <input type="text" name="search" class="form-input" placeholder="Search products..." value="">
+                </div>
+                <div class="form-group">
+                    <select name="category" class="form-input">
+                        <option value="">All Categories</option>
+
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select name="status" class="form-input">
+                        <option value="">All Status</option>
+                        <option value="Available" ></option>Available</option>
+                        <option value="Out of Stock" >Out of Stock</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select name="sort" class="form-input">
+                        <option value="">Default Sorting</option>
+                        <option value="price_asc" >Price: Low to High</option>
+                        <option value="price_desc" >Price: High to Low</option>
+                        <option value="name_asc" >Name: A-Z</option>
+                        <option value="name_desc" >Name: Z-A</option>
+                        <option value="newest" >Newest First</option>
+                        <option value="oldest" >Oldest First</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </form>
+        </div>
+
+        <!-- Products Table -->
+        <div class="recent-table">
+            <div class="table-header">
+                <div class="table-title">Product List</div>
+                <a href="/admin/products" class="view-all">Clear Filter</a>
+            </div>
+
+            <table id="productTable">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div class="pagination">
+
+            </div>
+            <div class="pagination-info">
+
+            </div>
+        </div>
+
+        <!-- Add Product Modal -->
+        <div class="modal-overlay" id="addProductModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">Add Product</div>
+                    <button class="modal-close" onclick="closeModal('addProductModal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-content">
+                    <form id="addProductForm" onsubmit="return handleAddProduct(event)">
+
+                        <div class="form-group">
+                            <label class="form-label" for="addProductName">Product Name</label>
+                            <input type="text" class="form-input" name="productName" id="addProductName" required />
+                            <div id="add-productName-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="addDescription">Description</label>
+                            <textarea class="form-input" name="description" id="addDescription" rows="4" required></textarea>
+                            <div id="add-description-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="addRegularPrice">Regular Price</label>
+                            <input type="number" class="form-input" name="regularPrice" id="addRegularPrice" min="0" step="0.01" required />
+                            <div id="add-regularPrice-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="addSalePrice">Sale Price</label>
+                            <input type="number" class="form-input" name="salePrice" id="addSalePrice" min="0" step="0.01" required />
+                            <div id="add-salePrice-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="addQuantity">Quantity</label>
+                            <input type="number" class="form-input" name="quantity" id="addQuantity" min="0" step="1" required />
+                            <div id="add-quantity-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="addCategory">Category</label>
+                            <select class="form-input" name="category" id="addCategory" required>
+                                <option value="">Select Category</option>
+
+                            </select>
+                            <div id="add-category-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Images (at least 3 required)</label>
+                            <div class="thumbnails-container" id="addThumbnailsContainer"></div>
+
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-outline" onclick="closeModal('addProductModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Product Modal -->
+        <div class="modal-overlay" id="editProductModal">
+            <div class="modal">
+                <div class="modal-header">
+                    <div class="modal-title">Edit Product</div>
+                    <button class="modal-close" onclick="closeModal('editProductModal')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-content">
+                    <form id="editProductForm" onsubmit="return handleEditProduct(event)">
+
+                        <input type="hidden" id="editProductId" name="productId" />
+                        <div class="form-group">
+                            <label class="form-label" for="editProductName">Product Name</label>
+                            <input type="text" class="form-input" name="productName" id="editProductName" required />
+                            <div id="edit-productName-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editDescription">Description</label>
+                            <textarea class="form-input" name="description" id="editDescription" rows="4" required></textarea>
+                            <div id="edit-description-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editRegularPrice">Regular Price</label>
+                            <input type="number" class="form-input" name="regularPrice" id="editRegularPrice" min="0" step="0.01" required />
+                            <div id="edit-regularPrice-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editSalePrice">Sale Price</label>
+                            <input type="number" class="form-input" name="salePrice" id="editSalePrice" min="0" step="0.01" required />
+                            <div id="edit-salePrice-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editQuantity">Quantity</label>
+                            <input type="number" class="form-input" name="quantity" id="editQuantity" min="0" step="1" required />
+                            <div id="edit-quantity-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editCategory">Category</label>
+                            <select class="form-input" name="category" id="editCategory" required>
+                                <option value="">Select Category</option>
+
+                            </select>
+                            <div id="edit-category-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="editStatus">Status</label>
+                            <select class="form-input" name="status" id="editStatus" required>
+                                <option value="Available">Available</option>
+                                <option value="Out of Stock">Out of Stock</option>
+                            </select>
+                            <div id="edit-status-error" class="error-message" style="color: var(--danger-color);"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Existing Images</label>
+                            <div class="thumbnails-container" id="editExistingImages"></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Update Images (Optional)</label>
+                            <div class="thumbnails-container" id="editThumbnailsContainer"></div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" class="btn btn-outline" onclick="closeModal('editProductModal')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Update Product</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script>
+        let croppers = {};
+
+        // Toggle sidebar collapse
+        document.getElementById('collapseBtn').addEventListener('click', function() {
+            document.body.classList.toggle('collapsed-sidebar');
+        });
+
+        // Dark mode toggle
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const icon = this.querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+
+        // Search function
+        function searchTable() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let rows = document.querySelectorAll("#productTable tbody tr");
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+            });
+        }
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            clearErrorMessages(modalId);
+            if (modalId === 'addProductModal') {
+                document.getElementById('addProductForm').reset();
+                document.getElementById('addThumbnailsContainer').innerHTML = '';
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`addImgView${i}`).style.display = 'none';
+                    document.getElementById(`addCropperContainer${i}`).style.display = 'none';
+                    if (croppers[`add${i}`]) {
+                        croppers[`add${i}`].destroy();
+                        delete croppers[`add${i}`];
+                    }
+                }
+            } else if (modalId === 'editProductModal') {
+                document.getElementById('editProductForm').reset();
+                document.getElementById('editThumbnailsContainer').innerHTML = '';
+                document.getElementById('editExistingImages').innerHTML = '';
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById(`editImgView${i}`).style.display = 'none';
+                    document.getElementById(`editCropperContainer${i}`).style.display = 'none';
+                    if (croppers[`edit${i}`]) {
+                        croppers[`edit${i}`].destroy();
+                        delete croppers[`edit${i}`];
+                    }
+                }
+            }
+        }
+
+        // Add product modal trigger
+        document.getElementById('addProductBtn').addEventListener('click', function() {
+            openModal('addProductModal');
+        });
+
+        // Edit product modal trigger
+        function openEditProductModal(id, productName, description, regularPrice, salePrice, quantity, categoryId, status, images) {
+            document.getElementById('editProductId').value = id;
+            document.getElementById('editProductName').value = productName;
+            document.getElementById('editDescription').value = description;
+            document.getElementById('editRegularPrice').value = regularPrice;
+            document.getElementById('editSalePrice').value = salePrice;
+            document.getElementById('editQuantity').value = quantity;
+            document.getElementById('editCategory').value = categoryId;
+            document.getElementById('editStatus').value = status;
+
+            // Display existing images
+            const existingImagesContainer = document.getElementById('editExistingImages');
+            existingImagesContainer.innerHTML = '';
+            const imageArray = JSON.parse(images);
+            imageArray.forEach((img, index) => {
+                const div = document.createElement('div');
+                div.className = 'position-relative';
+                div.innerHTML = `
+                    <img src="/Uploads/product-images/${img}" class="thumbnail" alt="Product Image ${index + 1}">
+                    <input type="checkbox" name="deleteImages" value="${img}" id="delete-${index}" class="position-absolute top-0 end-0 m-1">
+                    <label for="delete-${index}" class="small text-muted d-block text-center">Remove</label>
+                `;
+                existingImagesContainer.appendChild(div);
+            });
+
+            openModal('editProductModal');
+        }
+
+        // Form validation
+        function validateForm(formId) {
+            const prefix = formId === 'addProductForm' ? 'add' : 'edit';
+            const productName = document.getElementById(`${prefix}ProductName`).value;
+            const description = document.getElementById(`${prefix}Description`).value;
+            const regularPrice = document.getElementById(`${prefix}RegularPrice`).value;
+            const salePrice = document.getElementById(`${prefix}SalePrice`).value;
+            const quantity = document.getElementById(`${prefix}Quantity`).value;
+            const category = document.getElementById(`${prefix}Category`).value;
+            const imageInputs = Array.from({ length: 4 }, (_, i) => document.getElementById(`${prefix}Input${i + 1}`));
+
+            clearErrorMessages(formId);
+
+            let isValid = true;
+            const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+
+            if (!productName.trim()) {
+                displayErrorMessage(`${prefix}-productName-error`, 'Product name is required');
+                isValid = false;
+            }
+
+            if (!description.trim()) {
+                displayErrorMessage(`${prefix}-description-error`, 'Description is required');
+                isValid = false;
+            }
+
+            if (!regularPrice || isNaN(regularPrice) || regularPrice < 0) {
+                displayErrorMessage(`${prefix}-regularPrice-error`, 'Enter a valid non-negative price');
+                isValid = false;
+            }
+
+            if (!salePrice || isNaN(salePrice) || salePrice < 0) {
+                displayErrorMessage(`${prefix}-salePrice-error`, 'Enter a valid non-negative price');
+                isValid = false;
+            }
+
+            if (!quantity || isNaN(quantity) || !Number.isInteger(Number(quantity)) || quantity < 0) {
+                displayErrorMessage(`${prefix}-quantity-error`, 'Enter a valid non-negative whole number');
+                isValid = false;
+            }
+
+            if (!category) {
+                displayErrorMessage(`${prefix}-category-error`, 'Select a category');
+                isValid = false;
+            }
+
+            if (formId === 'addProductForm') {
+                let uploadedImages = 0;
+                imageInputs.forEach((input, index) => {
+                    if (input.files && input.files.length > 0) {
+                        const file = input.files[0];
+                        if (!validImageTypes.includes(file.type)) {
+                            displayErrorMessage(`${prefix}-image-error-${index + 1}`, 'Only JPG or PNG files allowed');
+                            isValid = false;
+                        } else {
+                            uploadedImages++;
+                        }
+                    }
+                });
+                if (uploadedImages < 3) {
+                    displayErrorMessage(`${prefix}-image-error-1`, 'Upload at least 3 images (JPG or PNG)');
+                    isValid = false;
+                }
+            }
+
+            return isValid;
+        }
+
+        function displayErrorMessage(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            if (errorElement) {
+                errorElement.innerText = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function clearErrorMessages(formId) {
+            const prefix = formId === 'addProductForm' ? 'add' : 'edit';
+            const errorElements = [
+                `${prefix}-productName-error`,
+                `${prefix}-description-error`,
+                `${prefix}-regularPrice-error`,
+                `${prefix}-salePrice-error`,
+                `${prefix}-quantity-error`,
+                `${prefix}-category-error`,
+                `${prefix}-status-error`,
+                `${prefix}-image-error-1`,
+                `${prefix}-image-error-2`,
+                `${prefix}-image-error-3`,
+                `${prefix}-image-error-4`
+            ];
+            errorElements.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.innerText = '';
+                    el.style.display = 'none';
+                }
+            });
+        }
+
+        // Image cropping
+        function viewImage(event, index, prefix) {
+            const input = event.target;
+            const previewImage = document.getElementById(`${prefix}ImgView${index}`);
+            const cropperContainer = document.getElementById(`${prefix}CropperContainer${index}`);
+            const cropperImage = document.getElementById(`${prefix}CroppedImg${index}`);
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                if (!validTypes.includes(file.type)) {
+                    displayErrorMessage(`${prefix}-image-error-${index}`, 'Only JPG and PNG files allowed');
+                    input.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                    cropperImage.src = e.target.result;
+                    cropperContainer.style.display = 'block';
+
+                    if (croppers[`${prefix}${index}`]) {
+                        croppers[`${prefix}${index}`].destroy();
+                    }
+
+                    croppers[`${prefix}${index}`] = new Cropper(cropperImage, {
+                        aspectRatio: 1,
+                        viewMode: 1,
+                        guides: true,
+                        background: false,
+                        autoCropArea: 0.8,
+                        zoomable: true,
+                        scalable: true,
+                        movable: true
+                    });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveCroppedImage(index, prefix) {
+            const cropperContainer = document.getElementById(`${prefix}CropperContainer${index}`);
+            const previewImage = document.getElementById(`${prefix}ImgView${index}`);
+            const input = document.getElementById(`${prefix}Input${index}`);
+            const thumbnailsContainer = document.getElementById(`${prefix}ThumbnailsContainer`);
+
+            if (!croppers[`${prefix}${index}`]) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Cropper is not initialized'
+                });
+                return;
+            }
+
+            const croppedCanvas = croppers[`${prefix}${index}`].getCroppedCanvas({
+                width: 800,
+                height: 800
+            });
+
+            if (!croppedCanvas) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to crop the image'
+                });
+                return;
+            }
+
+            previewImage.src = croppedCanvas.toDataURL('image/jpeg', 0.9);
+            croppedCanvas.toBlob(function(blob) {
+                const fileName = `cropped-img-${Date.now()}-${index}.jpeg`;
+                const imgFile = new File([blob], fileName, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(imgFile);
+                input.files = dataTransfer.files;
+
+                const thumbnail = document.createElement('img');
+                thumbnail.src = previewImage.src;
+                thumbnail.className = 'thumbnail';
+                thumbnail.style.width = '100px';
+                thumbnail.style.height = '100px';
+                thumbnail.style.objectFit = 'cover';
+                thumbnailsContainer.appendChild(thumbnail);
+
+                cropperContainer.style.display = 'none';
+                croppers[`${prefix}${index}`].destroy();
+                delete croppers[`${prefix}${index}`];
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: 'Image cropped successfully',
+                    timer: 1500
+                });
+            }, 'image/jpeg', 0.9);
+        }
+
+        // Handle add product
+        function handleAddProduct(event) {
+            event.preventDefault();
+            if (!validateForm('addProductForm')) return;
+
+            const form = document.getElementById('addProductForm');
+            const formData = new FormData(form);
+
+            fetch('/admin/add-products', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to add product');
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: result.message || 'Product added successfully',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    location.reload();
+                });
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: error.message || 'Something went wrong while adding the product'
+                });
+            });
+        }
+
+        // Handle edit product
+        function handleEditProduct(event) {
+            event.preventDefault();
+            if (!validateForm('editProductForm')) return;
+
+            const form = document.getElementById('editProductForm');
+            const formData = new FormData(form);
+            const productId = document.getElementById('editProductId').value;
+
+            fetch(`/admin/edit-product/${productId}`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || 'Failed to update product');
+                    });
+                }
+                return response.json();
+            })
+            .then(result => {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: result.message || 'Product updated successfully',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    location.reload();
+                });
+            })
+            .catch(error => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Oops...',
+                    text: error.message || 'Something went wrong while updating the product'
+                });
+            });
+        }
+
+        // Delete product
+        function deleteProduct(productId) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you want to delete this product?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/delete-product/${productId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => {
+                                throw new Error(err.error || 'Failed to delete product');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: 'Product deleted successfully',
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: error.message || 'Failed to delete product'
+                        });
+                    });
+                }
+            });
+        }
+
+        // Toggle block/unblock product
+        function toggleBlockProduct(productId, isBlocked) {
+            const action = isBlocked === 'true' ? 'unblock' : 'block';
+            Swal.fire({
+                title: `Are you sure?`,
+                text: `Do you want to ${action} this product?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/admin/toggle-block-product/${productId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => {
+                                throw new Error(err.error || `Failed to ${action} product`);
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Success!',
+                            text: `Product ${action}ed successfully`,
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    })
+                    .catch(error => {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: error.message || `Failed to ${action} product`
+                        });
+                    });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

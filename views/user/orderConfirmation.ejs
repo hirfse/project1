@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Confirmation - U-Craft</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Importing Poppins font */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+/* Base styles for the order confirmation page */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    font-family: 'Poppins', sans-serif;
+    background-image: url('/images/background/gray-wood-texture.jpg');
+    background-size: contain;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header styles */
+header {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 16px 20px;
+}
+
+header .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+}
+
+header nav {
+    display: flex;
+    gap: 16px;
+}
+
+header nav a {
+    font-size: 16px;
+    font-weight: 500;
+    color: #666;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+header nav a:hover {
+    color: #000;
+}
+
+header nav a.logout {
+    color: #dc2626;
+}
+
+header nav a.logout:hover {
+    color: #b91c1c;
+}
+
+/* Main content */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 20px;
+    flex: 1;
+}
+
+.confirmation-container {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    box-shadow: 0 8px 9px rgba(0, 0, 0, 0.1);
+    padding: 32px;
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.confirmation-container h2 {
+    font-size: 30px;
+    font-weight: 700;
+    color: #16a34a;
+    margin-bottom: 16px;
+}
+
+.confirmation-container p {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 24px;
+}
+
+.confirmation-container h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.address-details p {
+    font-size: 16px;
+    color: #333;
+    margin: 4px 0;
+}
+
+.address-details p strong {
+    font-weight: 600;
+}
+
+.order-items ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.order-items ul li {
+    font-size: 16px;
+    color: #333;
+    padding: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px solid #ddd;
+}
+
+.continue-shopping-btn {
+    background-color: #2563eb;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 4px;
+    padding: 8px 24px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.3s ease;
+}
+
+.continue-shopping-btn:hover {
+    background-color: #1d4ed8;
+}
+
+/* Footer */
+footer {
+    background-color: #000;
+    color: #fff;
+    padding: 40px 0;
+    width: 100%;
+    margin-top: auto;
+}
+
+footer .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+footer p {
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    main {
+        padding: 24px 16px;
+    }
+
+    .confirmation-container {
+        padding: 24px;
+    }
+
+    header .container {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    header nav {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    main {
+        padding: 16px 10px;
+    }
+
+    .confirmation-container {
+        padding: 16px;
+    }
+
+    .confirmation-container h2 {
+        font-size: 24px;
+    }
+
+    .confirmation-container h3 {
+        font-size: 18px;
+    }
+
+    .confirmation-container p,
+    .order-items ul li,
+    .continue-shopping-btn {
+        font-size: 14px;
+    }
+}
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <header class="bg-white shadow">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold">U-Craft</h1>
+            <nav>
+                <a href="/home" class="text-gray-600 hover:text-gray-900 mx-2">Home</a>
+                <a href="/cart" class="text-gray-600 hover:text-gray-900 mx-2">Cart</a>
+                <a href="/profile" class="text-gray-600 hover:text-gray-900 mx-2">Profile</a>
+                <a href="/logout" class="text-red-600 hover:text-red-800 mx-2">Logout</a>
+            </nav>
+        </div>
+    </header>
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow p-8 max-w-xl mx-auto text-center">
+            <h2 class="text-3xl font-semibold text-green-600 mb-4"><%= message || 'Order placed successfully!' %></h2>
+            <p class="mb-6 text-gray-700">Thank you for shopping with U-Craft<% if (userName) { %>, <%= userName %><% } %>!</p>
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold mb-2">Delivery Address</h3>
+                <% if (orderDetails && orderDetails.address) { %>
+                    <div class="text-gray-700">
+                        <p><strong><%= orderDetails.address.fullName %></strong> (<%= orderDetails.address.addressType %>)</p>
+                        <p><%= orderDetails.address.houseName %>, <%= orderDetails.address.city %>, <%= orderDetails.address.state %> - <%= orderDetails.address.pincode %></p>
+                        <p>Phone: <%= orderDetails.address.phone %> <% if (orderDetails.address.secPhone) { %>, Alt: <%= orderDetails.address.secPhone %><% } %></p>
+                        <p>Landmark: <%= orderDetails.address.landMark %></p>
+                    </div>
+                <% } else { %>
+                    <p>No address information available.</p>
+                <% } %>
+            </div>
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold mb-2">Order Items</h3>
+                <% if (orderDetails && orderDetails.items && orderDetails.items.length > 0) { %>
+                    <ul class="divide-y divide-gray-200">
+                        <% orderDetails.items.forEach(function(item) { %>
+                            <li class="py-2 flex items-center justify-between">
+                                <span>
+                                    <%= item.productId && item.productId.productName ? item.productId.productName : 'Product' %>
+                                    (x<%= item.quantity %>)
+                                </span>
+                            </li>
+                        <% }) %>
+                    </ul>
+                <% } else { %>
+                    <p>No items found in this order.</p>
+                <% } %>
+            </div>
+            <a href="/home" class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition">Continue Shopping</a>
+        </div>
+    </main>
+    <footer class="bg-gray-800 text-white py-4 mt-8">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2025 U-Craft. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

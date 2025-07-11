@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - U-Craft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background-image: url('/images/background/gray-wood-texture.jpg');
+            background-size: contain;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .mainhead {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px;
+            align-items: center;
+        }
+        .subhead {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .subhead a {
+            text-decoration: none;
+            color: black;
+        }
+        .subhead li {
+            margin: 20px 10px;
+        }
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .buttons .searchBar {
+            width: 15rem;
+            background-color: transparent;
+            border: 1px solid;
+        }
+        .buttons img {
+            height: 25px;
+            cursor: pointer;
+        }
+        .buttons img:hover {
+            filter: contrast(0);
+        }
+        .buttons button {
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+        }
+        .buttons button:hover {
+            background-color: rgb(64, 63, 63);
+            color: aliceblue;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            flex-grow: 1;
+        }
+        .sidebar {
+            width: 100%;
+            max-width: 250px;
+            background-color: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 25px 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        .sidebar li {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            width: 100%;
+        }
+        .sidebar li:last-child {
+            border-bottom: none;
+        }
+        .sidebar a {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        .sidebar a:hover {
+            color: #000;
+            transform: translateX(5px);
+        }
+        .main-content {
+            flex: 1;
+            min-width: 300px;
+        }
+        .styled-table {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .styled-table th {
+            text-align: left;
+            padding: 8px;
+            color: #333;
+            vertical-align: top;
+            width: 120px;
+        }
+        .styled-table td {
+            padding: 8px;
+            color: #333;
+            vertical-align: top;
+        }
+        .styled-table input {
+            padding: 8px;
+            margin: 3px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 250px;
+        }
+        .styled-table button {
+            background-color: #000;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            max-width: 150px;
+            margin: 0 auto;
+            display: block;
+        }
+        .styled-table button:hover {
+            background-color: #333;
+        }
+        .styled-table tr:last-child td {
+            text-align: center;
+            padding-top: 12px;
+        }
+        .profile_img img {
+            border: solid 1px black;
+            border-radius: 100%;
+        }
+        .profile_pic {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .section {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            font-family: 'Playfair', serif;
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .section p, .section label {
+            font-size: 16px;
+            color: #333;
+        }
+        .section input, .section button {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .section button {
+            background-color: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            max-width: 150px;
+        }
+        .section button:hover {
+            background-color: #333;
+        }
+        .order-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-card p {
+            margin: 0;
+        }
+        .order-card a {
+            text-decoration: none;
+            color: #000;
+            font-weight: 500;
+        }
+        .order-card a:hover {
+            text-decoration: underline;
+        }
+        .address-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        .address-card p {
+            margin: 5px 0;
+        }
+        footer {
+            background-color: black;
+            color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 40px 0;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-top: auto;
+        }
+        footer div {
+            margin: 10px;
+            min-width: 150px;
+        }
+        footer div p {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        footer ul {
+            list-style: none;
+        }
+        footer li {
+            margin: 8px 0;
+        }
+        footer input[type="text"] {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border: none;
+            width: 200px;
+        }
+        .modal {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 15px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .modal-content li {
+            list-style-type: none;
+            padding: 2px;
+            color: black;
+        }
+        .modal-content a {
+            text-decoration: none;
+            color: black;
+        }
+        .modal-content a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                width: 95%;
+                padding: 10px;
+            }
+           Inventors of the sidebar {
+                max-width: 100%;
+                position: static;
+                margin-bottom: 20px;
+            }
+            .mainhead {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .styled-table {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="mainhead">
+            <p>U-Craft .</p>
+            <div class="buttons">
+                <input type="text" class="searchBar" placeholder="Search product...">
+                <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()" class="profileImg">
+                <a href="/logout"><button>Logout</button></a>
+            </div>
+            <div id="profileViewModal" class="modal">
+                <div class="modal-content" onmouseleave="closeViewModal()">
+                    <% if (user.fullName) { %>
+                        <p>Welcome, <strong><%= user.fullName.toUpperCase() %></strong>!</p>
+                    <% } else { %>
+                        <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
+                    <% } %>
+                    <ul>
+                        <a href="/profile"><li>Profile</li></a>
+                        <a href="/wishlist"><li>Wish List</li></a>
+                        <a href="/cart"><li>Cart</li></a>
+                        <a href="/wallet"><li>Wallet</li></a>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="subhead">
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/productListing">Shop</a></li>
+                    <li><a href="/customListing">Custom</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <!-- Breadcrumbs -->
+    <nav id="breadcrumbs" style="margin: 18px 0 0 30px;"></nav>
+    <div class="container">
+        <aside class="sidebar">
+            <ul>
+                <li><a href="/profile">Personal Information</a></li>
+                <li><a href="/orders">Your Orders</a></li>
+                <li><a href="/addresses">Saved Addresses</a></li>
+                <li><a href="#settings">Account Settings</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <table class="styled-table">
+                <tr>
+                    <td colspan="2" class="profile_pic">
+                        <% if (user.profileImage) { %>
+                            <img src="/uploads/profile/<%= user.profileImage %>" alt="profile" style="width:100px;height:100px;object-fit:cover;border-radius:50%;">
+                        <% } else { %>
+                            <img src="/images/project_icons/profile.png" alt="profile" style="width:60px;height:60px;object-fit:cover;border-radius:50%;">
+                        <% } %>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Full Name</th>
+                    <td><%= user.fullName %></td>
+                </tr>
+                <tr>
+                    <th>E-mail</th>
+                    <td><%= user.email %></td>
+                </tr>
+                <tr>
+                    <th>Phone</th>
+                    <td><%= user.phone %></td>
+                </tr>
+                <tr>
+                    <td colspan="2"><a href="/profile/edit" style="text-decoration: none;"><button>Edit Profile</button></a></td>
+                </tr>
+            </table>
+        </main>
+    </div>
+    <script>
+        // Dynamic Breadcrumbs
+        (function() {
+            const prettyNames = {
+                '': 'Home',
+                'home': 'Home',
+                'productlisting': 'Shop',
+                'customlisting': 'Custom',
+                'profile': 'Profile',
+                'cart': 'Cart',
+                'wishlist': 'Wishlist',
+                'addresses': 'Addresses',
+                'orders': 'Orders',
+                'checkout': 'Checkout',
+                'about': 'About',
+                'contact': 'Contact'
+            };
+            function toTitle(str) {
+                return prettyNames[str.toLowerCase()] || str.charAt(0).toUpperCase() + str.slice(1);
+            }
+            const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+            let crumbs = [];
+            let url = '';
+            for (let i = 0; i < path.length; i++) {
+                url += '/' + path[i];
+                crumbs.push({
+                    name: toTitle(path[i]),
+                    url: i < path.length - 1 ? url : null
+                });
+            }
+            if (crumbs.length === 0 || crumbs[0].name !== 'Home') {
+                crumbs.unshift({ name: 'Home', url: '/' });
+            }
+            const nav = document.getElementById('breadcrumbs');
+            if (nav) {
+                nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
+                    crumbs.map((crumb, idx) => {
+                        if (crumb.url) {
+                            return `<li><a href="${crumb.url}" style="color:#888;text-decoration:none;">${crumb.name}</a></li>` +
+                                (idx < crumbs.length - 1 ? '<li style="color:#888;">/</li>' : '');
+                        } else {
+                            return `<li style="color:#333;">${crumb.name}</li>`;
+                        }
+                    }).join('') +
+                    '</ol>';
+            }
+        })();
+
+        // Profile Modal Functions
+        function profileViewModal() {
+            document.getElementById('profileViewModal').style.display = 'block';
+        }
+
+        function closeViewModal() {
+            document.getElementById('profileViewModal').style.display = 'none';
+        }
+
+        // Smooth scrolling for sidebar navigation
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (link.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+    </script>
+    <footer>
+        <div id="exclusive">
+            <p>Exclusive</p>
+            <p>Subscribe</p>
+            <input type="text" placeholder="Enter Your E-mail" />
+        </div>
+        <div id="support">
+            <p>Support</p>
+            <ul>
+                <li>Help Center</li>
+                <li>Contact Us</li>
+            </ul>
+        </div>
+        <div id="account">
+            <p>Account</p>
+            <ul>
+                <li>Login</li>
+                <li>Register</li>
+            </ul>
+        </div>
+        <div id="quickLinks">
+            <p>Quick Links</p>
+            <ul>
+                <li>Shop</li>
+                <li>Custom</li>
+                <li>FAQ</li>
+            </ul>
+        </div>
+    </footer>
+</body>
+</html>

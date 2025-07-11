@@ -1,0 +1,22 @@
+<%- include('layout') %>
+
+<h1>Manage Categories</h1>
+<table border="1">
+  <thead>
+    <tr>
+      <th>Category Name</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% categories.forEach(category => { %>
+      <tr>
+        <td><%= category.name %></td>
+        <td>
+          <a href="/admin/category/edit/<%= category._id %>">Edit</a>
+          <a href="/admin/category/delete/<%= category._id %>">Delete</a>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>

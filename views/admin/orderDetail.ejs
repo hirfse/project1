@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Detail - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        /* Additional styles specific to order detail */
+        .order-detail-container {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .order-detail-container h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+        }
+
+        .order-detail-container h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin: 20px 0 10px;
+            color: var(--secondary-color);
+        }
+
+        .order-detail-container p {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: var(--secondary-color);
+        }
+
+        .order-detail-container p strong {
+            font-weight: 600;
+            color: var(--icon-color);
+        }
+
+        .error-message {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .order-table {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .order-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .order-table th {
+            background-color: var(--background-color);
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--icon-color);
+            text-align: left;
+        }
+
+        .order-table td {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .status-form, .return-form {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .status-form select, .return-form button {
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .status-form select {
+            border: 1px solid var(--border-color);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 15px;
+            appearance: none;
+            min-width: 150px;
+        }
+
+        .status-form button, .return-form button {
+            border: none;
+            cursor: pointer;
+        }
+
+        .return-form .btn-accept {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .return-form .btn-accept:hover {
+            background-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .return-form .btn-reject {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .return-form .btn-reject:hover {
+            background-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .back-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            background-color: var(--accent-color);
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        @media (max-width: 768px) {
+            .status-form, .return-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .status-form select, .return-form button {
+                width: 100%;
+            }
+
+            .order-table {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <header id="sidebar">
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <span class="logo-text">AdminPro</span>
+            </div>
+            <button class="collapse-btn" id="collapseBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    
+        <nav>
+            <ul>
+                <a href="/admin/adminHome">
+                    <li>
+                        <i class="fas fa-home"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </li>
+                </a>
+                <a href="/admin/userManagement">
+                    <li>
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text">Users</span>
+                    </li>
+                </a>
+                <a href="/admin/products">
+                    <li>
+                        <i class="fas fa-box"></i>
+                        <span class="nav-text">Products</span>
+                    </li>
+                </a>
+                <a href="/admin/categoryManagement">
+                    <li>
+                        <i class="fas fa-folder"></i>
+                        <span class="nav-text">Categories</span>
+                    </li>
+                </a>
+                <a href="/admin/orders" class="active">
+                    <li>
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="nav-text">Orders</span>
+                        <span class="nav-badge">7</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-chart-pie"></i>
+                        <span class="nav-text">Sales</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-tag"></i>
+                        <span class="nav-text">Coupons</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-image"></i>
+                        <span class="nav-text">Banners</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-gift"></i>
+                        <span class="nav-text">Offers</span>
+                    </li>
+                </a>
+            </ul>
+        </nav>
+    
+        <div class="footer-section">
+            <a href="/admin/adminLogout" class="logout-btn" id="logoutBtn" style="text-decoration: none;">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search orders...">
+        </div>
+
+        <div class="user-actions">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div class="notification-bell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </div>
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div class="user-info">
+                    <div class="user-name">Admin</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        <div class="table-container">
+            <div class="table-header">
+                <div class="table-title">Order Detail</div>
+            </div>
+
+            <div class="order-detail-container">
+                <% if (error) { %>
+                    <div class="error-message"><%= error %></div>
+                <% } %>
+                <% if (order) { %>
+                    <h2>Order Detail: <%= order.orderID %></h2>
+                    <p><strong>Date:</strong> <%= new Date(order.orderDate).toLocaleString() %></p>
+                    <p><strong>User:</strong> <%= order.userId ? order.userId.fullName : 'N/A' %> (<span style="color: var(--icon-color);"><%= order.userId ? order.userId.email : '' %></span>)</p>
+                    <p><strong>Status:</strong> <span class="status-badge status-<%= order.status.toLowerCase().replace(' ', '-') %>"><%= order.status %></span></p>
+                    <p><strong>Payment:</strong> <%= order.paymentMethod %></p>
+                    <p><strong>Total:</strong> ₹<%= order.total.toFixed(2) %></p>
+                    <h3>Shipping Address</h3>
+                    <p>
+                        <%= order.shippingAddress.fullName %>, <%= order.shippingAddress.houseName %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %>, <%= order.shippingAddress.pincode %>
+                        <% if (order.shippingAddress.landMark) { %> (Landmark: <%= order.shippingAddress.landMark %>) <% } %>
+                    </p>
+                    <h3>Items</h3>
+                    <div class="order-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Qty</th>
+                                    <th>Price</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% order.items.forEach(item => { %>
+                                    <tr>
+                                        <td><%= item.productName %></td>
+                                        <td><%= item.quantity %></td>
+                                        <td>₹<%= item.price.toFixed(2) %></td>
+                                        <td>₹<%= (item.price * item.quantity).toFixed(2) %></td>
+                                    </tr>
+                                <% }) %>
+                            </tbody>
+                        </table>
+                    </div>
+                    <h3>Change Order Status</h3>
+                    <form method="post" action="/admin/orders/<%= order._id %>/status" id="statusForm" class="status-form">
+                        <select name="status" id="statusSelect">
+                            <% ['Pending','Shipped','Out for Delivery','Delivered','Canceled'].forEach(st => { %>
+                                <option value="<%= st %>" <%= order.status===st?'selected':'' %>><%= st %></option>
+                            <% }) %>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                    </form>
+                    <% if (order.status === 'Return Requested') { %>
+                        <h3>Return Request</h3>
+                        <form method="post" action="/admin/orders/<%= order._id %>/verify-return" class="return-form">
+                            <input type="hidden" name="action" value="accept">
+                            <button type="submit" class="btn btn-accept">Accept Return</button>
+                        </form>
+                        <form method="post" action="/admin/orders/<%= order._id %>/verify-return" class="return-form">
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn btn-reject">Reject Return</button>
+                        </form>
+                    <% } %>
+                    <div>
+                        <a href="/admin/orders" class="back-btn">Back to Orders</a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Toggle sidebar collapse
+        document.getElementById('collapseBtn').addEventListener('click', function() {
+            document.body.classList.toggle('collapsed-sidebar');
+        });
+
+        // Dark mode toggle
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const icon = this.querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+
+        // Status form submission with SweetAlert
+        document.getElementById('statusForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you want to update the order status?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'No'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(this.action, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams(new FormData(this))
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.message) {
+                            Swal.fire({
+                                title: 'Success',
+                                text: data.message,
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                if (!data.error) location.reload();
+                            });
+                        } else if (data.error) {
+                            Swal.fire({
+                                title: 'Error',
+                                text: data.error,
+                                icon: 'error',
+                                confirmButtonText: 'OK'
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        // Return form submission with SweetAlert
+        document.querySelectorAll('.return-form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const action = this.querySelector('input[name="action"]').value;
+                Swal.fire({
+                    title: `Are you sure?`,
+                    text: action === 'accept' ? 'Accept and refund to wallet?' : 'Reject return request?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes',
+                    cancelButtonText: 'No'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        fetch(this.action, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: new URLSearchParams(new FormData(this))
+                        })
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.message) {
+                                Swal.fire({
+                                    title: 'Success',
+                                    text: data.message,
+                                    icon: 'success',
+                                    confirmButtonText: 'OK'
+                                }).then(() => {
+                                    if (!data.error) location.reload();
+                                });
+                            } else if (data.error) {
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: data.error,
+                                    icon: 'error',
+                                    confirmButtonText: 'OK'
+                                });
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

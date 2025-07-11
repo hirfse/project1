@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Details - <%= order.orderID %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,wght@0,300;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #f4f4f4 url('/images/background/gray-wood-texture.jpg') no-repeat;
+      background-size: cover;
+      color: #333;
+      padding: 20px;
+    }
+    h1, h2 {
+      font-family: 'Playfair', serif;
+      margin-bottom: 10px;
+    }
+    p {
+      margin: 5px 0;
+    }
+    .section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f9f9f9;
+    }
+    button {
+      padding: 6px 12px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 4px;
+      background-color: #000;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    a {
+      color: #000;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h1>Order Details - <%= order.orderID %></h1>
+    <% if (error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } %>
+    <p><strong>Order Date:</strong> <%= new Date(order.orderDate).toLocaleDateString() %></p>
+    <p><strong>Status:</strong> <%= order.status %></p>
+    <% if (order.cancelReason) { %>
+      <p><strong>Cancellation Reason:</strong> <%= order.cancelReason %></p>
+    <% } %>
+    <% if (order.returnReason) { %>
+      <p><strong>Return Reason:</strong> <%= order.returnReason %></p>
+    <% } %>
+  </div>
+
+  <div class="section">
+    <h2>Shipping Address</h2>
+    <p><%= order.shippingAddress.fullName %></p>
+    <p><%= order.shippingAddress.houseName %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %></p>
+    <p>Pincode: <%= order.shippingAddress.pincode %></p>
+    <% if (order.shippingAddress.landMark) { %>
+      <p>Landmark: <%= order.shippingAddress.landMark %></p>
+    <% } %>
+  </div>
+
+  <div class="section">
+    <h2>Items</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% order.items.forEach(item => { %>
+          <tr>
+            <td><%= item.productName %></td>
+            <td><%= item.quantity %></td>
+            <td>$<%= item.price.toFixed(2) %></td>
+            <td>$<%= (item.quantity * item.price).toFixed(2) %></td>
+            <td><%= item.status || 'N/A' %></td>
+            <td>
+              <% if ((order.status === 'Pending' || order.status === 'Confirmed') && !item.status) { %>
+                <button onclick="cancelItem('<%= order._id %>', '<%= item._id %>')">Cancel Item</button>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Payment Summary</h2>
+    <p>Subtotal: $<%= order.subtotal.toFixed(2) %></p>
+    <p>Tax (5%): $<%= order.tax.toFixed(2) %></p>
+    <p>Shipping: $<%= order.shipping.toFixed(2) %></p>
+    <p>Discount: $<%= order.discount.toFixed(2) %></p>
+    <p><strong>Total: $<%= order.total.toFixed(2) %></strong></p>
+    <p><strong>Payment Method:</strong> <%= order.paymentMethod.toUpperCase() %></p>
+    <a href="/orders/invoice/<%= order._id %>">Download Invoice</a>
+  </div>
+
+  <script>
+    function cancelItem(orderId, itemId) {
+      const reason = prompt('Enter cancellation reason (optional):');
+      fetch(`/orders/cancel-item/${orderId}/${itemId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancelReason: reason })
+      })
+      .then(res => res.json())
+      .then(data => {
+        alert(data.message);
+        if (data.success) window.location.reload();
+      });
+    }
+  </script>
+</body>
+</html>

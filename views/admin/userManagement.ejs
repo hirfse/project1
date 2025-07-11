@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/css/admin.css" />
+</head>
+<body>
+    <!-- Sidebar -->
+    <header id="sidebar">
+        <div class="logo-container">
+          <div class="logo">
+            <i class="fas fa-cube"></i>
+            <span class="logo-text">AdminPro</span>
+          </div>
+          <button class="collapse-btn" id="collapseBtn">
+            <i class="fas fa-bars"></i>
+          </button>
+        </div>
+    
+        <nav>
+          <ul>
+            <a href="/admin/adminHome" >
+              <li>
+                <i class="fas fa-home"></i>
+                <span class="nav-text">Dashboard</span>
+              </li>
+            </a>
+            <a href="/admin/userManagement" class="active">
+                <li>
+                    <i class="fas fa-users"></i>
+                    <span class="nav-text">Users</span>
+                </li>
+            </a>
+            <a href="/admin/products">
+                <li>
+                    <i class="fas fa-box"></i>
+                    <span class="nav-text">Products</span>
+                </li>
+            </a>
+            <a href="/admin/categoryManagement">
+              <li>
+                <i class="fas fa-folder"></i>
+                <span class="nav-text">Categories</span>
+              </li>
+            </a>
+            <a href="#">
+                <li>
+                    <i class="fas fa-shopping-bag"></i>
+                    <span class="nav-text">Orders</span>
+                    <span class="nav-badge">7</span>
+                </li>
+            </a>
+            <a href="#">
+              <li>
+                <i class="fas fa-chart-pie"></i>
+                <span class="nav-text">Sales</span>
+              </li>
+            </a>
+            <a href="#">
+              <li>
+                <i class="fas fa-tag"></i>
+                <span class="nav-text">Coupons</span>
+              </li>
+            </a>
+            <a href="#">
+              <li>
+                <i class="fas fa-image"></i>
+                <span class="nav-text">Banners</span>
+              </li>
+            </a>
+            <a href="#">
+              <li>
+                <i class="fas fa-gift"></i>
+                <span class="nav-text">Offers</span>
+              </li>
+            </a>
+          </ul>
+        </nav>
+    
+        <div class="footer-section">
+            <a href="/admin/adminLogout" class="logout-btn" id="logoutBtn" style="text-decoration: none;">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+        </div>
+      </header>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search users..." onkeyup="searchTable()">
+        </div>
+
+        <div class="user-actions">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div class="notification-bell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </div>
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div class="user-info">
+                    <div class="user-name">Admin</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+
+        <div class="table-container">
+            <div class="table-header">
+                <div class="table-title">User List</div>
+            </div>
+
+            <table id="userTable">
+                <thead>
+                    <tr>
+                        <th>Full Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user => { %>
+                    <tr>
+                        <td><%= user.fullName %></td>
+                        <td><%= user.email %></td>
+                        <td><%= user.phone %></td>
+                        <td>
+                            <span class="status-badge <%= user.status === 'blocked' ? 'status-pending' : 'status-completed' %>">
+                                <%= user.status === 'blocked' ? 'Blocked' : 'Active' %>
+                            </span>
+                        </td>
+                        <td>
+                            <button onclick="toggleBlockUser('<%= user._id %>', '<%= user.status %>')" 
+                                class="user-action-btn <%= user.status === 'blocked' ? 'btn-unblock' : 'btn-block' %>">
+                                <i class="fas <%= user.status === 'blocked' ? 'fa-unlock' : 'fa-ban' %>"></i>
+                                <%= user.status === 'blocked' ? 'Unblock' : 'Block' %>
+                            </button>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage - 1 %>" class="prev-next">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                <% } %>
+            
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="?page=<%= i %>" class="<%= i === currentPage ? 'active' : '' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+            
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage + 1 %>" class="prev-next">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Search function
+        function searchTable() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let rows = document.querySelectorAll("#userTable tbody tr");
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+            });
+        }
+
+        // Block/Unblock Toggle with SweetAlert
+        function toggleBlockUser(userId, status) {
+            let action = status === 'blocked' ? 'unblock' : 'block';
+            Swal.fire({
+                title: `Are you sure?`,
+                text: `Do you want to ${action} this user?`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes",
+                cancelButtonText: "No"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/admin/toggleBlock/${userId}`;
+                }
+            });
+        }
+
+        // Toggle sidebar collapse
+        document.getElementById('collapseBtn').addEventListener('click', function() {
+            document.body.classList.toggle('collapsed-sidebar');
+        });
+
+        // Dark mode toggle
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const icon = this.querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+    </script>
+</body>
+</html>

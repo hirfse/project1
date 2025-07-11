@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email OTP - U-Craft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.6.1/toastify.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        body {
+            background-image: url('/images/background/gray-wood-texture.jpg');
+            background-size: contain;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .mainhead {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px;
+            align-items: center;
+        }
+        .subhead {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .subhead a {
+            text-decoration: none;
+            color: black;
+        }
+        .subhead li {
+            margin: 20px 10px;
+        }
+        nav ul {
+            display: flex;
+            list-style: none;
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .buttons .searchBar {
+            width: 15rem;
+            background-color: transparent;
+            border: 1px solid;
+        }
+        .buttons img {
+            height: 25px;
+            cursor: pointer;
+        }
+        .buttons img:hover {
+            filter: contrast(0);
+        }
+        .buttons button {
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+        }
+        .buttons button:hover {
+            background-color: rgb(64, 63, 63);
+            color: aliceblue;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            flex-grow: 1;
+        }
+        .sidebar {
+            width: 100%;
+            max-width: 250px;
+            background-color: #fff;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 25px 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        .sidebar ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+        .sidebar li {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f0f0f0;
+            width: 100%;
+        }
+        .sidebar li:last-child {
+            border-bottom: none;
+        }
+        .sidebar a {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            display: block;
+            transition: all 0.2s ease;
+        }
+        .sidebar a:hover {
+            color: #000;
+            transform: translateX(5px);
+        }
+        .main-content {
+            flex: 1;
+            min-width: 300px;
+        }
+        .otp-container {
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .otp-container h2 {
+            font-family: 'Playfair', serif;
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+        }
+        .otp-container p {
+            font-size: 16px;
+            color: #333;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin: 12px 0 4px;
+            font-weight: 500;
+            font-size: 16px;
+            color: #333;
+        }
+        .form-group input[type="text"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 300px;
+        }
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 18px;
+        }
+        .form-actions button, .form-actions a {
+            padding: 8px 18px;
+            border-radius: 4px;
+            border: none;
+            background: #000;
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .form-actions a {
+            background: #888;
+        }
+        .form-actions button:hover {
+            background: #333;
+        }
+        .form-actions a:hover {
+            background: #555;
+        }
+        .resend-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .resend-container button {
+            padding: 8px 18px;
+            border-radius: 4px;
+            border: none;
+            background: #ccc;
+            color: #333;
+            cursor: not-allowed;
+        }
+        .resend-container button.active {
+            background: #000;
+            color: #fff;
+            cursor: pointer;
+        }
+        .resend-container button.active:hover {
+            background: #333;
+        }
+        .resend-container span {
+            display: block;
+            font-size: 14px;
+            color: #555;
+            margin-top: 5px;
+        }
+        .modal {
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #ffffff;
+            padding: 15px;
+            border: 1px solid #888;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        .modal-content li {
+            list-style-type: none;
+            padding: 2px;
+            color: black;
+        }
+        .modal-content a {
+            text-decoration: none;
+            color: black;
+        }
+        .modal-content a:hover {
+            text-decoration: underline;
+        }
+        footer {
+            background-color: black;
+            color: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 40px 0;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-top: auto;
+        }
+        footer div {
+            margin: 10px;
+            min-width: 150px;
+        }
+        footer div p {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        footer ul {
+            list-style: none;
+        }
+        footer li {
+            margin: 8px 0;
+        }
+        footer input[type="text"] {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border: none;
+            width: 200px;
+        }
+        footer button {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border: none;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+        }
+        footer button:hover {
+            background: #555;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                width: 95%;
+                padding: 10px;
+            }
+            .sidebar {
+                max-width: 100%;
+                position: static;
+                margin-bottom: 20px;
+            }
+            .mainhead {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .otp-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="mainhead">
+            <p>U-Craft .</p>
+            <div class="buttons">
+                <input type="text" class="searchBar" placeholder="Search product...">
+                <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()" class="profileImg">
+                <a href="/logout"><button>Logout</button></a>
+            </div>
+            <div id="profileViewModal" class="modal">
+                <div class="modal-content" onmouseleave="closeViewModal()">
+                    <% if (userName) { %>
+                        <p>Welcome, <strong><%= userName.toUpperCase() %></strong>!</p>
+                    <% } else { %>
+                        <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
+                    <% } %>
+                    <ul>
+                        <a href="/profile"><li>Profile</li></a>
+                        <a href="/wishlist"><li>Wish List</li></a>
+                        <a href="/cart"><li>Cart</li></a>
+                        <a href="/wallet"><li>Wallet</li></a>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="subhead">
+            <nav>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/productListing">Shop</a></li>
+                    <li><a href="/customListing">Custom</a></li>
+                    <li><a href="/about">About</a></li>
+                    <li><a href="/contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <!-- Breadcrumbs -->
+    <nav id="breadcrumbs" style="margin: 18px 0 0 30px;"></nav>
+    <div class="container">
+        <aside class="sidebar">
+            <ul>
+                <li><a href="/profile">Personal Information</a></li>
+                <li><a href="/orders">Your Orders</a></li>
+                <li><a href="/addresses">Saved Addresses</a></li>
+                <li><a href="/profile/edit">Account Settings</a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="otp-container">
+                <h2>Verify Email OTP</h2>
+                <p>Enter the OTP sent to <strong><%= email %></strong></p>
+                <form id="verifyOTPForm" action="/verify-email-otp" method="POST">
+                    <input type="hidden" name="email" value="<%= email %>">
+                    <div class="form-group">
+                        <label for="otp">OTP</label>
+                        <input type="text" id="otp" name="otp" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit">Verify</button>
+                        <a href="/profile/edit">Cancel</a>
+                    </div>
+                </form>
+                <div class="resend-container">
+                    <button id="resendOTP" disabled>Resend OTP</button>
+                    <span id="resendTimer">Resend in 01:00</span>
+                </div>
+            </div>
+        </main>
+    </div>
+    <footer>
+        <div id="exclusive">
+            <p>Exclusive</p>
+            <p>Subscribe</p>
+            <input type="text" placeholder="Enter Your E-mail" />
+            <button type="submit">Subscribe</button>
+        </div>
+        <div id="support">
+            <p>Support</p>
+            <ul>
+                <li><a href="/help">Help Center</a></li>
+                <li><a href="/contact">Contact Us</a></li>
+            </ul>
+        </div>
+        <div id="account">
+            <p>Account</p>
+            <ul>
+                <li><a href="/login">Login</a></li>
+                <li><a href="/signup">Register</a></li>
+            </ul>
+        </div>
+        <div id="quickLinks">
+            <p>Quick Links</p>
+            <ul>
+                <li><a href="/productListing">Shop</a></li>
+                <li><a href="/customListing">Custom</a></li>
+                <li><a href="/faq">FAQ</a></li>
+            </ul>
+        </div>
+    </footer>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.6.1/toastify.min.js"></script>
+    <script>
+        // Dynamic Breadcrumbs
+        (function() {
+            const prettyNames = {
+                '': 'Home',
+                'home': 'Home',
+                'productlisting': 'Shop',
+                'customlisting': 'Custom',
+                'profile': 'Profile',
+                'cart': 'Cart',
+                'wishlist': 'Wishlist',
+                'addresses': 'Addresses',
+                'orders': 'Orders',
+                'checkout': 'Checkout',
+                'about': 'About',
+                'contact': 'Contact',
+                'verify-email-otp': 'Verify Email OTP'
+            };
+            function toTitle(str) {
+                return prettyNames[str.toLowerCase()] || str.charAt(0).toUpperCase() + str.slice(1);
+            }
+            const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+            let crumbs = [];
+            let url = '';
+            for (let i = 0; i < path.length; i++) {
+                url += '/' + path[i];
+                crumbs.push({
+                    name: toTitle(path[i]),
+                    url: i < path.length - 1 ? url : null
+                });
+            }
+            if (crumbs.length === 0 || crumbs[0].name !== 'Home') {
+                crumbs.unshift({ name: 'Home', url: '/' });
+            }
+            const nav = document.getElementById('breadcrumbs');
+            if (nav) {
+                nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
+                    crumbs.map((crumb, idx) => {
+                        if (crumb.url) {
+                            return `<li><a href="${crumb.url}" style="color:#888;text-decoration:none;">${crumb.name}</a></li>` +
+                                (idx < crumbs.length - 1 ? '<li style="color:#888;">/</li>' : '');
+                        } else {
+                            return `<li style="color:#333;">${crumb.name}</li>`;
+                        }
+                    }).join('') +
+                    '</ol>';
+            }
+        })();
+
+        // Profile Modal Functions
+        function profileViewModal() {
+            document.getElementById('profileViewModal').style.display = 'block';
+        }
+
+        function closeViewModal() {
+            document.getElementById('profileViewModal').style.display = 'none';
+        }
+
+        // Smooth scrolling for sidebar navigation
+        document.querySelectorAll('.sidebar a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (link.getAttribute('href').startsWith('#')) {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // Resend OTP Timer
+        const resendButton = document.getElementById('resendOTP');
+        const resendTimer = document.getElementById('resendTimer');
+        let countdown = 15;
+
+        function updateTimer() {
+            if (countdown <= 0) {
+                resendButton.disabled = false;
+                resendButton.classList.add('active');
+                resendTimer.textContent = 'Resend OTP';
+                return;
+            }
+            const minutes = Math.floor(countdown / 60);
+            const seconds = countdown % 60;
+            resendTimer.textContent = `Resend in ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            countdown--;
+            setTimeout(updateTimer, 1000);
+        }
+
+        updateTimer();
+
+        // Resend OTP Handler
+        resendButton.addEventListener('click', function() {
+            if (!resendButton.disabled) {
+                fetch('/resendOTP', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: '<%= email %>' })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Toastify({
+                            text: data.message || 'OTP resent successfully',
+                            duration: 3000,
+                            close: true,
+                            gravity: 'top',
+                            position: 'right',
+                            backgroundColor: '#4caf50',
+                          stopOnFocus: true
+                        }).showToast();
+                        countdown = 60;
+                        resendButton.disabled = true;
+                        resendButton.classList.remove('active');
+                        updateTimer();
+                    } else {
+                        Toastify({
+                            text: data.message || 'Failed to resend OTP',
+                            duration: 3000,
+                            close: true,
+                            gravity: 'top',
+                            position: 'right',
+                            backgroundColor: '#f44336',
+                            stopOnFocus: true
+                        }).showToast();
+                    }
+                })
+                .catch(() => {
+                    Toastify({
+                        text: 'An error occurred. Please try again.',
+                        duration: 3000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        backgroundColor: '#f44336',
+                        stopOnFocus: true
+                    }).showToast();
+                });
+            }
+        });
+
+        // Toastify Form Submission
+        document.getElementById('verifyOTPForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            const formData = new FormData(form);
+            console.log('Submitting OTP form data:', Object.fromEntries(formData)); // Log form data
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('OTP verification response:', data); // Log response
+                if (data.success) {
+                    Toastify({
+                        text: data.message || 'Successfully updated email',
+                        duration: 3000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        backgroundColor: '#4caf50',
+                        stopOnFocus: true
+                    }).showToast();
+                    setTimeout(() => {
+                        window.location.href = data.redirect || '/profile';
+                    }, 1000);
+                } else {
+                    Toastify({
+                        text: data.message || 'Failed to verify OTP',
+                        duration: 3000,
+                        close: true,
+                        gravity: 'top',
+                        position: 'right',
+                        backgroundColor: '#f44336',
+                        stopOnFocus: true
+                    }).showToast();
+                }
+            })
+            .catch(error => {
+                console.error('Error verifying OTP:', error);
+                Toastify({
+                    text: 'An error occurred. Please try again.',
+                    duration: 3000,
+                    close: true,
+                    gravity: 'top',
+                    position: 'right',
+                    backgroundColor: '#f44336',
+                    stopOnFocus: true
+                }).showToast();
+            });
+        });
+
+        // Display server-side error on page load if present
+        <% if (error) { %>
+            Toastify({
+                text: '<%= error %>',
+                duration: 3000,
+                close: true,
+                gravity: 'top',
+                position: 'right',
+                backgroundColor: '#f44336',
+                stopOnFocus: true
+            }).showToast();
+        <% } %>
+    </script>
+</body>
+</html>

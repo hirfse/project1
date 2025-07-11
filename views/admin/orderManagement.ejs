@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Management - Admin Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        /* Additional styles specific to order management */
+        .order-form {
+            background-color: var(--card-color);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .order-form input[type="text"],
+        .order-form select {
+            flex: 1;
+            min-width: 150px;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .order-form select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 15px;
+            appearance: none;
+        }
+
+        .order-form button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+        }
+
+        .order-table {
+            background-color: var(--card-color);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .order-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .order-table th {
+            background-color: var(--background-color);
+            padding: 12px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--icon-color);
+            text-align: left;
+        }
+
+        .order-table td {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background-color: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .status-shipped,
+        .status-out-for-delivery {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: var(--accent-color);
+        }
+
+        .status-delivered {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-canceled,
+        .status-return-requested,
+        .status-returned {
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .view-btn {
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .view-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        @media (max-width: 768px) {
+            .order-form {
+                flex-direction: column;
+            }
+
+            .order-form input[type="text"],
+            .order-form select,
+            .order-form button {
+                width: 100%;
+            }
+
+            .order-table {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <header id="sidebar">
+        <div class="logo-container">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <span class="logo-text">AdminPro</span>
+            </div>
+            <button class="collapse-btn" id="collapseBtn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    
+        <nav>
+            <ul>
+                <a href="/admin/adminHome">
+                    <li>
+                        <i class="fas fa-home"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </li>
+                </a>
+                <a href="/admin/userManagement">
+                    <li>
+                        <i class="fas fa-users"></i>
+                        <span class="nav-text">Users</span>
+                    </li>
+                </a>
+                <a href="/admin/products">
+                    <li>
+                        <i class="fas fa-box"></i>
+                        <span class="nav-text">Products</span>
+                    </li>
+                </a>
+                <a href="/admin/categoryManagement">
+                    <li>
+                        <i class="fas fa-folder"></i>
+                        <span class="nav-text">Categories</span>
+                    </li>
+                </a>
+                <a href="/admin/orders" class="active">
+                    <li>
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="nav-text">Orders</span>
+                        <span class="nav-badge">7</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-chart-pie"></i>
+                        <span class="nav-text">Sales</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-tag"></i>
+                        <span class="nav-text">Coupons</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-image"></i>
+                        <span class="nav-text">Banners</span>
+                    </li>
+                </a>
+                <a href="#">
+                    <li>
+                        <i class="fas fa-gift"></i>
+                        <span class="nav-text">Offers</span>
+                    </li>
+                </a>
+            </ul>
+        </nav>
+    
+        <div class="footer-section">
+            <a href="/admin/adminLogout" class="logout-btn" id="logoutBtn" style="text-decoration: none;">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="logout-text">Logout</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search orders..." onkeyup="searchTable()">
+        </div>
+
+        <div class="user-actions">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon"></i>
+            </div>
+            <div class="notification-bell">
+                <i class="fas fa-bell"></i>
+                <span class="notification-badge">3</span>
+            </div>
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div class="user-info">
+                    <div class="user-name">Admin</div>
+                    <div class="user-role">Administrator</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main>
+        <div class="table-container">
+            <div class="table-header">
+                <div class="table-title">Order List</div>
+            </div>
+
+            <form method="get" action="/admin/orders" class="order-form">
+                <input type="text" name="search" placeholder="Order ID" value="<%= search %>" onkeyup="searchTable()"/>
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="Pending" <%= status==='Pending'?'selected':'' %>>Pending</option>
+                    <option value="Shipped" <%= status==='Shipped'?'selected':'' %>>Shipped</option>
+                    <option value="Out for Delivery" <%= status==='Out for Delivery'?'selected':'' %>>Out for Delivery</option>
+                    <option value="Delivered" <%= status==='Delivered'?'selected':'' %>>Delivered</option>
+                    <option value="Canceled" <%= status==='Canceled'?'selected':'' %>>Canceled</option>
+                    <option value="Return Requested" <%= status==='Return Requested'?'selected':'' %>>Return Requested</option>
+                    <option value="Returned" <%= status==='Returned'?'selected':'' %>>Returned</option>
+                </select>
+                <select name="sort" class="form-select">
+                    <option value="desc" <%= sort==='desc'?'selected':'' %>>Newest</option>
+                    <option value="asc" <%= sort==='asc'?'selected':'' %>>Oldest</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="/admin/orders"><button type="button" class="btn btn-outline">Clear</button></a>
+            </form>
+
+            <div class="order-table">
+                <table id="orderTable">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (orders.length === 0) { %>
+                            <tr><td colspan="6" class="text-center">No orders found.</td></tr>
+                        <% } %>
+                        <% orders.forEach(order => { %>
+                            <tr>
+                                <td><%= order.orderID %></td>
+                                <td><%= new Date(order.orderDate).toLocaleString() %></td>
+                                <td>
+                                    <%= order.userId ? order.userId.fullName : 'N/A' %><br>
+                                    <span style="color: var(--icon-color);"><%= order.userId ? order.userId.email : '' %></span>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-<%= order.status.toLowerCase().replace(' ', '-') %>">
+                                        <%= order.status %>
+                                    </span>
+                                </td>
+                                <td>₹<%= order.total.toFixed(2) %></td>
+                                <td>
+                                    <a href="/admin/orders/<%= order._id %>"><button class="view-btn">View</button></a>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination">
+                <% if (currentPage > 1) { %>
+                    <a href="?page=<%= currentPage - 1 %>&search=<%= search %>&status=<%= status %>&sort=<%= sort %>" class="prev-next">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </a>
+                <% } %>
+                <% for (let i = 1; i <= totalPages; i++) { %>
+                    <a href="?page=<%= i %>&search=<%= search %>&status=<%= status %>&sort=<%= sort %>" class="<%= i === currentPage ? 'active' : '' %>">
+                        <%= i %>
+                    </a>
+                <% } %>
+                <% if (currentPage < totalPages) { %>
+                    <a href="?page=<%= currentPage + 1 %>&search=<%= search %>&status=<%= status %>&sort=<%= sort %>" class="prev-next">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </a>
+                <% } %>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Search function
+        function searchTable() {
+            let input = document.getElementById("searchInput").value.toLowerCase();
+            let formSearch = document.querySelector("input[name='search']").value.toLowerCase();
+            let rows = document.querySelectorAll("#orderTable tbody tr");
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(input) || row.innerText.toLowerCase().includes(formSearch) ? "" : "none";
+            });
+        }
+
+        // Toggle sidebar collapse
+        document.getElementById('collapseBtn').addEventListener('click', function() {
+            document.body.classList.toggle('collapsed-sidebar');
+        });
+
+        // Dark mode toggle
+        document.getElementById('themeToggle').addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const icon = this.querySelector('i');
+            if (document.body.classList.contains('dark-mode')) {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+    </script>
+</body>
+</html>
