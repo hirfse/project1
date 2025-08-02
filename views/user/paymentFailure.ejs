@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed - U-Craft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,wght@0,300;0,500;1,400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .failure-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .failure-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            animation: shake 0.8s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .cross-mark {
+            width: 60px;
+            height: 60px;
+            position: relative;
+        }
+
+        .cross-mark::before,
+        .cross-mark::after {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 10px;
+            width: 4px;
+            height: 40px;
+            background: white;
+            border-radius: 2px;
+        }
+
+        .cross-mark::before {
+            transform: rotate(45deg);
+        }
+
+        .cross-mark::after {
+            transform: rotate(-45deg);
+        }
+
+        .failure-title {
+            font-family: 'Playfair', serif;
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .failure-message {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .failure-reason {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #c53030;
+            font-weight: 500;
+        }
+
+        .illustration {
+            margin: 20px 0;
+            opacity: 0.8;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f8f9fa;
+            color: #333;
+            border: 2px solid #e9ecef;
+        }
+
+        .btn-secondary:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: #ff6b6b;
+            border: 2px solid #ff6b6b;
+        }
+
+        .btn-outline:hover {
+            background: #ff6b6b;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .help-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .help-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .help-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .help-list li {
+            padding: 8px 0;
+            color: #666;
+            position: relative;
+            padding-left: 25px;
+        }
+
+        .help-list li::before {
+            content: '•';
+            color: #ff6b6b;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        @media (max-width: 768px) {
+            .failure-container {
+                padding: 30px 20px;
+            }
+
+            .failure-title {
+                font-size: 2rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="failure-container">
+        <!-- Failure Icon -->
+        <div class="failure-icon">
+            <div class="cross-mark"></div>
+        </div>
+
+        <!-- Failure Message -->
+        <h1 class="failure-title">Payment Failed</h1>
+        <p class="failure-message">
+            We're sorry, but your payment could not be processed at this time.
+        </p>
+
+        <!-- Failure Reason -->
+        <% if (reason) { %>
+        <div class="failure-reason">
+            <strong>Reason:</strong> <%= reason %>
+        </div>
+        <% } %>
+
+        <!-- Illustration -->
+        <div class="illustration">
+            <svg width="200" height="150" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="100" cy="75" r="60" fill="#FFE8E8" opacity="0.5"/>
+                <path d="M80 55L120 95M120 55L80 95" stroke="#ff6b6b" stroke-width="4" stroke-linecap="round"/>
+                <rect x="40" y="100" width="120" height="30" rx="15" fill="#F0F0F0"/>
+                <rect x="50" y="110" width="60" height="10" rx="5" fill="#ff6b6b"/>
+            </svg>
+        </div>
+
+        <!-- Help Section -->
+        <div class="help-section">
+            <h3>What can you do next?</h3>
+            <ul class="help-list">
+                <li>Check your internet connection and try again</li>
+                <li>Verify your payment details are correct</li>
+                <li>Ensure you have sufficient balance in your account</li>
+                <li>Try using a different payment method</li>
+                <li>Contact your bank if the issue persists</li>
+            </ul>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="/checkout" class="btn btn-primary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Retry Payment
+            </a>
+            
+            <% if (orderId) { %>
+            <a href="/orders/<%= orderId %>" class="btn btn-outline">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14,2 14,8 20,8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                </svg>
+                View Order Details
+            </a>
+            <% } %>
+            
+            <a href="/productListing" class="btn btn-secondary">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="m1 1 4 4 12.68 6.39a2 2 0 0 1 .32 2.22L16 21H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h10"></path>
+                </svg>
+                Continue Shopping
+            </a>
+        </div>
+
+        <!-- Support Info -->
+        <p style="margin-top: 30px; color: #888; font-size: 0.9rem;">
+            Need help? Contact our support team at <strong>support@u-craft.com</strong> or call <strong>+91-XXXX-XXXX</strong>
+        </p>
+    </div>
+</body>
+</html>

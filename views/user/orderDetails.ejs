@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Details - <%= order.orderID %></title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,wght@0,300;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #f4f4f4 url('/images/background/gray-wood-texture.jpg') no-repeat;
+      background-size: cover;
+      color: #333;
+      padding: 20px;
+    }
+    h1, h2 {
+      font-family: 'Playfair', serif;
+      margin-bottom: 10px;
+    }
+    p {
+      margin: 5px 0;
+    }
+    .section {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0,0,0,0.05);
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background: #f9f9f9;
+    }
+    button {
+      padding: 6px 12px;
+      margin-top: 5px;
+      border: none;
+      border-radius: 4px;
+      background-color: #000;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #333;
+    }
+    a {
+      color: #000;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 10px;
+      font-weight: 500;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Payment Summary Styles */
+    .payment-breakdown {
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .payment-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .payment-row:last-child {
+      border-bottom: none;
+    }
+    .payment-row.discount {
+      color: #28a745;
+      font-weight: 500;
+    }
+    .payment-row.total {
+      border-top: 2px solid #333;
+      margin-top: 10px;
+      padding-top: 15px;
+      font-size: 1.1em;
+    }
+    .invoice-actions {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      margin: 5px;
+      text-decoration: none;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      font-weight: 500;
+    }
+    .btn-primary {
+      background-color: #007bff;
+      color: white;
+    }
+    .btn:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="section">
+    <h1>Order Details - <%= order.orderID %></h1>
+    <% if (error) { %>
+      <p style="color: red;"><%= error %></p>
+    <% } %>
+    <p><strong>Order Date:</strong> <%= new Date(order.orderDate).toLocaleDateString() %></p>
+    <p><strong>Status:</strong> <%= order.status %></p>
+    <% if (order.cancelReason) { %>
+      <p><strong>Cancellation Reason:</strong> <%= order.cancelReason %></p>
+    <% } %>
+    <% if (order.returnReason) { %>
+      <p><strong>Return Reason:</strong> <%= order.returnReason %></p>
+    <% } %>
+  </div>
+
+  <div class="section">
+    <h2>Shipping Address</h2>
+    <p><%= order.shippingAddress.fullName %></p>
+    <p><%= order.shippingAddress.houseName %>, <%= order.shippingAddress.city %>, <%= order.shippingAddress.state %></p>
+    <p>Pincode: <%= order.shippingAddress.pincode %></p>
+    <% if (order.shippingAddress.landMark) { %>
+      <p>Landmark: <%= order.shippingAddress.landMark %></p>
+    <% } %>
+  </div>
+
+  <div class="section">
+    <h2>Items</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% order.items.forEach(item => { %>
+          <tr>
+            <td><%= item.productName %></td>
+            <td><%= item.quantity %></td>
+            <td>₹<%= item.price.toFixed(2) %></td>
+            <td>₹<%= (item.quantity * item.price).toFixed(2) %></td>
+            <td><%= item.status || 'N/A' %></td>
+            <td>  
+              <% if(item.status === 'Pending') { %>
+                <button onclick="cancelItem('<%= order._id %>', '<%= item._id %>')">Cancel Item</button>
+              <% }  else if (item.status === 'Delivered' && !item.rejectionReason) { %>
+  <button onclick="returnItem('<%= order._id %>', '<%= item._id %>')">Return Item</button>
+<% } else if (item.rejectionReason) { %>
+  <div class="return-rejected">
+    <i class="fas fa-ban"></i>
+    <span style="color: red; font-style: italic;">Return Rejected</span>
+    <br/>
+    <strong>Reason:</strong> <%= item.rejectionReason %>
+  </div>
+<% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Payment Summary</h2>
+    <div class="payment-breakdown">
+      <div class="payment-row">
+        <span>Subtotal:</span>
+        <span>₹<%= order.subtotal.toFixed(2) %></span>
+      </div>
+      <div class="payment-row">
+        <span>Tax (5%):</span>
+        <span>₹<%= order.tax.toFixed(2) %></span>
+      </div>
+      <div class="payment-row">
+        <span>Shipping:</span>
+        <span>₹<%= order.shipping.toFixed(2) %></span>
+      </div>
+      <% if (order.discount && order.discount > 0) { %>
+        <div class="payment-row discount">
+          <span>Product/Category Discount:</span>
+          <span>- ₹<%= order.discount.toFixed(2) %></span>
+        </div>
+      <% } %>
+      <% if (order.offerDiscount && order.offerDiscount > 0) { %>
+        <div class="payment-row discount">
+          <span>Offer Discount
+            <% if (order.appliedOffer && order.appliedOffer.code) { %>
+              (<%= order.appliedOffer.code %>):
+            <% } else { %>
+              :
+            <% } %>
+          </span>
+          <span>- ₹<%= order.offerDiscount.toFixed(2) %></span>
+        </div>
+      <% } %>
+      <div class="payment-row total">
+        <span><strong>Total:</strong></span>
+        <span><strong>₹<%= order.total.toFixed(2) %></strong></span>
+      </div>
+      <div class="payment-row">
+        <span><strong>Payment Method:</strong></span>
+        <span><%= order.paymentMethod.toUpperCase() %></span>
+      </div>
+    </div>
+    <div class="invoice-actions">
+      <a href="/orders/invoice/<%= order._id %>" class="btn btn-primary">Download Invoice</a>
+    </div>
+  </div>
+
+  <!-- Sweet Alert CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    function cancelItem(orderId, itemId) {
+      Swal.fire({
+        title: 'Cancel Item',
+        input: 'textarea',
+        inputLabel: 'Cancellation Reason',
+        inputPlaceholder: 'Please enter the reason for cancelling this item (optional)',
+        inputAttributes: {
+          'aria-label': 'Type your cancellation reason here'
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Cancel Item',
+        cancelButtonText: 'Keep Item',
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        preConfirm: (reason) => {
+          return fetch(`/orders/cancel-item/${orderId}/${itemId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cancelReason: reason || 'No reason provided' })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (!data.success) {
+              throw new Error(data.message || 'Failed to cancel item');
+            }
+            return data;
+          })
+          .catch(error => {
+            Swal.showValidationMessage(`Request failed: ${error.message}`);
+          });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Check if the response contains refund information
+          const responseData = result.value;
+          let title = 'Cancelled!';
+          let text = responseData.message || 'The item has been cancelled successfully.';
+          let icon = 'success';
+
+          // If refund was processed, show special notification
+          if (text.includes('refunded to your wallet')) {
+            title = 'Item Cancelled & Refunded!';
+            icon = 'success';
+          }
+
+          Swal.fire({
+            title: title,
+            text: text,
+            icon: icon,
+            timer: 4000,
+            showConfirmButton: true,
+            confirmButtonText: 'OK'
+          }).then(() => {
+            window.location.reload();
+          });
+        }
+      });
+    }
+
+    function returnItem(orderId, itemId) {
+      Swal.fire({
+        title: 'Return Item',
+        input: 'textarea',
+        inputLabel: 'Return Reason',
+        inputPlaceholder: 'Please enter the reason for returning this item',
+        inputAttributes: {
+          'aria-label': 'Type your return reason here'
+        },
+        inputValidator: (value) => {
+          if (!value) {
+            return 'Return reason is required!'
+          }
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Submit Return Request',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#f59e0b',
+        cancelButtonColor: '#3085d6',
+        preConfirm: (reason) => {
+          return fetch(`/orders/return-item/${orderId}/${itemId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ returnReason: reason })
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (!data.success) {
+              throw new Error(data.message || 'Failed to submit return request');
+            }
+            return data;
+          })
+          .catch(error => {
+            Swal.showValidationMessage(`Request failed: ${error.message}`);
+          });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({
+            title: 'Return Request Submitted!',
+            text: 'Your return request has been submitted successfully. We will review it shortly.',
+            icon: 'success',
+            timer: 3000,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.reload();
+          });
+        }
+      });
+    }
+  </script>
+</body>
+</html>

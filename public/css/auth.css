@@ -1,0 +1,249 @@
+/* Reset and common styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    background-attachment: fixed;
+}
+
+/* Header styles */
+header, .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0px 20px;
+    padding: 15px 0;
+}
+
+/* Logo styles */
+header p, .logo {
+    font-size: 24px;
+    font-weight: 600;
+    color: #992828;
+}
+
+/* Navigation styles */
+nav ul, .nav-list {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    list-style: none;
+}
+
+nav li, .nav-list li {
+    padding: 20px;
+    list-style: none;
+    cursor: pointer;
+}
+
+nav a, .nav-list li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav a:hover, .nav-list li a:hover {
+    color: #992828;
+}
+
+/* Auth buttons */
+.authButtons, .auth-buttons, .buttons {
+    display: flex;
+    gap: 10px;
+}
+
+#login, #login-btn {
+    border-style: none;
+    background-color: #992828;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 5px;
+    margin: 6px;
+    cursor: pointer;
+}
+
+#signup, #signup-btn {
+    background-color: transparent;
+    color: #992828;
+    padding: 10px 25px;
+    border: 1px solid #992828;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Main content container */
+main {
+    height: 80vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+/* Auth container styling */
+.loginContainer, #loginContainer, .auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 80vw;
+    height: 70vh;
+    margin: auto;
+    background-color: rgba(42, 41, 41, 0.16);
+    backdrop-filter: blur(5px);
+    border-radius: 20px;
+}
+
+/* Left container with vector image */
+.loginLeft, #loginLeft, .auth-image-container {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease-in-out, filter 0.3s ease-in-out;
+}
+
+.loginLeft:hover, #loginLeft:hover, .auth-image-container:hover {
+    transform: scale(1.05) rotate(180deg);
+}
+
+#loginImage, .auth-image {
+    height: 400px;
+    filter: brightness(100);
+}
+
+/* Right container with form */
+.loginRight, #loginRight, .auth-form-container {
+    width: 50%;
+    height: 80%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Form header styling */
+.rightHeader, #rightHeader, .form-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+#loginHeadLogo, .form-logo {
+    height: 60px;
+}
+
+/* Form body styling */
+.rightBody, #rightBody, .form-body {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.rightBody form, #rightBody form, .form-body form {
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Input styling */
+.rightBody input, #rightBody input, .form-body input {
+    background-color: transparent;
+    width: 100%;
+    height: 45px;
+    border-radius: 10px;
+    border: 2px solid rgba(128, 128, 128, 0.551);
+    padding: 10px 15px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.rightBody input::placeholder, #rightBody input::placeholder, .form-body input::placeholder {
+    color: white;
+    opacity: 0.7;
+}
+
+/* Button styling */
+.rightBody form button, #rightBody form button, .form-body button[type="submit"] {
+    width: 100%;
+    height: 50px;
+    border-radius: 50px;
+    border-style: none;
+    background-color: #992828;
+    font-size: 18px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-bottom: 20px;
+}
+
+.rightBody form button:hover, #rightBody form button:hover, .form-body button[type="submit"]:hover {
+    background-color: #7b2020;
+}
+
+/* Mobile responsiveness */
+@media only screen and (max-width: 768px) {
+    .loginContainer, #loginContainer, .auth-container {
+        flex-direction: column;
+        height: auto;
+        width: 95vw;
+        padding: 30px 0;
+    }
+
+    .loginLeft, #loginLeft, .auth-image-container,
+    .loginRight, #loginRight, .auth-form-container {
+        width: 100%;
+    }
+
+    .loginLeft, #loginLeft, .auth-image-container {
+        display: none;
+    }
+
+    header, .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    nav ul, nav, .nav-list {
+        flex-direction: column;
+        margin-top: 20px;
+        align-items: flex-start;
+    }
+
+    nav li, .nav-list li {
+        margin-bottom: 10px;
+        padding: 10px 0;
+    }
+
+    .authButtons, .auth-buttons, .buttons {
+        width: 100%;
+        justify-content: center;
+        margin-top: 15px;
+    }
+
+    .rightBody input, #rightBody input, .form-body input,
+    .rightBody form button, #rightBody form button, .form-body button[type="submit"] {
+        width: 100%;
+    }
+
+    main {
+        height: auto;
+        margin: 20px 0;
+    }
+}
+
+footer{
+    color:white;
+    text-align: center;
+}

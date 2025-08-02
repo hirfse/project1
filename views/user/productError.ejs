@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Product Error</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f8f8; color: #333; }
+        .error-container {
+            max-width: 500px;
+            margin: 100px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .error-title { font-size: 2rem; color: #e74c3c; margin-bottom: 10px; }
+        .error-message { font-size: 1.1rem; margin-bottom: 20px; }
+        a { color: #3498db; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-title">Oops!</div>
+        <div class="error-message"><%= message %></div>
+        <a href="/productListing">Back to Products</a>
+    </div>
+</body>
+</html>
