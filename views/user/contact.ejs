@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - U-Craft</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coming-soon-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .coming-soon-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 60px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+        }
+
+        .coming-soon-icon {
+            font-size: 5rem;
+            color: #667eea;
+            margin-bottom: 30px;
+            animation: swing 2s infinite;
+        }
+
+        @keyframes swing {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            25% {
+                transform: rotate(10deg);
+            }
+            75% {
+                transform: rotate(-10deg);
+            }
+        }
+
+        .coming-soon-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .coming-soon-subtitle {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 20px;
+        }
+
+        .coming-soon-description {
+            font-size: 1.1rem;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 40px;
+        }
+
+        .back-home-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .back-home-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+
+        .features-preview {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .features-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            text-align: left;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #666;
+            font-size: 1rem;
+        }
+
+        .feature-icon {
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .temp-contact-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 4px solid #667eea;
+        }
+
+        .temp-contact-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .temp-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        @media (max-width: 768px) {
+            .coming-soon-content {
+                padding: 40px 20px;
+                margin: 20px;
+            }
+
+            .coming-soon-title {
+                font-size: 2.5rem;
+            }
+
+            .coming-soon-subtitle {
+                font-size: 1.3rem;
+            }
+
+            .coming-soon-description {
+                font-size: 1rem;
+            }
+
+            .features-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Include header -->
+    <%- include('../partials/header') %>
+
+    <div class="coming-soon-container">
+        <div class="coming-soon-content">
+            <div class="coming-soon-icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+            
+            <h1 class="coming-soon-title">Contact Us</h1>
+            <h2 class="coming-soon-subtitle">Coming Soon!</h2>
+            
+            <p class="coming-soon-description">
+                We're building an amazing contact experience for you! Soon you'll have multiple 
+                ways to reach out to us, including live chat, contact forms, and direct communication 
+                channels. We can't wait to hear from you!
+            </p>
+
+            <div class="temp-contact-info">
+                <h3 class="temp-contact-title">Temporary Contact Information:</h3>
+                <div class="temp-contact-item">
+                    <i class="fas fa-envelope feature-icon"></i>
+                    <span>Email: support@u-craft.com</span>
+                </div>
+                <div class="temp-contact-item">
+                    <i class="fas fa-phone feature-icon"></i>
+                    <span>Phone: +91 9876543210</span>
+                </div>
+                <div class="temp-contact-item">
+                    <i class="fas fa-clock feature-icon"></i>
+                    <span>Hours: Mon-Fri 9AM-6PM IST</span>
+                </div>
+            </div>
+
+            <a href="/" class="back-home-btn">
+                <i class="fas fa-home"></i>
+                Back to Home
+            </a>
+
+            <div class="features-preview">
+                <h3 class="features-title">Coming Features:</h3>
+                <div class="features-list">
+                    <div class="feature-item">
+                        <i class="fas fa-comments feature-icon"></i>
+                        <span>Live Chat Support</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-form feature-icon"></i>
+                        <span>Contact Forms</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-map-marker-alt feature-icon"></i>
+                        <span>Office Locations</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-headset feature-icon"></i>
+                        <span>24/7 Support</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-question-circle feature-icon"></i>
+                        <span>FAQ Section</span>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-ticket-alt feature-icon"></i>
+                        <span>Support Tickets</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include footer -->
+    <%- include('../partials/footer') %>
+</body>
+</html>

@@ -716,9 +716,9 @@
                                 <% if (product.quantity === 0) { %>
                                     <p style="color: red; font-size: 0.9rem; font-weight: bold;">Out of Stock</p>
                                 <% } else if (product.quantity < 10) { %>
-                                    <p style="color: orange; font-size: 0.9rem;">Low Stock: Only <span class="stock-count"><%= product.quantity %></span> left!</p>
+                                    <p style="color: orange; font-size: 0.9rem;">Selling Fast ! </p>
                                 <% } else { %>
-                                    <p style="color: green; font-size: 0.9rem;">In Stock: <span class="stock-count"><%= product.quantity %></span> available</p>
+                                    <p style="color: green; font-size: 0.9rem;">In Stock </p>
                                 <% } %>
                             </div>
                         </a>
@@ -916,12 +916,7 @@
             mainElement.insertBefore(resultsCount, allProductDiv);
         }
 
-        const visibleCount = visibleProducts.length;
-        if (visibleCount === totalProducts) {
-            resultsCount.textContent = `Showing all ${totalProducts} products`;
-        } else {
-            resultsCount.textContent = `Showing ${visibleCount} of ${totalProducts} products`;
-        }
+
     }
 
     // Enhanced Add to Cart function with all requirements
@@ -960,13 +955,13 @@
             Swal.fire({
                 icon: 'success',
                 title: isUpdate ? 'Cart Updated!' : 'Added to Cart!',
-                html: `
-                    <div style="text-align: center;">
-                        <p><strong>${result.productName}</strong></p>
-                        <p>${result.message}</p>
-                        ${result.cartCount ? `<small>Total items in cart: ${result.cartCount}</small>` : ''}
-                    </div>
-                `,
+                // html: `
+                //     <div style="text-align: center;">
+                //         <p><strong>${result.productName}</strong></p>
+                //         <p>${result.message}</p>
+                //         ${result.cartCount ? `<small>Total items in cart: ${result.cartCount}</small>` : ''}
+                //     </div>
+                // `,
                 showConfirmButton: false,
                 timer: 2500,
                 toast: true,
@@ -1168,153 +1163,153 @@
     });
 
     // Optimized real-time stock monitoring with bulk API
-    let lastStockCheck = {};
-    let stockCheckInterval = null;
+    // let lastStockCheck = {};
+    // let stockCheckInterval = null;
 
-    function updateProductStock() {
-        const productCards = document.querySelectorAll('[id^="stock-info-"]');
-        const productIds = Array.from(productCards).map(card => card.id.replace('stock-info-', ''));
+    // function updateProductStock() {
+    //     const productCards = document.querySelectorAll('[id^="stock-info-"]');
+    //     const productIds = Array.from(productCards).map(card => card.id.replace('stock-info-', ''));
 
-        if (productIds.length === 0) return;
+    //     if (productIds.length === 0) return;
 
-        // Use bulk API for efficiency - single request for all products
-        bulkStockCheck(productIds);
-    }
+    //     // Use bulk API for efficiency - single request for all products
+    //     bulkStockCheck(productIds);
+    // }
 
-    async function bulkStockCheck(productIds) {
-        try {
-            const response = await fetch('/products/bulk-stock-check', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ productIds })
-            });
+    // async function bulkStockCheck(productIds) {
+    //     try {
+    //         const response = await fetch('/products/bulk-stock-check', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify({ productIds })
+    //         });
 
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    // Update UI for all products at once
-                    Object.entries(data.stockData).forEach(([productId, stockInfo]) => {
-                        // Only update if stock actually changed
-                        const lastStock = lastStockCheck[productId];
-                        if (!lastStock ||
-                            lastStock.quantity !== stockInfo.quantity ||
-                            lastStock.status !== stockInfo.status ||
-                            lastStock.isAvailable !== stockInfo.isAvailable) {
+    //         if (response.ok) {
+    //             const data = await response.json();
+    //             if (data.success) {
+    //                 // Update UI for all products at once
+    //                 Object.entries(data.stockData).forEach(([productId, stockInfo]) => {
+    //                     // Only update if stock actually changed
+    //                     const lastStock = lastStockCheck[productId];
+    //                     if (!lastStock ||
+    //                         lastStock.quantity !== stockInfo.quantity ||
+    //                         lastStock.status !== stockInfo.status ||
+    //                         lastStock.isAvailable !== stockInfo.isAvailable) {
 
-                            updateProductStockUI(productId, stockInfo.quantity, stockInfo.status, stockInfo.isAvailable);
-                            lastStockCheck[productId] = stockInfo;
-                        }
-                    });
-                }
-            }
-        } catch (error) {
-            console.log('Bulk stock check failed:', error);
-        }
-    }
+    //                         updateProductStockUI(productId, stockInfo.quantity, stockInfo.status, stockInfo.isAvailable);
+    //                         lastStockCheck[productId] = stockInfo;
+    //                     }
+    //                 });
+    //             }
+    //         }
+    //     } catch (error) {
+    //         console.log('Bulk stock check failed:', error);
+    //     }
+    // }
 
-    function updateProductStockUI(productId, quantity, status, isAvailable = true) {
-        const stockInfo = document.getElementById(`stock-info-${productId}`);
-        const cartBtn = document.getElementById(`cart-btn-${productId}`);
-        const stockCount = stockInfo?.querySelector('.stock-count');
+    // function updateProductStockUI(productId, quantity, status, isAvailable = true) {
+    //     const stockInfo = document.getElementById(`stock-info-${productId}`);
+    //     const cartBtn = document.getElementById(`cart-btn-${productId}`);
+    //     const stockCount = stockInfo?.querySelector('.stock-count');
 
-        if (!stockInfo || !cartBtn) return;
+    //     if (!stockInfo || !cartBtn) return;
 
-        // Update stock count
-        if (stockCount) {
-            stockCount.textContent = quantity;
-        }
+    //     // Update stock count
+    //     if (stockCount) {
+    //         stockCount.textContent = quantity;
+    //     }
 
-        // Update stock message and button state with enhanced functionality
-        if (!isAvailable || quantity === 0 || status === 'Out of Stock' || status === 'Unavailable') {
-            const message = status === 'Unavailable' ? 'Product Unavailable' : 'Out of Stock';
-            stockInfo.innerHTML = `<p style="color: red; font-size: 0.9rem; font-weight: bold;">${message}</p>`;
-            cartBtn.disabled = true;
-            cartBtn.style.opacity = '0.5';
-            cartBtn.style.backgroundColor = '#dc3545';
-            cartBtn.innerHTML = '<i class="fas fa-times"></i>';
-            cartBtn.title = message;
-        } else if (quantity < 10) {
-            stockInfo.innerHTML = `<p style="color: orange; font-size: 0.9rem;">Low Stock: Only <span class="stock-count">${quantity}</span> left!</p>`;
-            cartBtn.disabled = false;
-            cartBtn.style.opacity = '1';
-            cartBtn.style.backgroundColor = '#333';
-            cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i>';
-            cartBtn.title = 'Add to Cart';
-        } else {
-            stockInfo.innerHTML = `<p style="color: green; font-size: 0.9rem;">In Stock: <span class="stock-count">${quantity}</span> available</p>`;
-            cartBtn.disabled = false;
-            cartBtn.style.opacity = '1';
-            cartBtn.style.backgroundColor = '#333';
-            cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i>';
-            cartBtn.title = 'Add to Cart';
-        }
-    }
+    //     // Update stock message and button state with enhanced functionality
+    //     if (!isAvailable || quantity === 0 || status === 'Out of Stock' || status === 'Unavailable') {
+    //         const message = status === 'Unavailable' ? 'Product Unavailable' : 'Out of Stock';
+    //         stockInfo.innerHTML = `<p style="color: red; font-size: 0.9rem; font-weight: bold;">${message}</p>`;
+    //         cartBtn.disabled = true;
+    //         cartBtn.style.opacity = '0.5';
+    //         cartBtn.style.backgroundColor = '#dc3545';
+    //         cartBtn.innerHTML = '<i class="fas fa-times"></i>';
+    //         cartBtn.title = message;
+    //     } else if (quantity < 10) {
+    //         stockInfo.innerHTML = `<p style="color: orange; font-size: 0.9rem;">Low Stock: Only <span class="stock-count">${quantity}</span> left!</p>`;
+    //         cartBtn.disabled = false;
+    //         cartBtn.style.opacity = '1';
+    //         cartBtn.style.backgroundColor = '#333';
+    //         cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i>';
+    //         cartBtn.title = 'Add to Cart';
+    //     } else {
+    //         stockInfo.innerHTML = `<p style="color: green; font-size: 0.9rem;">In Stock: <span class="stock-count">${quantity}</span> available</p>`;
+    //         cartBtn.disabled = false;
+    //         cartBtn.style.opacity = '1';
+    //         cartBtn.style.backgroundColor = '#333';
+    //         cartBtn.innerHTML = '<i class="fas fa-shopping-cart"></i>';
+    //         cartBtn.title = 'Add to Cart';
+    //     }
+    // }
 
-    // Initialize page functionality with optimized monitoring
-    function initializePage() {
-        // Check authentication status
-        checkAuthenticationStatus();
+    // // Initialize page functionality with optimized monitoring
+    // function initializePage() {
+    //     // Check authentication status
+    //     checkAuthenticationStatus();
 
-        // Start stock monitoring
-        startStockMonitoring();
+    //     // Start stock monitoring
+    //     startStockMonitoring();
 
-        // Initialize all add to cart buttons
-        initializeCartButtons();
-    }
+    //     // Initialize all add to cart buttons
+    //     initializeCartButtons();
+    // }
 
-    function startStockMonitoring() {
-        // Initial stock check
-        updateProductStock();
+    // function startStockMonitoring() {
+    //     // Initial stock check
+    //     updateProductStock();
 
-        // Set up intelligent periodic updates
-        stockCheckInterval = setInterval(updateProductStock, 60000); // Increased to 60 seconds
+    //     // Set up intelligent periodic updates
+    //     stockCheckInterval = setInterval(updateProductStock, 60000); // Increased to 60 seconds
 
-        // Pause monitoring when page is hidden, resume when visible
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                // Page is hidden - pause monitoring
-                if (stockCheckInterval) {
-                    clearInterval(stockCheckInterval);
-                    stockCheckInterval = null;
-                }
-            } else {
-                // Page is visible - resume monitoring
-                updateProductStock(); // Immediate check
-                if (!stockCheckInterval) {
-                    stockCheckInterval = setInterval(updateProductStock, 60000);
-                }
-            }
-        });
+    //     // Pause monitoring when page is hidden, resume when visible
+    //     document.addEventListener('visibilitychange', function() {
+    //         if (document.hidden) {
+    //             // Page is hidden - pause monitoring
+    //             if (stockCheckInterval) {
+    //                 clearInterval(stockCheckInterval);
+    //                 stockCheckInterval = null;
+    //             }
+    //         } else {
+    //             // Page is visible - resume monitoring
+    //             updateProductStock(); // Immediate check
+    //             if (!stockCheckInterval) {
+    //                 stockCheckInterval = setInterval(updateProductStock, 60000);
+    //             }
+    //         }
+    //     });
 
-        // Pause monitoring when user is idle for 5 minutes
-        let idleTimer;
-        function resetIdleTimer() {
-            clearTimeout(idleTimer);
-            idleTimer = setTimeout(() => {
-                if (stockCheckInterval) {
-                    clearInterval(stockCheckInterval);
-                    stockCheckInterval = null;
-                    console.log('Stock monitoring paused due to inactivity');
-                }
-            }, 300000); // 5 minutes
-        }
+    //     // Pause monitoring when user is idle for 5 minutes
+    //     let idleTimer;
+    //     function resetIdleTimer() {
+    //         clearTimeout(idleTimer);
+    //         idleTimer = setTimeout(() => {
+    //             if (stockCheckInterval) {
+    //                 clearInterval(stockCheckInterval);
+    //                 stockCheckInterval = null;
+    //                 console.log('Stock monitoring paused due to inactivity');
+    //             }
+    //         }, 300000); // 5 minutes
+    //     }
 
-        // Reset idle timer on user activity
-        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
-            document.addEventListener(event, resetIdleTimer, true);
-        });
+    //     // Reset idle timer on user activity
+    //     ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(event => {
+    //         document.addEventListener(event, resetIdleTimer, true);
+    //     });
 
-        resetIdleTimer();
-    }
+    //     resetIdleTimer();
+    // }
 
-    function stopStockMonitoring() {
-        if (stockCheckInterval) {
-            clearInterval(stockCheckInterval);
-            stockCheckInterval = null;
-        }
-    }
+    // function stopStockMonitoring() {
+    //     if (stockCheckInterval) {
+    //         clearInterval(stockCheckInterval);
+    //         stockCheckInterval = null;
+    //     }
+    // }
 
     // Check if user is authenticated
     function checkAuthenticationStatus() {

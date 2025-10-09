@@ -1032,8 +1032,9 @@ exports.getProductListing = async (req, res) => {
         );
 
         // Apply offers to products
+        const userId = req.session.userId;
         const productsWithOffers = await OfferService.applyOffersToProducts(filteredProducts);
-
+        const cart = Cart.findOne({userId})
         const categories = await Category.find();
 
         res.render('user/productList', {
@@ -1047,7 +1048,8 @@ exports.getProductListing = async (req, res) => {
             sort: sort || '',
             searchQuery: search || '',
             minPrice: minPrice || '',
-            maxPrice: maxPrice || ''
+            maxPrice: maxPrice || '',
+            cart
         });
     } catch (error) {
         console.error('Error fetching product listing:', error.message);
@@ -1645,63 +1647,46 @@ exports.removeFromCart = async (req, res) => {
 };
 
 // Update cart quantity via AJAX
-exports.updateCartQuantity = async (req, res) => {
+exports.setCartQuantity = async (req, res) => {
   try {
     const productId = req.params.id;
-    const userId = req.session.userId;
-    const { quantity } = req.body;
+    const userId      = req.session.userId;
+    const { quantity } = req.body;          // <- must be present
 
-    if (!quantity || quantity < 1) {
+    if (!quantity || quantity < 1)
       return res.status(400).json({ success: false, message: 'Invalid quantity' });
-    }
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
+    if (!mongoose.Types.ObjectId.isValid(productId))
       return res.status(400).json({ success: false, message: 'Invalid product ID' });
-    }
 
-    // Check product availability
     const product = await Product.findById(productId);
-    if (!product) {
+    if (!product)
       return res.status(404).json({ success: false, message: 'Product not found' });
-    }
 
-    if (product.quantity < quantity) {
-      return res.status(400).json({
-        success: false,
-        message: `Only ${product.quantity} items available in stock`
-      });
-    }
+    if (product.quantity < quantity)
+      return res.status(400).json({ success: false, message: `Only ${product.quantity} left` });
 
-    // Update cart
     const cart = await Cart.findOne({ userId });
-    if (!cart) {
+    if (!cart)
       return res.status(404).json({ success: false, message: 'Cart not found' });
-    }
 
-    const cartItem = cart.items.find(item => item.productId.toString() === productId);
-    if (!cartItem) {
-      return res.status(404).json({ success: false, message: 'Item not found in cart' });
-    }
+    const item = cart.items.find(i => i.productId.toString() === productId);
+    if (!item)
+      return res.status(404).json({ success: false, message: 'Item not in cart' });
 
-    cartItem.quantity = parseInt(quantity);
+    item.quantity = quantity;
     await cart.save();
 
-    const itemTotal = cartItem.quantity * product.salePrice;
-
-    res.json({
-      success: true,
-      message: 'Cart updated successfully',
-      itemTotal,
-      newQuantity: cartItem.quantity
-    });
-  } catch (error) {
-    console.error('Error updating cart quantity:', error);
-    res.status(500).json({ success: false, message: 'Failed to update cart' });
+    const itemTotal = item.quantity * product.salePrice;
+    res.json({ success: true, itemTotal });
+  } catch (err) {
+    console.error(err);                         // <— log the real error
+    res.status(500).json({ success: false, message: 'Could not update cart' });
   }
 };
 
 // Update Cart Quantity (Increment/Decrement)
-exports.updateCartQuantity = async (req, res) => {
+exports.adjustCartQuantity = async (req, res) => {
   try {
     const productId = req.params.id;
     const { action } = req.body; // 'increment' or 'decrement'
@@ -3338,8 +3323,27 @@ async function processOrderAfterPayment(userId, cartItems, selectedAddress, paym
 }
 
 exports.getCustomList = (req,res) =>{
-    res.render('user/customListing')
+    res.render('user/custom')
 }
+
+// Coming Soon Pages
+exports.getCustomPage = (req, res) => {
+    res.render('user/custom', {
+        userName: req.session.userName || null
+    });
+};
+
+exports.getAboutPage = (req, res) => {
+    res.render('user/about', {
+        userName: req.session.userName || null
+    });
+};
+
+exports.getContactPage = (req, res) => {
+    res.render('user/contact', {
+        userName: req.session.userName || null
+    });
+};
 
 // Apply offer during checkout
 exports.applyOffer = async (req, res) => {

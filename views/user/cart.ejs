@@ -1,12 +1,22 @@
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <title>Your Cart – U-Craft</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Cart - U-Craft</title>
+
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
-    <style>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900&display=swap" rel="stylesheet">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Styles (unchanged except for badge span) -->
+        <style>
         * {
             margin: 0;
             padding: 0;
@@ -274,306 +284,244 @@
         }
     </style>
 </head>
-<body>
-    <header>
-        <div class="mainhead">
-            <div class="logo">
-                <a href="/"><img src="/images/logo.png" alt="U-Craft Logo" style="height: 60px;"></a>
-            </div>
-            <nav class="subhead">
-                <ul>
-                    <li><a href="/">Home</a></li>
-                    <li><a href="/productListing">Shop</a></li>
-                    <li><a href="/customListing">Custom</a></li>
-                    <li><a href="/about">About</a></li>
-                    <li><a href="/contact">Contact</a></li>
-                </ul>
-            </nav>
-            <div class="buttons">
-                <input type="text" class="searchBar" placeholder="Search...">
-                <a href="/wishlist"><img src="/images/icons/heart.svg" alt="Wishlist"></a>
-                <a href="/cart"><img src="/images/icons/shopping-bag.svg" alt="Cart"></a>
-                <a href="/profile"><img src="/images/icons/user.svg" alt="Profile"></a>
-            </div>
-        </div>
-    </header>
 
-    <div class="container">
-        <!-- Breadcrumbs -->
-        <nav id="breadcrumbs"></nav>
-        
-        <div class="cart-section">
-            <h1>Your Cart</h1>
-            
-            <!-- Error message display -->
-            <% if (error) { %>
-                <div class="error-message"><%= error %></div>
-            <% } %>
-            
-            <!-- Cart contents -->
-            <% if (!cart || cart.items.length === 0) { %>
-                <div class="empty-cart">
-                    <p>Your cart is empty.</p>
-                    <a href="/productListing" class="continue-shopping">Continue Shopping</a>
-                </div>
-            <% } else { %>
-                <table class="cart-table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Price</th>
-                            <th>Total</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% 
-                        let cartTotal = 0;
-                        cart.items.forEach(item => { 
-                            const itemTotal = item.quantity * item.productId.salePrice;
-                            cartTotal += itemTotal;
-                        %>
-                            <tr id="cart-item-<%= item.productId._id %>">
-                                <td>
-                                    <div>
-                                        <%= item.productId.productName %>
-                                        <div class="stock-status" id="stock-status-<%= item.productId._id %>">
-                                            <% if (item.productId.quantity === 0) { %>
-                                                <small style="color: red;">⚠️ Out of Stock</small>
-                                            <% } else if (item.productId.quantity < item.quantity) { %>
-                                                <small style="color: orange;">⚠️ Only <%= item.productId.quantity %> available</small>
-                                            <% } else if (item.productId.quantity < 10) { %>
-                                                <small style="color: orange;">Low Stock: <%= item.productId.quantity %> left</small>
-                                            <% } else { %>
-                                                <small style="color: green;">✓ In Stock</small>
-                                            <% } %>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <input type="number"
-                                           id="qty-<%= item.productId._id %>"
-                                           name="quantity"
-                                           value="<%= item.quantity %>"
-                                           min="1"
-                                           max="<%= Math.min(item.productId.quantity, 10) %>"
-                                           onchange="updateCartQuantity('<%= item.productId._id %>', this.value)"
-                                           style="width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"
-                                           <%= item.productId.quantity === 0 ? 'disabled' : '' %>>
-                                    <div class="quantity-info">
-                                        <small>Max: <%= Math.min(item.productId.quantity, 10) %></small>
-                                    </div>
-                                </td>
-                                <td>₹<%= item.productId.salePrice.toFixed(2) %></td>
-                                <td id="item-total-<%= item.productId._id %>">₹<%= itemTotal.toFixed(2) %></td>
-                                <td>
-                                    <form action="/cart/remove/<%= item.productId._id %>" method="POST">
-                                        <button type="submit">Remove</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    </tbody>
-                </table>
-                
-                <!-- Cart summary -->
-                <div class="cart-summary">
-                    <div class="cart-total">
-                        Total: ₹<%= cartTotal.toFixed(2) %>
-                    </div>
-                    <div>
-                        <a href="/productListing" class="continue-shopping">Continue Shopping</a>
-                        <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
-                    </div>
-                </div>
-            <% } %>
+<body>
+<header>
+    <div class="mainhead">
+        <div class="logo">
+            <a href="/"><img src="/images/logo.png" alt="U-Craft Logo" style="height:60px"></a>
+        </div>
+        <nav class="subhead">
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/productListing">Shop</a></li>
+                <li><a href="/customListing">Custom</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+        <div class="buttons">
+            <input type="text" class="searchBar" placeholder="Search...">
+            <a href="/wishlist"><img src="/images/icons/heart.svg" alt="Wishlist"></a>
+
+            <!-- badge span added for live count -->
+            <a href="/cart">
+                <img src="/images/icons/shopping-bag.svg" alt="Cart">
+                <span id="cart-badge"><%= cart ? cart.items.length : 0 %></span>
+            </a>
+
+            <a href="/profile"><img src="/images/icons/user.svg" alt="Profile"></a>
         </div>
     </div>
+</header>
 
-    <footer>
-        <div>
-            <p>Shop</p>
-            <ul>
-                <li>All Products</li>
-                <li>New Arrivals</li>
-                <li>Best Sellers</li>
-                <li>Special Offers</li>
-            </ul>
-        </div>
-        <div>
-            <p>Information</p>
-            <ul>
-                <li>About Us</li>
-                <li>Contact Us</li>
-                <li>Return Policy</li>
-                <li>Terms & Conditions</li>
-            </ul>
-        </div>
-        <div>
-            <p>Customer Service</p>
-            <ul>
-                <li>FAQ</li>
-                <li>Shipping Info</li>
-                <li>Track Order</li>
-                <li>Privacy Policy</li>
-            </ul>
-        </div>
-        <div>
-            <p>Newsletter</p>
-            <div>Subscribe to get updates on new products and special offers.</div>
-            <input type="text" placeholder="Enter your email">
-        </div>
-    </footer>
+<div class="container">
+    <nav id="breadcrumbs"></nav>
 
-    <script>
-        // Dynamic Breadcrumbs
-        (function() {
-            const prettyNames = {
-                '': 'Home',
-                'home': 'Home',
-                'productlisting': 'Shop',
-                'customlisting': 'Custom',
-                'profile': 'Profile',
-                'cart': 'Cart',
-                'wishlist': 'Wishlist',
-                'addresses': 'Addresses',
-                'orders': 'Orders',
-                'checkout': 'Checkout',
-                'about': 'About',
-                'contact': 'Contact'
-            };
-            function toTitle(str) {
-                return prettyNames[str.toLowerCase()] || str.charAt(0).toUpperCase() + str.slice(1);
-            }
-            const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
-            let crumbs = [];
-            let url = '';
-            for (let i = 0; i < path.length; i++) {
-                url += '/' + path[i];
-                crumbs.push({
-                    name: toTitle(path[i]),
-                    url: i < path.length - 1 ? url : null
-                });
-            }
-            if (crumbs.length === 0 || crumbs[0].name !== 'Home') {
-                crumbs.unshift({ name: 'Home', url: '/' });
-            }
-            const nav = document.getElementById('breadcrumbs');
-            if (nav) {
-                nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
-                    crumbs.map((crumb, idx) => {
-                        if (crumb.url) {
-                            return `<li><a href="${crumb.url}" style="color:#888;text-decoration:none;">${crumb.name}</a></li>` +
-                                (idx < crumbs.length - 1 ? '<li style="color:#888;">/</li>' : '');
-                        } else {
-                            return `<li style="color:#333;">${crumb.name}</li>`;
-                        }
-                    }).join('') +
-                    '</ol>';
-            }
-        })();
+    <div class="cart-section">
+        <h1>Your Cart</h1>
 
-        // Real-time cart stock monitoring
-        async function updateCartQuantity(productId, newQuantity) {
-            try {
-                const response = await fetch(`/cart/update-quantity/${productId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ quantity: parseInt(newQuantity) })
-                });
+        <% if (error) { %>
+            <div class="error-message"><%= error %></div>
+        <% } %>
 
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        // Update item total
-                        const itemTotalElement = document.getElementById(`item-total-${productId}`);
-                        if (itemTotalElement) {
-                            itemTotalElement.textContent = `₹${data.itemTotal.toFixed(2)}`;
-                        }
+        <% if (!cart || cart.items.length === 0) { %>
+            <div class="empty-cart">
+                <p>Your cart is empty.</p>
+                <a href="/productListing" class="continue-shopping">Continue Shopping</a>
+            </div>
+        <% } else { %>
+            <table class="cart-table">
+                <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <% let cartTotal = 0; %>
+                <% cart.items.forEach(item => {
+                       const itemTotal = item.quantity * item.productId.salePrice;
+                       cartTotal += itemTotal;
+                %>
+                    <tr id="cart-item-<%= item.productId._id %>">
+                        <td>
+                            <%= item.productId.productName %>
+                            <div class="stock-status" id="stock-status-<%= item.productId._id %>">
+                                <% if (item.productId.quantity === 0) { %>
+                                    <small style="color:red">⚠️ Out of Stock</small>
+                                <% } else if (item.productId.quantity < item.quantity) { %>
+                                    <small style="color:orange">⚠️ Only <%= item.productId.quantity %> left</small>
+                                <% } else if (item.productId.quantity < 10) { %>
+                                    <small style="color:orange">Low Stock: <%= item.productId.quantity %> left</small>
+                                <% } else { %>
+                                    <small style="color:green">✓ In Stock</small>
+                                <% } %>
+                            </div>
+                        </td>
+                        <td>
+                            <input type="number"
+                                   id="qty-<%= item.productId._id %>"
+                                   value="<%= item.quantity %>"
+                                   min="1"
+                                   max="<%= Math.min(item.productId.quantity, 10) %>"
+                                   <%= item.productId.quantity === 0 ? 'disabled' : '' %>
+                                   style="width:60px;padding:5px">
+                        </td>
+                        <td>₹<%= item.productId.salePrice.toFixed(2) %></td>
+                        <td id="item-total-<%= item.productId._id %>">₹<%= itemTotal.toFixed(2) %></td>
+                        <td>
+                            <button type="button" class="remove-btn" data-id="<%= item.productId._id %>">Remove</button>
+                        </td>
+                    </tr>
+                <% }) %>
+                </tbody>
+            </table>
 
-                        // Update cart total (you might want to reload the page or update via AJAX)
-                        location.reload();
-                    } else {
-                        alert(data.message || 'Failed to update quantity');
-                        location.reload();
-                    }
-                } else {
-                    alert('Failed to update cart');
-                    location.reload();
-                }
-            } catch (error) {
-                console.error('Error updating cart:', error);
-                alert('Error updating cart');
-                location.reload();
-            }
-        }
+            <div class="cart-summary">
+                <div class="cart-total">Total: ₹<span id="grand-total"><%= cartTotal.toFixed(2) %></span></div>
+                <div>
+                    <a href="/productListing" class="continue-shopping">Continue Shopping</a>
+                    <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+                </div>
+            </div>
+        <% } %>
+    </div>
+</div>
 
-        function checkCartStockUpdates() {
-            const cartItems = document.querySelectorAll('[id^="cart-item-"]');
-            const productIds = Array.from(cartItems).map(item => item.id.replace('cart-item-', ''));
+<footer>
+    <div><p>Shop</p><ul><li>All Products</li><li>New Arrivals</li><li>Best Sellers</li><li>Special Offers</li></ul></div>
+    <div><p>Information</p><ul><li>About Us</li><li>Contact Us</li><li>Return Policy</li><li>Terms & Conditions</li></ul></div>
+    <div><p>Customer Service</p><ul><li>FAQ</li><li>Shipping Info</li><li>Track Order</li><li>Privacy Policy</li></ul></div>
+    <div>
+        <p>Newsletter</p>
+        <div>Subscribe for updates</div>
+        <input type="text" placeholder="Enter your email">
+    </div>
+</footer>
 
-            if (productIds.length === 0) return;
+<!-- ------------------------------------------------------------------ -->
+<!--  SINGLE SCRIPT BLOCK  -->
+<!-- ------------------------------------------------------------------ -->
+<script>
+/* ---------- Breadcrumbs ---------- */
+(function () {
+    const prettyNames = {
+        '': 'Home', home: 'Home', productlisting: 'Shop', customlisting: 'Custom',
+        profile: 'Profile', cart: 'Cart', wishlist: 'Wishlist', addresses: 'Addresses',
+        orders: 'Orders', checkout: 'Checkout', about: 'About', contact: 'Contact'
+    };
+    const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+    const crumbs = [];
+    let url = '';
+    for (let i = 0; i < path.length; i++) {
+        url += '/' + path[i];
+        crumbs.push({ name: prettyNames[path[i].toLowerCase()] || path[i].charAt(0).toUpperCase() + path[i].slice(1), url: i < path.length - 1 ? url : null });
+    }
+    if (crumbs.length === 0 || crumbs[0].name !== 'Home') crumbs.unshift({ name: 'Home', url: '/' });
+    const nav = document.getElementById('breadcrumbs');
+    if (nav) {
+        nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
+            crumbs.map((c, idx) => c.url ? `<li><a href="${c.url}" style="color:#888;text-decoration:none">${c.name}</a></li>${idx < crumbs.length - 1 ? '<li style="color:#888">/</li>' : ''}` : `<li style="color:#333">${c.name}</li>`).join('') + '</ol>';
+    }
+})();
 
-            productIds.forEach(async (productId) => {
-                try {
-                    const response = await fetch(`/product/${productId}/json`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.success) {
-                            updateCartItemStockUI(productId, data.quantity, data.status);
-                        }
-                    }
-                } catch (error) {
-                    console.log('Stock check failed for cart item:', productId);
-                }
-            });
-        }
-
-        function updateCartItemStockUI(productId, availableStock, status) {
-            const stockStatus = document.getElementById(`stock-status-${productId}`);
-            const qtyInput = document.getElementById(`qty-${productId}`);
-            const cartItem = document.getElementById(`cart-item-${productId}`);
-
-            if (!stockStatus || !qtyInput) return;
-
-            const currentQty = parseInt(qtyInput.value);
-
-            // Update max quantity
-            qtyInput.max = Math.min(availableStock, 10);
-
-            // Update stock status message
-            if (availableStock === 0 || status === 'Out of Stock') {
-                stockStatus.innerHTML = '<small style="color: red;">⚠️ Out of Stock</small>';
-                qtyInput.disabled = true;
-                cartItem.style.opacity = '0.6';
-            } else if (availableStock < currentQty) {
-                stockStatus.innerHTML = `<small style="color: orange;">⚠️ Only ${availableStock} available</small>`;
-                qtyInput.value = Math.min(currentQty, availableStock);
-                qtyInput.disabled = false;
-                cartItem.style.opacity = '1';
-            } else if (availableStock < 10) {
-                stockStatus.innerHTML = `<small style="color: orange;">Low Stock: ${availableStock} left</small>`;
-                qtyInput.disabled = false;
-                cartItem.style.opacity = '1';
-            } else {
-                stockStatus.innerHTML = '<small style="color: green;">✓ In Stock</small>';
-                qtyInput.disabled = false;
-                cartItem.style.opacity = '1';
-            }
-        }
-
-        // Check cart stock updates every 30 seconds
-        setInterval(checkCartStockUpdates, 30000);
-
-        // Check when page becomes visible
-        document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
-                checkCartStockUpdates();
-            }
+/* ---------- Quantity change ---------- */
+async function updateCartQuantity(productId, newQuantity) {
+    try {
+        const res = await fetch(`/cart/update-quantity/${productId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ quantity: Number(newQuantity) })
         });
-    </script>
+        const data = await res.json();
+        if (data.success) {
+            // line total
+            document.getElementById(`item-total-${productId}`).textContent = `₹${data.itemTotal.toFixed(2)}`;
+            // grand total
+            document.getElementById('grand-total').textContent = data.newGrandTotal
+                ? data.newGrandTotal.toFixed(2)
+                : (Number(document.getElementById('grand-total').textContent.replace('₹', '')) + (data.itemTotal - data.oldTotal)).toFixed(2);
+            Swal.fire({ icon: 'success', title: 'Updated!', timer: 1200, showConfirmButton: false });
+        } else {
+            Swal.fire({ icon: 'warning', title: 'Oops…', text: data.message || 'Could not update' });
+        }
+    } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: 'error', title: 'Error', text: 'Could not update cart' });
+    }
+}
+
+/* ---------- Remove item ---------- */
+document.addEventListener('click', e => {
+    if (!e.target.classList.contains('remove-btn')) return;
+    const id = e.target.dataset.id;
+    Swal.fire({
+        title: 'Remove item?',
+        text: 'This product will be removed from your cart.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, remove',
+        cancelButtonText: 'Cancel'
+    }).then(async result => {
+        if (!result.isConfirmed) return;
+        try {
+            const res = await fetch(`/cart/remove/${id}`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                Swal.fire({ icon: 'success', title: 'Removed!', timer: 1200, showConfirmButton: false })
+                     .then(() => location.reload());
+            } else {
+                Swal.fire({ icon: 'error', title: 'Oops…', text: data.message || 'Could not remove' });
+            }
+        } catch {
+            Swal.fire({ icon: 'error', title: 'Network error' });
+        }
+    });
+});
+
+/* ---------- Bind quantity inputs ---------- */
+document.addEventListener('change', e => {
+    if (e.target.matches('input[name="quantity"]')) {
+        const productId = e.target.id.replace('qty-', '');
+        updateCartQuantity(productId, e.target.value);
+    }
+});
+
+/* ---------- Stock checker (unchanged) ---------- */
+function checkCartStockUpdates() {
+    const ids = Array.from(document.querySelectorAll('[id^="cart-item-"]')).map(el => el.id.replace('cart-item-', ''));
+    ids.forEach(async id => {
+        try {
+            const res = await fetch(`/product/${id}/json`);
+            const data = await res.json();
+            if (data.success) updateCartItemStockUI(id, data.quantity, data.status);
+        } catch (_) {}
+    });
+}
+function updateCartItemStockUI(id, stock, status) {
+    const stockEl = document.getElementById(`stock-status-${id}`);
+    const qtyEl   = document.getElementById(`qty-${id}`);
+    const rowEl   = document.getElementById(`cart-item-${id}`);
+    if (!stockEl || !qtyEl) return;
+    qtyEl.max = Math.min(stock, 10);
+    if (stock === 0 || status === 'Out of Stock') {
+        stockEl.innerHTML = '<small style="color:red">⚠️ Out of Stock</small>';
+        qtyEl.disabled = true; rowEl.style.opacity = '0.6';
+    } else if (stock < qtyEl.value) {
+        stockEl.innerHTML = `<small style="color:orange">⚠️ Only ${stock} available</small>`;
+        qtyEl.value = Math.min(qtyEl.value, stock);
+    } else if (stock < 10) {
+        stockEl.innerHTML = `<small style="color:orange">Low Stock: ${stock} left</small>`;
+    } else {
+        stockEl.innerHTML = '<small style="color:green">✓ In Stock</small>';
+    }
+}
+setInterval(checkCartStockUpdates, 30000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkCartStockUpdates(); });
+</script>
 </body>
 </html>

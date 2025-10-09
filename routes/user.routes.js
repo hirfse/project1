@@ -29,6 +29,11 @@ const upload = multer({ storage: storage });
 //   Public Routes (No authentication required)
 router.get('/', userController.getLandingPage);
 
+// Coming Soon Pages
+router.get('/custom', userController.getCustomPage);
+router.get('/about', userController.getAboutPage);
+router.get('/contact', userController.getContactPage);
+
 router.get('/signup', preventBackAfterLogout, userController.getSignupPage);
 router.post('/signup', userController.handleSignupPage);
 router.post('/verifySignupOTP', userController.verifySignupOTP);
@@ -86,6 +91,11 @@ router.post('/resend-email-otp', userController.resendEmailOTP);
 // router.post('/change-password', userController.handleChangePassword);
 // router.get('/verify-password-otp', userController.verifyPasswordOTP); 
 // router.post('/verify-password-otp', userController.verifyPasswordOTP); 
+ 
+//productListing
+
+
+router.get('/productListing', userController.getProductListing);
 
 
 /////////
@@ -97,7 +107,7 @@ router.post('/addresses/add', userController.addAddress);
 router.get('/addresses/edit/:id', userController.getEditAddress);
 router.post('/addresses/edit/:id', userController.editAddress);
 router.post('/addresses/delete/:id', userController.deleteAddress);
-router.get('/productListing', userController.getProductListing);
+
 
 // Cart Management Routes
 router.post('/cart/add/:id', userController.addToCart);
@@ -106,7 +116,7 @@ router.get('/cart', userController.getCart);
 router.get('/product/:id/json', userController.getProductDetailsJson);
 router.post('/products/bulk-stock-check', userController.bulkStockCheck);
 router.post('/cart/remove/:id', userController.removeFromCart);
-router.post('/cart/update-quantity/:id', userController.updateCartQuantity);
+router.post('/cart/update-quantity/:id', userController.adjustCartQuantity);
 
 router.post('/wishlist/add/:id', userController.addToWishlist);
 router.post('/wishlist/remove/:id', userController.removeFromWishlist);
