@@ -53,6 +53,13 @@ router.get("/editCategory", adminController.getEditCategory);
 router.post("/editCategory/:id", adminController.editCategory);
 router.post("/delete-category/:id", adminController.deleteCategory);
 
+//   Subcategory Management
+router.get('/subcategories', adminController.listSubcategories); // optional ?category=
+router.post('/addSubcategory', adminController.addSubcategory);
+router.post('/editSubcategory/:id', adminController.editSubcategory);
+router.patch('/toggle-subcategory/:id', adminController.toggleSubcategory);
+router.delete('/delete-subcategory/:id', adminController.deleteSubcategory);
+
 //   Product Management
 
 router.get('/products', adminController.getProductList);
@@ -63,7 +70,6 @@ router.post('/edit-product/:id', upload.fields([
     { name: 'image3', maxCount: 1 },
     { name: 'image4', maxCount: 1 }
 ]), adminController.editProduct);
-router.post('/delete-product/:id', adminController.deleteProduct);
 router.post('/toggle-block-product/:id', adminController.toggleBlockProduct);
 
 
@@ -125,6 +131,10 @@ router.get('/sales-report', salesReportController.getSalesReport);
 router.get('/sales-report-data', salesReportController.getSalesDataAPI);
 router.get('/sales-report-pdf', salesReportController.downloadSalesReportPDF);
 router.get('/sales-report-excel', salesReportController.downloadSalesReportExcel);
+
+//sample route
+
+router.get('/sample',adminController.sampleView)
 
 //   Admin Logout
 router.post('/adminLogout',preventBackAfterLogout ,adminController.handleLogout);

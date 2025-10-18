@@ -4,6 +4,7 @@ const Product = require('../../models/product.model');
 const Review = require('../../models/review.model');
 const bcrypt = require('bcrypt');
 const Category = require('../../models/category.model');
+const Subcategory = require('../../models/subcategory.model');
 const Order = require('../../models/order.model');
 const OfferService = require('../../services/offerService');
 const mongoose = require('mongoose');
@@ -958,7 +959,7 @@ exports.deleteAddress = async (req, res) => {
 //productLitsing
 exports.getProductListing = async (req, res) => {
     try {
-        const { page = 1, category, sort, search, minPrice, maxPrice } = req.query;
+        const { page = 1, category, subCategory, sort, search, minPrice, maxPrice } = req.query;
         const itemsPerPage = 8;
 
         // Build query for filtering products
@@ -967,6 +968,11 @@ exports.getProductListing = async (req, res) => {
         // Category filter
         if (category && category.trim() !== '') {
             query.category = category;
+        }
+
+        // Subcategory filter
+        if (subCategory && subCategory.trim() !== '') {
+            query.subCategory = subCategory.trim();
         }
 
         // Search filter
@@ -1021,6 +1027,7 @@ exports.getProductListing = async (req, res) => {
         const totalPages = Math.ceil(totalProducts / itemsPerPage);
 
         const products = await Product.find(query)
+            .collation({ locale: 'en', strength: 2 })
             .populate('category')
             .sort(sortOption)
             .skip((page - 1) * itemsPerPage)
@@ -1036,6 +1043,10 @@ exports.getProductListing = async (req, res) => {
         const productsWithOffers = await OfferService.applyOffersToProducts(filteredProducts);
         const cart = Cart.findOne({userId})
         const categories = await Category.find();
+        let subcategories = [];
+        if (category) {
+            subcategories = await Subcategory.find({ category, isActive: true }).sort({ name: 1 });
+        }
 
         res.render('user/productList', {
             products: productsWithOffers,
@@ -1045,10 +1056,12 @@ exports.getProductListing = async (req, res) => {
             totalPages,
             categories,
             selectedCategory: category || '',
+            selectedSubCategory: subCategory || '',
             sort: sort || '',
             searchQuery: search || '',
             minPrice: minPrice || '',
             maxPrice: maxPrice || '',
+            subcategories,
             cart
         });
     } catch (error) {

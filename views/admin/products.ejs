@@ -196,7 +196,7 @@
 
     <!-- Topbar -->
     <div class="topbar">
-        <div class="search-container">
+        <div class="search-container" style="display: none;">
             <i class="fas fa-search"></i>
             <input type="text" id="searchInput" placeholder="Search products..." value="<%= searchQuery || '' %>" onkeyup="searchTable()">
         </div>
@@ -264,6 +264,11 @@
                     </select>
                 </div>
                 <div class="form-group">
+                    <select name="subCategory" id="filterSubcategory" class="form-input" disabled>
+                        <option value="">All Subcategories</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <select name="status" class="form-input">
                         <option value="">All Status</option>
                         <option value="Available" <%= statusFilter === 'Available' ? 'selected' : '' %>>Available</option>
@@ -282,6 +287,7 @@
                     </select>
                 </div>
                 <button type="submit" class="btn btn-primary">Filter</button>
+                <button type="button" class="btn btn-outline" onclick="window.location.href='/admin/products'">Clear Filters</button>
             </form>
         </div>
 
@@ -289,7 +295,6 @@
         <div class="recent-table">
             <div class="table-header">
                 <div class="table-title">Product List</div>
-                <a href="/admin/products" class="view-all">Clear Filter</a>
             </div>
 
             <table id="productTable">
@@ -342,12 +347,10 @@
                                         data-sale-price="<%= product.salePrice %>"
                                         data-quantity="<%= product.quantity %>"
                                         data-category="<%= product.category ? product.category._id : '' %>"
+                                        data-subcategory="<%= product.subCategory ? product.subCategory._id : '' %>"
                                         data-status="<%= product.status %>"
                                         data-images="<%= JSON.stringify(product.productImage) %>">
                                         <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="action-icon delete-product-btn" data-id="<%= product._id %>">
-                                        <i class="fas fa-trash"></i>
                                     </button>
                                     <button class="action-icon toggle-block-btn" data-id="<%= product._id %>" data-blocked="<%= product.isBlocked %>">
                                         <i class="fas <%= product.isBlocked ? 'fa-lock-open' : 'fa-lock' %>"></i>
@@ -438,6 +441,12 @@
                                 <div id="add-category-error" class="error-message" style="color: var(--danger-color);"></div>
                             </div>
                             <div class="form-group">
+                                <label class="form-label" for="addSubcategory">Subcategory</label>
+                                <select class="form-input" name="subCategory" id="addSubcategory" disabled>
+                                    <option value="">Select Category first</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label class="form-label">Images (at least 3  )</label>
                                 <div id="add-image-error" class="error-message" style="color: var(--danger-color);"></div>
                                 <div class="thumbnails-container" id="addThumbnailsContainer"></div>
@@ -514,6 +523,12 @@
                             <div id="edit-category-error" class="error-message" style="color: var(--danger-color);"></div>
                         </div>
                         <div class="form-group">
+                            <label class="form-label" for="editSubcategory">Subcategory</label>
+                            <select class="form-input" name="subCategory" id="editSubcategory" disabled>
+                                <option value="">Select Category first</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label class="form-label" for="editStatus">Status</label>
                             <select class="form-input" name="status" id="editStatus"  >
                                 <option value="Available">Available</option>
@@ -565,6 +580,44 @@
             collapseBtn.addEventListener('click', function() {
                 document.body.classList.toggle('collapsed-sidebar');
             });
+        }
+
+        // Populate Subcategory Filter
+        async function populateFilterSubcategories(categoryId, selected = '') {
+            const subSelect = document.getElementById('filterSubcategory');
+            if (!subSelect) return;
+            if (!categoryId) {
+                subSelect.innerHTML = '<option value="">All Subcategories</option>';
+                subSelect.disabled = true;
+                return;
+            }
+            try {
+                const res = await fetch(`/admin/subcategories?category=${categoryId}`, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                const subs = (data && data.subcategories) ? data.subcategories.filter(s => s.isActive) : [];
+                subSelect.innerHTML = '<option value="">All Subcategories</option>' + subs.map(s => `<option value="${s._id}">${s.name}</option>`).join('');
+                subSelect.disabled = false;
+                if (selected) subSelect.value = selected;
+            } catch (e) {
+                console.error('Failed to load subcategories for filter', e);
+                subSelect.innerHTML = '<option value="">All Subcategories</option>';
+                subSelect.disabled = true;
+            }
+        }
+
+        // Hook category change to load subcategories
+        const filterCategorySelect = document.querySelector('select[name="category"]');
+        if (filterCategorySelect) {
+            filterCategorySelect.addEventListener('change', function() {
+                populateFilterSubcategories(this.value, '');
+            });
+        }
+
+        // Initialize subcategory filter on load if category preselected
+        const preselectedCategory = "<%= selectedCategory ? selectedCategory : '' %>";
+        const preselectedSubcategory = "<%= selectedSubCategory ? selectedSubCategory : '' %>";
+        if (preselectedCategory) {
+            populateFilterSubcategories(preselectedCategory, preselectedSubcategory);
         }
 
         // Dark mode toggle
@@ -675,20 +728,15 @@
                 const salePrice = this.dataset.salePrice;
                 const quantity = this.dataset.quantity;
                 const categoryId = this.dataset.category;
+                const subCategoryId = this.dataset.subcategory;
                 const status = this.dataset.status;
                 const images = this.dataset.images;
 
-                openEditProductModal(id, productName, description, regularPrice, salePrice, quantity, categoryId, status, images);
+                openEditProductModal(id, productName, description, regularPrice, salePrice, quantity, categoryId, subCategoryId, status, images);
             });
         });
 
-        // Delete product button triggers
-        document.querySelectorAll('.delete-product-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const productId = this.dataset.id;
-                deleteProduct(productId);
-            });
-        });
+        // (Delete product removed)
 
         // Toggle block product button triggers
         document.querySelectorAll('.toggle-block-btn').forEach(btn => {
@@ -733,7 +781,7 @@
         });
 
         // Edit product modal trigger
-        function openEditProductModal(id, productName, description, regularPrice, salePrice, quantity, categoryId, status, images) {
+        async function openEditProductModal(id, productName, description, regularPrice, salePrice, quantity, categoryId, subCategoryId, status, images) {
             document.getElementById('editProductId').value = id;
             document.getElementById('editProductName').value = productName;
             document.getElementById('editDescription').value = description;
@@ -742,6 +790,8 @@
             document.getElementById('editQuantity').value = quantity;
             document.getElementById('editCategory').value = categoryId;
             document.getElementById('editStatus').value = status;
+
+            await populateSubcategories('editSubcategory', categoryId, subCategoryId);
 
             // Display existing images
             const existingImagesContainer = document.getElementById('editExistingImages');
@@ -760,6 +810,38 @@
 
             openModal('editProductModal');
         }
+
+        // Subcategory dynamic loading
+        async function populateSubcategories(selectId, categoryId, selectedSubId = '') {
+            const select = document.getElementById(selectId);
+            if (!select) return;
+            if (!categoryId) {
+                select.innerHTML = '<option value="">Select Category first</option>';
+                select.disabled = true;
+                return;
+            }
+            try {
+                const res = await fetch(`/admin/subcategories?category=${categoryId}`, { headers: { 'Accept': 'application/json' } });
+                const data = await res.json();
+                const subs = data.subcategories || [];
+                select.innerHTML = '<option value="">None</option>' + subs.filter(s=>s.isActive).map(s => `<option value="${s._id}">${s.name}</option>`).join('');
+                select.disabled = false;
+                if (selectedSubId) {
+                    select.value = selectedSubId;
+                }
+            } catch (e) {
+                console.error('Failed to load subcategories', e);
+                select.innerHTML = '<option value="">Failed to load</option>';
+                select.disabled = true;
+            }
+        }
+
+        document.getElementById('addCategory').addEventListener('change', function() {
+            populateSubcategories('addSubcategory', this.value, '');
+        });
+        document.getElementById('editCategory').addEventListener('change', function() {
+            populateSubcategories('editSubcategory', this.value, '');
+        });
 
         // Form validation
         function validateForm(formId) {
@@ -1006,21 +1088,42 @@
             const form = document.getElementById('addProductForm');
             const formData = new FormData(form);
 
-            fetch('/admin/products', {
+            // Frontend validation to avoid unnecessary requests
+            if (!validateForm('addProductForm')) {
+                return;
+            }
+
+            fetch('/admin/add-products', {
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        if (err.validationErrors) {
-                            displayValidationErrors(err.validationErrors, 'add');
-                            return null; // Return null to indicate validation error
+            .then(async (response) => {
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        if (data && data.validationErrors) {
+                            displayValidationErrors(data.validationErrors, 'add');
+                            return null; // handled
                         }
-                        throw new Error(err.message || err.error || 'Failed to add product');
-                    });
+                        throw new Error((data && (data.message || data.error)) || 'Failed to add product');
+                    }
+                    return data;
+                } else {
+                    // Likely an HTML redirect (e.g., session expired)
+                    const text = await response.text();
+                    if (text && text.startsWith('<!DOCTYPE')) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Session expired',
+                            text: 'Please login again to continue.',
+                        }).then(() => {
+                            window.location.href = '/admin/adminLogin';
+                        });
+                        return null;
+                    }
+                    throw new Error('Unexpected response from server');
                 }
-                return response.json();
             })
             .then(result => {
                 if (result === null) {
@@ -1054,8 +1157,8 @@
             const formData = new FormData(form);
             const productId = document.getElementById('editProductId').value;
 
-            fetch(`/admin/products/${productId}`, {
-                method: 'PUT',
+            fetch(`/admin/edit-product/${productId}`, {
+                method: 'POST',
                 body: formData
             })
             .then(response => {
@@ -1094,51 +1197,7 @@
             });
         }
 
-        // Delete product
-        function deleteProduct(productId) {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: 'Do you want to delete this product?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Yes',
-                cancelButtonText: 'No'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    fetch(`/admin/products/${productId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(err => {
-                                throw new Error(err.error || 'Failed to delete product');
-                            });
-                        }
-                        return response.json();
-                    })
-                    .then(() => {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Deleted!',
-                            text: 'Product deleted successfully',
-                            timer: 1500
-                        }).then(() => {
-                            location.reload();
-                        });
-                    })
-                    .catch(error => {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Oops...',
-                            text: error.message || 'Failed to delete product'
-                        });
-                    });
-                }
-            });
-        }
+        // (Delete product flow removed)
 
         // Toggle block/unblock product
         function toggleBlockProduct(productId, isBlocked) {
@@ -1152,8 +1211,8 @@
                 cancelButtonText: 'No'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch(`/admin/products/${productId}/toggle-block`, {
-                        method: 'PATCH',
+                    fetch(`/admin/toggle-block-product/${productId}`, {
+                        method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         }

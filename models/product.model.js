@@ -16,6 +16,12 @@ const productSchema = new Schema({
     ref: 'Category',
     required: true
   },
+  subCategory: {
+    type: Schema.Types.ObjectId,
+    ref: 'Subcategory',
+    required: false,
+    default: null
+  },
   regularPrice:{
     type: Number,
     required: true
@@ -45,7 +51,7 @@ const productSchema = new Schema({
     type: Number,
     default: 0,
   },
-  
+
   offerEndDate: {
     type: Date,
     default: null,

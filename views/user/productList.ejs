@@ -630,6 +630,7 @@
                 <form method="GET" action="/productListing">
                     <input type="hidden" name="search" value="<%= searchQuery %>">
                     <input type="hidden" name="category" value="<%= selectedCategory %>">
+                    <input type="hidden" name="subCategory" value="<%= selectedSubCategory || '' %>">
                     <input type="hidden" name="sort" value="<%= sort %>">
 
                     <label>Price Range:</label>
@@ -657,10 +658,20 @@
                         <% } %>
                     <% }) %>
                 </select>
+                <% if (subcategories && subcategories.length > 0) { %>
+                    <label for="subCategory" style="margin-left:10px;">Subcategory:</label>
+                    <select name="subCategory" id="subCategory" onchange="this.form.submit()">
+                        <option value="">All Subcategories</option>
+                        <% subcategories.forEach(sub => { %>
+                            <option value="<%= sub._id %>" <%= selectedSubCategory === sub._id.toString() ? 'selected' : '' %>><%= sub.name %></option>
+                        <% }) %>
+                    </select>
+                <% } %>
             </form>
             <form method="GET" action="/productListing" class="sort">
                 <input type="hidden" name="search" value="<%= searchQuery || '' %>">
                 <input type="hidden" name="category" value="<%= selectedCategory || '' %>">
+                <input type="hidden" name="subCategory" value="<%= selectedSubCategory || '' %>">
                 <input type="hidden" name="minPrice" value="<%= minPrice || '' %>">
                 <input type="hidden" name="maxPrice" value="<%= maxPrice || '' %>">
                 <label for="sort">Sort by:</label>
@@ -735,13 +746,13 @@
         <!-- Pagination Controls -->
         <div class="pagination">
             <% if (currentPage > 1) { %>
-                <a href="?page=<%= currentPage - 1 %>&search=<%= searchQuery || '' %>&category=<%= selectedCategory || '' %>&sort=<%= sort || '' %>&minPrice=<%= minPrice || '' %>&maxPrice=<%= maxPrice || '' %>" class="prev">Previous</a>
+                <a href="?page=<%= currentPage - 1 %>&search=<%= searchQuery || '' %>&category=<%= selectedCategory || '' %>&subCategory=<%= selectedSubCategory || '' %>&sort=<%= sort || '' %>&minPrice=<%= minPrice || '' %>&maxPrice=<%= maxPrice || '' %>" class="prev">Previous</a>
             <% } %>
             <% for (let i = 1; i <= totalPages; i++) { %>
-                <a href="?page=<%= i %>&search=<%= searchQuery || '' %>&category=<%= selectedCategory || '' %>&sort=<%= sort || '' %>&minPrice=<%= minPrice || '' %>&maxPrice=<%= maxPrice || '' %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
+                <a href="?page=<%= i %>&search=<%= searchQuery || '' %>&category=<%= selectedCategory || '' %>&subCategory=<%= selectedSubCategory || '' %>&sort=<%= sort || '' %>&minPrice=<%= minPrice || '' %>&maxPrice=<%= maxPrice || '' %>" class="<%= i === currentPage ? 'active' : '' %>"><%= i %></a>
             <% } %>
             <% if (currentPage < totalPages) { %>
-                <a href="?page=<%= currentPage + 1 %>&search=<%= searchQuery || '' %>&category=<%= selectedCategory || '' %>&sort=<%= sort || '' %>&minPrice=<%= minPrice || '' %>&maxPrice=<%= maxPrice || '' %>" class="next">Next</a>
+                <a href="?page=<%= currentPage + 1 %>&search=<%= searchQuery || '' %>&category=<%= selectedCategory || '' %>&subCategory=<%= selectedSubCategory || '' %>&sort=<%= sort || '' %>&minPrice=<%= minPrice || '' %>&maxPrice=<%= maxPrice || '' %>" class="next">Next</a>
             <% } %>
         </div>
     </main>

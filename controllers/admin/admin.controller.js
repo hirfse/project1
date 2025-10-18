@@ -2,6 +2,7 @@ require('dotenv').config()
 const User = require('../../models/user.model')
 const Product = require("../../models/product.model");
 const Category = require("../../models/category.model");
+const Subcategory = require("../../models/subcategory.model");
 const Order = require('../../models/order.model');
 const Wallet = require('../../models/wallet.model');
 const Offer = require('../../models/offer.model');
@@ -20,6 +21,98 @@ exports.getAdminLogin = (req, res) => {
     return res.redirect('/admin/adminHome');
   }
   res.render('admin/login', { error: null });
+};
+
+//////////////////////////////////////
+// Subcategory Management (JSON API)
+//////////////////////////////////////
+exports.listSubcategories = async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.category && mongoose.isValidObjectId(req.query.category)) {
+      filter.category = req.query.category;
+    }
+    const subs = await Subcategory.find(filter).populate('category').sort({ createdAt: -1 });
+    res.json({ subcategories: subs });
+  } catch (err) {
+    console.error('Error listing subcategories:', err);
+    res.status(500).json({ error: 'Failed to load subcategories' });
+  }
+};
+
+exports.addSubcategory = async (req, res) => {
+  try {
+    const { name,  category } = req.body;
+    if (!name || !category) {
+      return res.status(400).json({ error: 'Name and category are required' });
+    }
+
+    if (!mongoose.isValidObjectId(category)) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+    const catDoc = await Category.findById(category);
+    if (!catDoc) return res.status(400).json({ error: 'Category not found' });
+
+    const exists = await Subcategory.findOne({ name: new RegExp(`^${name.trim()}$`, 'i'), category });
+    if (exists) return res.status(400).json({ error: 'Subcategory already exists in this category' });
+
+    const sub = new Subcategory({ name: name.trim(), category, isActive: true });
+    await sub.save();
+    res.status(201).json({ message: 'Subcategory added successfully', subcategory: sub });
+  } catch (err) {
+    console.error('Error adding subcategory:', err);
+    res.status(500).json({ error: 'Failed to add subcategory' });
+  }
+};
+
+exports.editSubcategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, category } = req.body;
+    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ error: 'Invalid subcategory id' });
+    if (!name || !category) return res.status(400).json({ error: 'Name and category are required' });
+    if (!mongoose.isValidObjectId(category)) return res.status(400).json({ error: 'Invalid category' });
+
+    const catDoc = await Category.findById(category);
+    if (!catDoc) return res.status(400).json({ error: 'Category not found' });
+
+    const conflict = await Subcategory.findOne({ _id: { $ne: id }, name: new RegExp(`^${name.trim()}$`, 'i'), category });
+    if (conflict) return res.status(400).json({ error: 'Another subcategory with this name exists in the category' });
+
+    const updated = await Subcategory.findByIdAndUpdate(id, { name: name.trim(), category }, { new: true });
+    if (!updated) return res.status(404).json({ error: 'Subcategory not found' });
+    res.json({ message: 'Subcategory updated successfully', subcategory: updated });
+  } catch (err) {
+    console.error('Error editing subcategory:', err);
+    res.status(500).json({ error: 'Failed to edit subcategory' });
+  }
+};
+
+exports.toggleSubcategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ error: 'Invalid subcategory id' });
+    const sub = await Subcategory.findById(id);
+    if (!sub) return res.status(404).json({ error: 'Subcategory not found' });
+    sub.isActive = !sub.isActive;
+    await sub.save();
+    res.json({ message: `Subcategory ${sub.isActive ? 'activated' : 'deactivated'} successfully` });
+  } catch (err) {
+    console.error('Error toggling subcategory:', err);
+    res.status(500).json({ error: 'Failed to toggle subcategory' });
+  }
+};
+
+exports.deleteSubcategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) return res.status(400).json({ error: 'Invalid subcategory id' });
+    await Subcategory.findByIdAndDelete(id);
+    res.json({ message: 'Subcategory deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting subcategory:', err);
+    res.status(500).json({ error: 'Failed to delete subcategory' });
+  }
 };
 
 exports.handleAdminLogin = async (req, res) => {
@@ -189,6 +282,7 @@ exports.getProductList = async (req, res) => {
     const limit = 4;
     const search = req.query.search || '';
     const selectedCategory = req.query.category || '';
+    const selectedSubCategory = req.query.subCategory || '';
     const statusFilter = req.query.status || '';
     const sortOption = req.query.sort || '';
 
@@ -205,6 +299,7 @@ exports.getProductList = async (req, res) => {
       isDeleted: { $ne: true },
       ...(search && { productName: { $regex: search, $options: 'i' } }),
       ...(selectedCategory && { category: selectedCategory }),
+      ...(selectedSubCategory && { subCategory: selectedSubCategory }),
       ...(statusFilter && { status: statusFilter }),
     };
 
@@ -212,7 +307,9 @@ exports.getProductList = async (req, res) => {
     const totalPages = Math.ceil(totalProducts / limit);
 
     const products = await Product.find(query)
+      .collation({ locale: 'en', strength: 2 })
       .populate('category')
+      .populate('subCategory')
       .sort(sortCriteria)
       .skip((page - 1) * limit)
       .limit(limit);
@@ -224,6 +321,7 @@ exports.getProductList = async (req, res) => {
         page,
         search,
         category: selectedCategory,
+        subCategory: selectedSubCategory,
         status: statusFilter,
         sort: sortOption,
       });
@@ -238,6 +336,7 @@ exports.getProductList = async (req, res) => {
       limit,
       searchQuery: search,
       selectedCategory,
+      selectedSubCategory,
       statusFilter,
       sortOption,
       categories,
@@ -257,7 +356,7 @@ exports.addProducts = async (req, res) => {
     console.log('Request body:', req.body);
     console.log('Request files:', req.files);
 
-    const { productName, description, category, regularPrice, salePrice, quantity } = req.body;
+    const { productName, description, category, subCategory, regularPrice, salePrice, quantity } = req.body;
 
     // Validation
     if (!productName || !productName.trim()) {
@@ -293,12 +392,25 @@ exports.addProducts = async (req, res) => {
       return res.status(400).json({ error: 'Invalid category' });
     }
 
+    let subCategoryId = null;
+    if (subCategory && mongoose.Types.ObjectId.isValid(subCategory)) {
+      const subcatDoc = await Subcategory.findById(subCategory);
+      if (!subcatDoc) {
+        return res.status(400).json({ error: 'Invalid subcategory' });
+      }
+      if (String(subcatDoc.category) !== String(categoryDoc._id)) {
+        return res.status(400).json({ error: 'Subcategory does not belong to selected category' });
+      }
+      subCategoryId = subcatDoc._id;
+    }
+
     const images = req.files.map(file => file.filename);
 
     const product = new Product({
       productName,
       description,
       category: categoryDoc._id,
+      subCategory: subCategoryId,
       regularPrice: parseFloat(regularPrice),
       salePrice: parseFloat(salePrice),
       quantity: parseInt(quantity),
@@ -318,7 +430,7 @@ exports.addProducts = async (req, res) => {
 exports.editProduct = async (req, res) => {
   try {
     const productId = req.params.id;
-    const { productName, description, regularPrice, salePrice, quantity, category, status, deleteImages } = req.body;
+    const { productName, description, regularPrice, salePrice, quantity, category, subCategory, status, deleteImages } = req.body;
 
     // Validation
     if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -372,6 +484,18 @@ exports.editProduct = async (req, res) => {
     product.salePrice = parseFloat(salePrice);
     product.quantity = parseInt(quantity);
     product.category = category;
+    if (subCategory && mongoose.Types.ObjectId.isValid(subCategory)) {
+      const subcatDoc = await Subcategory.findById(subCategory);
+      if (!subcatDoc) {
+        return res.status(400).json({ error: 'Invalid subcategory' });
+      }
+      if (String(subcatDoc.category) !== String(category)) {
+        return res.status(400).json({ error: 'Subcategory does not belong to selected category' });
+      }
+      product.subCategory = subCategory;
+    } else {
+      product.subCategory = null;
+    }
     product.status = status;
     product.productImage = images;
 
@@ -1413,3 +1537,6 @@ exports.validateAndApplyOffer = async (offerCode, userId, cartItems) => {
 
 
 
+exports.sampleView = async (req,res) =>{
+  res.render('sample')
+}

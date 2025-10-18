@@ -137,42 +137,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Edit Subcategory Modal -->
-        <div class="modal-overlay" id="editSubcategoryModal">
-            <div class="modal">
-                <div class="modal-header">
-                    <div class="modal-title">Edit Subcategory</div>
-                    <button class="modal-close" onclick="closeModal('editSubcategoryModal')">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-content">
-                    <form id="editSubcategoryForm">
-                        <input type="hidden" id="editSubId" />
-                        <div class="form-group">
-                            <label class="form-label" for="editSubcatName">Name</label>
-                            <input type="text" class="form-input" id="editSubcatName" />
-                            <div id="editSubcatName-error" class="error-message" style="color: var(--danger-color);"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="editSubcatCategory">Category</label>
-                            <select class="form-input" id="editSubcatCategory">
-                                <option value="">Select Category</option>
-                                <% cat.forEach((category) => { %>
-                                    <option value="<%= category._id %>"><%= category.name %></option>
-                                <% }) %>
-                            </select>
-                            <div id="editSubcatCategory-error" class="error-message" style="color: var(--danger-color);"></div>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-outline" onclick="closeModal('editSubcategoryModal')">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Update Subcategory</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Main Content -->
@@ -312,74 +276,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Subcategory Section -->
-        <div class="recent-table" style="margin-top: 24px;">
-            <div class="table-header">
-                <div class="table-title">Subcategory List</div>
-                <div>
-                    <select id="subcatCategoryFilter" class="form-input" style="margin-right: 8px;">
-                        <option value="">All Categories</option>
-                        <% cat.forEach((category) => { %>
-                            <option value="<%= category._id %>"><%= category.name %></option>
-                        <% }) %>
-                    </select>
-                    <button type="button" class="btn btn-primary" onclick="openModal('addSubcategoryModal')">
-                        <i class="fas fa-plus"></i> Add Subcategory
-                    </button>
-                </div>
-            </div>
-
-            <table id="subcategoryTable">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Category</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="subcategoryTbody">
-                    <tr><td colspan="5" class="no-data">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Add Subcategory Modal -->
-        <div class="modal-overlay" id="addSubcategoryModal">
-            <div class="modal">
-                <div class="modal-header">
-                    <div class="modal-title">Add Subcategory</div>
-                    <button class="modal-close" onclick="closeModal('addSubcategoryModal')">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-content">
-                    <form id="addSubcategoryForm">
-                        <div class="form-group">
-                            <label class="form-label" for="subcatName">Name</label>
-                            <input type="text" class="form-input" id="subcatName" />
-                            <div id="subcatName-error" class="error-message" style="color: var(--danger-color);"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="subcatCategory">Category</label>
-                            <select class="form-input" id="subcatCategory">
-                                <option value="">Select Category</option>
-                                <% cat.forEach((category) => { %>
-                                    <option value="<%= category._id %>"><%= category.name %></option>
-                                <% }) %>
-                            </select>
-                            <div id="subcatCategory-error" class="error-message" style="color: var(--danger-color);"></div>
-                        </div>
-                        <div class="modal-actions">
-                            <button type="button" class="btn btn-outline" onclick="closeModal('addSubcategoryModal')">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Create Subcategory</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
     </main>
 
     <script>
@@ -404,126 +300,6 @@
                     showConfirmButton: false
                 });
             }
-
-        // Subcategory helpers
-        function renderSubcategories(rows) {
-            const tbody = document.getElementById('subcategoryTbody');
-            tbody.innerHTML = '';
-            if (!rows || rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="no-data">No subcategories found</td></tr>';
-                return;
-            }
-            rows.forEach(sub => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${sub.name}</td>
-                    <td>${sub.category ? sub.category.name : '-'}</td>
-                    <td><span class="status-badge ${sub.isActive ? 'status-completed' : 'status-pending'}">${sub.isActive ? 'Active' : 'Inactive'}</span></td>
-                    <td>
-                        <button class="action-icon" onclick="toggleSubcategory('${sub._id}')"><i class="fas ${sub.isActive ? 'fa-ban' : 'fa-check'}"></i></button>
-                        <button class="action-icon" onclick="openEditSubcategory('${sub._id}', '${sub.name.replace(/'/g, "&#39;")}', '${sub.category ? sub.category._id : ''}')"><i class="fas fa-edit"></i></button>
-                    </td>`;
-                tbody.appendChild(tr);
-            });
-        }
-
-        async function loadSubcategories(categoryId = '') {
-            try {
-                const url = categoryId ? `/admin/subcategories?category=${categoryId}` : '/admin/subcategories';
-                const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                const data = await res.json();
-                renderSubcategories(data.subcategories || []);
-            } catch (e) {
-                console.error('Failed to load subcategories', e);
-                renderSubcategories([]);
-            }
-        }
-
-        document.getElementById('subcatCategoryFilter').addEventListener('change', function() {
-            loadSubcategories(this.value);
-        });
-
-        // Initialize subcategories on load
-        loadSubcategories('');
-
-        // Add subcategory
-        document.getElementById('addSubcategoryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const name = document.getElementById('subcatName').value.trim();
-            const category = document.getElementById('subcatCategory').value;
-            clearErrorMessages();
-            if (!name) { displayErrorMessage('subcatName-error', 'Please enter a name'); return; }
-            if (!category) { displayErrorMessage('subcatCategory-error', 'Please select a category'); return; }
-            try {
-                const res = await fetch('/admin/addSubcategory', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({ name, category })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Failed to add subcategory');
-                Swal.fire({ icon: 'success', title: 'Success', text: data.message || 'Subcategory added', timer: 1500, showConfirmButton: false });
-                closeModal('addSubcategoryModal');
-                // reload list respecting current filter
-                const filterVal = document.getElementById('subcatCategoryFilter').value;
-                loadSubcategories(filterVal);
-            } catch (err) {
-                Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to add subcategory' });
-            }
-        });
-
-        window.toggleSubcategory = async function(id) {
-            try {
-                const res = await fetch(`/admin/toggle-subcategory/${id}`, { method: 'PATCH', headers: { 'Accept': 'application/json' } });
-                if (!res.ok) {
-                    const data = await res.json().catch(() => ({}));
-                    throw new Error(data.error || 'Failed to toggle subcategory');
-                }
-                const filterVal = document.getElementById('subcatCategoryFilter').value;
-                loadSubcategories(filterVal);
-            } catch (e) {
-                Swal.fire({ icon: 'error', title: 'Error', text: e.message || 'Failed to toggle subcategory' });
-            }
-        }
-
-        // Open Edit Subcategory modal
-        window.openEditSubcategory = function(id, name, categoryId) {
-            const idInput = document.getElementById('editSubId');
-            const nameInput = document.getElementById('editSubcatName');
-            const catSelect = document.getElementById('editSubcatCategory');
-            if (idInput && nameInput && catSelect) {
-                idInput.value = id;
-                nameInput.value = name;
-                catSelect.value = categoryId || '';
-                openModal('editSubcategoryModal');
-            }
-        }
-
-        // Submit Edit Subcategory
-        document.getElementById('editSubcategoryForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            clearErrorMessages();
-            const id = document.getElementById('editSubId').value;
-            const name = document.getElementById('editSubcatName').value.trim();
-            const category = document.getElementById('editSubcatCategory').value;
-            if (!name) { displayErrorMessage('editSubcatName-error', 'Please enter a name'); return; }
-            if (!category) { displayErrorMessage('editSubcatCategory-error', 'Please select a category'); return; }
-            try {
-                const res = await fetch(`/admin/editSubcategory/${id}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                    body: JSON.stringify({ name, category })
-                });
-                const data = await res.json();
-                if (!res.ok) throw new Error(data.error || 'Failed to update subcategory');
-                Swal.fire({ icon: 'success', title: 'Success', text: data.message || 'Subcategory updated', timer: 1500, showConfirmButton: false });
-                closeModal('editSubcategoryModal');
-                const filterVal = document.getElementById('subcatCategoryFilter').value;
-                loadSubcategories(filterVal);
-            } catch (e) {
-                Swal.fire({ icon: 'error', title: 'Error', text: e.message || 'Failed to update subcategory' });
-            }
-        });
         };
 
         // Toggle sidebar collapse
@@ -715,7 +491,7 @@
 
         // Toggle list/unlist category
 function toggleListCategory(categoryId, isListed) {
-    console.log('toggleListCategory: categoryId=', categoryId, 'isListed=', isListed,);
+    console.log('toggleListCategory: categoryId=', categoryId, 'isListed=', isListed, 'type=', typeof isListed);
     const action = isListed ? 'unlist' : 'list';
     Swal.fire({
         title: `Are you sure?`,

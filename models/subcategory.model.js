@@ -7,11 +7,6 @@ const subcategorySchema = new Schema({
     required: true,
     trim: true
   },
-  type: {
-    type: String,
-    enum: ['size', 'color'],
-    required: true
-  },
   category: {
     type: Schema.Types.ObjectId,
     ref: 'Category',
