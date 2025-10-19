@@ -11,7 +11,7 @@ const productOfferSchema = new mongoose.Schema({
     },
     discountType: {
         type: String,
-        enum: ['percentage', 'amount'],
+        enum: ['percentage', 'fixed'],
         required: true
     },
     discountValue: {
@@ -51,6 +51,12 @@ const productOfferSchema = new mongoose.Schema({
     // Priority for conflict resolution (higher number = higher priority)
     priority: {
         type: Number,
+        min: [1, 'Priority must be at least 1'],
+        max: [10, 'Priority cannot exceed 10'],
+        validate: {
+            validator: Number.isInteger,
+            message: 'Priority must be an integer'
+        },
         default: 1
     },
 

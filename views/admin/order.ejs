@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Orders | Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="/css/admin.css" />
+  <style>
+    .row-actions { display:flex; gap:8px; align-items:center; }
+    .subtable { background:#fafafa; border-radius:8px; padding:8px; margin-top:8px; }
+    .muted { color:#64748b; font-size:12px; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    function statusBadgeClass(status) {
+      switch (status) {
+        case 'Pending': return 'status-badge status-pending';
+        case 'Shipped': return 'status-badge status-warning';
+        case 'Out for Delivery': return 'status-badge status-warning';
+        case 'Delivered': return 'status-badge status-completed';
+        case 'Canceled': return 'status-badge status-cancelled';
+        case 'Return Requested': return 'status-badge status-warning';
+        case 'Returned': return 'status-badge status-completed';
+        default: return 'status-badge';
+      }
+    }
+
+    function goSearch() {
+      const v = document.getElementById('globalSearch').value.trim();
+      const params = new URLSearchParams(window.location.search);
+      if (v) params.set('search', v); else params.delete('search');
+      params.set('page', '1');
+      window.location.href = '/admin/orders?' + params.toString();
+    }
+
+    async function updateOrderStatus(orderId) {
+      const sel = document.getElementById(`order-status-${orderId}`);
+      if (!sel) return;
+      const status = sel.value;
+      try {
+        const res = await fetch(`/admin/orders/${orderId}/status`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Failed');
+        const badge = document.getElementById(`order-badge-${orderId}`);
+        if (badge) { badge.className = statusBadgeClass(status); badge.textContent = status; }
+        Swal.fire({ title:'Updated', text: data.message, icon:'success', timer:1500, showConfirmButton:false });
+      } catch (err) {
+        Swal.fire({ title:'Error', text: err.message, icon:'error' });
+      }
+    }
+
+    async function updateItemStatus(orderId, itemId) {
+      const sel = document.getElementById(`item-status-${itemId}`);
+      if (!sel) return;
+      const status = sel.value;
+      try {
+        const res = await fetch(`/admin/orders/${orderId}/items/${itemId}/status`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Failed');
+        const badge = document.getElementById(`item-badge-${itemId}`);
+        if (badge) { badge.className = statusBadgeClass(status); badge.textContent = status; }
+        if (data.orderStatus) {
+          const ob = document.getElementById(`order-badge-${orderId}`);
+          const os = document.getElementById(`order-status-${orderId}`);
+          if (ob) { ob.className = statusBadgeClass(data.orderStatus); ob.textContent = data.orderStatus; }
+          if (os) { os.value = data.orderStatus; }
+        }
+        Swal.fire({ title:'Updated', text: data.message, icon:'success', timer:1500, showConfirmButton:false });
+      } catch (err) {
+        Swal.fire({ title:'Error', text: err.message, icon:'error' });
+      }
+    }
+  </script>
+</head>
+<body>
+  <header id="sidebar">
+    <div class="logo-container">
+      <div class="logo">
+        <i class="fas fa-cube"></i>
+        <span class="logo-text">U-Craft</span>
+      </div>
+      <button class="collapse-btn" id="collapseBtn">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+    <nav>
+      <ul>
+        <a href="/admin/adminHome"><li><i class="fas fa-home"></i><span class="nav-text">Dashboard</span></li></a>
+        <a href="/admin/userManagement"><li><i class="fas fa-users"></i><span class="nav-text">Users</span></li></a>
+        <a href="/admin/products"><li><i class="fas fa-box"></i><span class="nav-text">Products</span></li></a>
+        <a href="/admin/inventory"><li><i class="fas fa-warehouse"></i><span class="nav-text">Inventory</span></li></a>
+        <a href="/admin/categoryManagement"><li><i class="fas fa-folder"></i><span class="nav-text">Categories</span></li></a>
+        <a href="/admin/orders" class="active"><li><i class="fas fa-shopping-bag"></i><span class="nav-text">Orders</span></li></a>
+        <a href="/admin/sales-report"><li><i class="fas fa-chart-pie"></i><span class="nav-text">Sales</span></li></a>
+        <a href="/admin/couponManagement"><li><i class="fas fa-tag"></i><span class="nav-text">Coupons</span></li></a>
+        <a href="/admin/offerManagement"><li><i class="fas fa-gift"></i><span class="nav-text">Offers</span></li></a>
+      </ul>
+    </nav>
+    <div class="footer-section">
+      <form action="/admin/adminLogout" method="POST" style="margin:0;">
+        <button type="submit" class="logout-btn" id="logoutBtn" style="background:none;border:none;cursor:pointer;display:flex;align-items:center;">
+          <i class="fas fa-sign-out-alt"></i>
+          <span class="logout-text">Logout</span>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <div class="topbar">
+    <div class="search-container">
+      <i class="fas fa-search"></i>
+      <input type="text" id="searchInput" placeholder="Search orders..." onkeyup="searchTable()">
+    </div>
+    <div class="user-actions"></div>
+  </div>
+
+  <main>
+    <div class="table-container">
+      <div class="table-header">
+        <div class="table-title">Order List</div>
+      </div>
+
+      <form method="get" action="/admin/orders" class="order-form">
+        <input type="text" name="search" placeholder="Order ID" value="<%= search %>" onkeyup="searchTable()"/>
+        <select name="status" class="form-select">
+          <option value="">All Status</option>
+          <option value="Pending" <%= status==='Pending'?'selected':'' %>>Pending</option>
+          <option value="Shipped" <%= status==='Shipped'?'selected':'' %>>Shipped</option>
+          <option value="Out for Delivery" <%= status==='Out for Delivery'?'selected':'' %>>Out for Delivery</option>
+          <option value="Delivered" <%= status==='Delivered'?'selected':'' %>>Delivered</option>
+          <option value="Canceled" <%= status==='Canceled'?'selected':'' %>>Canceled</option>
+          <option value="Return Requested" <%= status==='Return Requested'?'selected':'' %>>Return Requested</option>
+          <option value="Returned" <%= status==='Returned'?'selected':'' %>>Returned</option>
+        </select>
+        <select name="sort" class="form-select">
+          <option value="desc" <%= sort==='desc'?'selected':'' %>>Newest</option>
+          <option value="asc" <%= sort==='asc'?'selected':'' %>>Oldest</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a href="/admin/orders"><button type="button" class="btn btn-outline">Clear</button></a>
+      </form>
+
+      <div class="order-table">
+        <table id="orderTable">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Date</th>
+              <th>User</th>
+              <th>Status</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (!orders || orders.length === 0) { %>
+              <tr><td colspan="6" class="text-center">No orders found.</td></tr>
+            <% } %>
+            <% (orders||[]).forEach(order => { %>
+              <tr>
+                <td><%= order.orderID %></td>
+                <td><%= new Date(order.orderDate).toLocaleString() %></td>
+                <td>
+                  <%= order.userId && (order.userId.fullName || order.userId.name) ? (order.userId.fullName || order.userId.name) : 'N/A' %><br>
+                  <span style="color: var(--icon-color);"><%= order.userId && order.userId.email ? order.userId.email : '' %></span>
+                </td>
+                <td>
+                  <span class="status-badge status-<%= order.status.toLowerCase().replace(' ', '-') %>">
+                    <%= order.status %>
+                  </span>
+                </td>
+                <td>₹<%= (order.total||0).toFixed ? order.total.toFixed(2) : Number(order.total||0).toFixed(2) %></td>
+                <td>
+                  <a href="/admin/orders/<%= order._id %>"><button class="view-btn">View</button></a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <% if (currentPage > 1) { %>
+          <a href="?page=<%= currentPage - 1 %>&search=<%= search %>&status=<%= status %>&sort=<%= sort %>" class="prev-next">
+            <i class="fas fa-chevron-left"></i> Previous
+          </a>
+        <% } %>
+        <% for (let i = 1; i <= totalPages; i++) { %>
+          <a href="?page=<%= i %>&search=<%= search %>&status=<%= status %>&sort=<%= sort %>" class="<%= i === currentPage ? 'active' : '' %>">
+            <%= i %>
+          </a>
+        <% } %>
+        <% if (currentPage < totalPages) { %>
+          <a href="?page=<%= currentPage + 1 %>&search=<%= search %>&status=<%= status %>&sort=<%= sort %>" class="prev-next">
+            Next <i class="fas fa-chevron-right"></i>
+          </a>
+        <% } %>
+      </div>
+    </div>
+  </main>
+  <script>
+    function searchTable() {
+      let input = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      let formSearch = (document.querySelector("input[name='search']")?.value || '').toLowerCase();
+      let rows = document.querySelectorAll('#orderTable tbody tr');
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = (text.includes(input) || text.includes(formSearch)) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

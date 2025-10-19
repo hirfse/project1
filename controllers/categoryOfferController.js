@@ -55,6 +55,12 @@ const addCategoryOffer = async (req, res) => {
             });
         }
 
+        // Validate priority (1-10 integer)
+        const p = parseInt(priority, 10) || 1;
+        if (!Number.isInteger(p) || p < 1 || p > 10) {
+            return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
+        }
+
         const categoryOffer = new CategoryOffer({
             name,
             description,
@@ -64,7 +70,7 @@ const addCategoryOffer = async (req, res) => {
             applicableCategories,
             startDate: new Date(startDate),
             endDate: new Date(endDate),
-            priority: priority || 1,
+            priority: p,
             isActive: isActive !== undefined ? isActive : true,
             createdBy: req.session.admin
         });
@@ -169,6 +175,12 @@ const updateCategoryOffer = async (req, res) => {
             });
         }
 
+        // Validate priority (1-10 integer)
+        const p = parseInt(priority, 10) || 1;
+        if (!Number.isInteger(p) || p < 1 || p > 10) {
+            return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
+        }
+
         // Update offer
         offer.name = name;
         offer.description = description;
@@ -178,7 +190,7 @@ const updateCategoryOffer = async (req, res) => {
         offer.applicableCategories = applicableCategories;
         offer.startDate = new Date(startDate);
         offer.endDate = new Date(endDate);
-        offer.priority = priority || 1;
+        offer.priority = p;
         offer.isActive = isActive !== undefined ? isActive : true;
 
         await offer.save();

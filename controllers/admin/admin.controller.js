@@ -821,7 +821,7 @@ exports.getOrderManagement = async (req, res) => {
       .limit(limit)
       .lean();
 
-    res.render('admin/orderManagement', {
+    res.render('admin/order', {
       orders,
       currentPage: page,
       totalPages,
@@ -902,9 +902,26 @@ exports.changeItemStatus = async (req, res) => {
 
     item.status = status;
     order.updatedAt = new Date();
+
+    // Recompute order.status based on items' statuses
+    const items = order.items;
+    const allCanceled = items.every(i => i.status === 'Canceled');
+    const allDelivered = items.every(i => i.status === 'Delivered');
+    const anyReturnRequested = items.some(i => i.status === 'Return Requested');
+    const anyOutForDelivery = items.some(i => i.status === 'Out for Delivery');
+    const anyShipped = items.some(i => i.status === 'Shipped');
+    const anyPending = items.some(i => i.status === 'Pending');
+
+    if (anyReturnRequested) order.status = 'Return Requested';
+    else if (allDelivered) order.status = 'Delivered';
+    else if (allCanceled) order.status = 'Canceled';
+    else if (anyOutForDelivery) order.status = 'Out for Delivery';
+    else if (anyShipped) order.status = 'Shipped';
+    else if (anyPending) order.status = 'Pending';
+
     await order.save();
 
-    res.json({ success: true, message: 'Item status updated successfully' });
+    res.json({ success: true, message: 'Item status updated successfully', orderStatus: order.status });
   } catch (error) {
     console.error('Error updating item status:', error);
     res.status(500).json({ success: false, message: 'Failed to update item status' });
@@ -1021,6 +1038,29 @@ exports.changeOrderStatus = async (req, res) => {
 
     order.status = status;
     order.updatedAt = new Date();
+
+    // Cascade order status to items where appropriate
+    const terminal = new Set(['Delivered', 'Returned', 'Canceled']);
+    const mapStatusToItem = s => {
+      switch (s) {
+        case 'Pending': return 'Pending';
+        case 'Shipped': return 'Shipped';
+        case 'Out for Delivery': return 'Out for Delivery';
+        case 'Delivered': return 'Delivered';
+        case 'Canceled': return 'Canceled';
+        default: return null;
+      }
+    };
+
+    const targetItemStatus = mapStatusToItem(status);
+    if (targetItemStatus) {
+      order.items.forEach(it => {
+        if (!terminal.has(it.status)) {
+          it.status = targetItemStatus;
+        }
+      });
+    }
+
     await order.save();
 
     res.json({ success: true, message: 'Order status updated successfully' });

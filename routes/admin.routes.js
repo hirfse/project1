@@ -119,11 +119,11 @@ router.delete('/category-offer/:id', categoryOfferController.deleteCategoryOffer
 router.patch('/category-offer/:id/toggle-status', categoryOfferController.toggleCategoryOfferStatus);
 
 // Referral Offer Routes
-// router.post('/add-referral-offer', offerController.addReferralOffer);
-// router.get('/referral-offer/:id', offerController.getReferralOfferDetails);
-// router.put('/referral-offer/:id', offerController.updateReferralOffer);
-// router.delete('/referral-offer/:id', offerController.deleteReferralOffer);
-// router.patch('/referral-offer/:id/toggle-status', offerController.toggleReferralOfferStatus);
+router.post('/add-referral-offer', offerController.addReferralOffer);
+router.get('/referral-offer/:id', offerController.getReferralOfferDetails);
+router.put('/referral-offer/:id', offerController.updateReferralOffer);
+router.delete('/referral-offer/:id', offerController.deleteReferralOffer);
+router.patch('/referral-offer/:id/toggle-status', offerController.toggleReferralOfferStatus);
 
 // Sales Report Routes
 const salesReportController = require('../controllers/admin/salesReport.controller');

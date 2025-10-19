@@ -50,6 +50,12 @@ exports.addProductOffer = async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
+    // Validate priority (1-10 integer)
+    const p = parseInt(priority, 10);
+    if (!Number.isInteger(p) || p < 1 || p > 10) {
+      return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
+    }
+
     // Validate dates
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -72,7 +78,7 @@ exports.addProductOffer = async (req, res) => {
       endDate: end,
       isActive: isActive === 'on' || isActive === true,
       applicableProducts: processedProducts,
-      priority: parseInt(priority) || 1,
+      priority: p,
       createdAt: new Date(),
       updatedAt: new Date()
     });
@@ -107,16 +113,28 @@ exports.updateProductOffer = async (req, res) => {
       return res.status(400).json({ success: false, message: 'End date must be after start date' });
     }
 
+    // Validate priority (1-10 integer)
+    const p = parseInt(priority, 10);
+    if (!Number.isInteger(p) || p < 1 || p > 10) {
+      return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
+    }
+
     // Update offer
     offer.name = name;
     offer.description = description;
     offer.discountType = discountType;
     offer.discountValue = parseFloat(discountValue);
-    offer.maxDiscount = parseFloat(maxDiscount);
+    // Only persist maxDiscount for percentage type; otherwise set to 0 for consistency
+    offer.maxDiscount = discountType === 'percentage' ? parseFloat(maxDiscount) : 0;
+    // Handle applicable categories (string or array)
+    if (applicableCategories) {
+      const processed = Array.isArray(applicableCategories) ? applicableCategories : [applicableCategories];
+      offer.applicableCategories = processed;
+    }
     offer.startDate = start;
     offer.endDate = end;
     offer.isActive = isActive === 'on' || isActive === true;
-    offer.priority = parseInt(priority) || 1;
+    offer.priority = p;
     offer.updatedAt = new Date();
 
     await offer.save();
@@ -181,6 +199,12 @@ exports.addCategoryOffer = async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
+    // Validate priority (1-10 integer)
+    const p = parseInt(priority, 10);
+    if (!Number.isInteger(p) || p < 1 || p > 10) {
+      return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
+    }
+
     // Validate dates
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -222,7 +246,7 @@ exports.updateCategoryOffer = async (req, res) => {
     const { id } = req.params;
     const {
       name, description, discountType, discountValue, maxDiscount,
-      startDate, endDate, isActive, priority
+      startDate, endDate, isActive, priority, applicableCategories
     } = req.body;
 
     const offer = await CategoryOffer.findById(id);
@@ -238,6 +262,12 @@ exports.updateCategoryOffer = async (req, res) => {
       return res.status(400).json({ success: false, message: 'End date must be after start date' });
     }
 
+    // Validate priority (1-10 integer)
+    const p = parseInt(priority, 10);
+    if (!Number.isInteger(p) || p < 1 || p > 10) {
+      return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
+    }
+
     // Update offer
     offer.name = name;
     offer.description = description;
@@ -247,7 +277,7 @@ exports.updateCategoryOffer = async (req, res) => {
     offer.startDate = start;
     offer.endDate = end;
     offer.isActive = isActive === 'on' || isActive === true;
-    offer.priority = parseInt(priority) || 1;
+    offer.priority = p;
     offer.updatedAt = new Date();
 
     await offer.save();
@@ -321,92 +351,78 @@ exports.getProductOfferDetails = async (req, res) => {
 exports.getCategoryOfferDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const offer = await CategoryOffer.findById(id)
+    const offerDoc = await CategoryOffer.findById(id)
       .populate('applicableCategories', 'name')
       .lean();
 
-    if (!offer) {
+    if (!offerDoc) {
       return res.status(404).json({ success: false, message: 'Category offer not found' });
     }
 
-    res.status(200).json({ success: true, offer });
+    const applicableCategoryIds = (offerDoc.applicableCategories || []).map(c => c._id ? c._id.toString() : c.toString());
+
+    res.status(200).json({ success: true, offer: offerDoc, applicableCategoryIds });
   } catch (error) {
     console.error('Error fetching category offer details:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch category offer details' });
   }
 };
 
-// Calculate best offer for a product
+// Calculate best offer for a product (priority-first)
 exports.calculateBestOffer = async (productId, categoryId, itemTotal) => {
   try {
     const now = new Date();
-    let bestOffer = null;
-    let maxDiscount = 0;
 
-    // Get active product offers
     const productOffers = await ProductOffer.find({
       applicableProducts: productId,
       isActive: true,
       isBlocked: false,
       startDate: { $lte: now },
       endDate: { $gte: now }
-    }).sort({ priority: -1 });
+    }).lean();
 
-    // Get active category offers
     const categoryOffers = await CategoryOffer.find({
       applicableCategories: categoryId,
       isActive: true,
       isBlocked: false,
       startDate: { $lte: now },
       endDate: { $gte: now }
-    }).sort({ priority: -1 });
+    }).lean();
 
-    // Calculate product offer discounts
-    for (const offer of productOffers) {
-      let discount = 0;
+    // Build a flat list of candidates with computed discount
+    const candidates = [];
+    const computeDiscount = (offer) => {
       if (offer.discountType === 'percentage') {
-        discount = (itemTotal * offer.discountValue) / 100;
+        const d = (itemTotal * offer.discountValue) / 100;
+        return Math.min(d, offer.maxDiscount || 0, itemTotal);
       } else {
-        discount = offer.discountValue;
+        // fixed amount, do not cap with maxDiscount (business rule)
+        return Math.min(offer.discountValue, itemTotal);
       }
+    };
 
-      // Apply max discount limit
-      discount = Math.min(discount, offer.maxDiscount, itemTotal);
-
-      if (discount > maxDiscount) {
-        maxDiscount = discount;
-        bestOffer = {
-          type: 'product',
-          offer: offer,
-          discount: discount
-        };
-      }
+    for (const o of productOffers) {
+      candidates.push({ scope: 'product', offer: o, priority: o.priority || 1, discount: computeDiscount(o) });
+    }
+    for (const o of categoryOffers) {
+      candidates.push({ scope: 'category', offer: o, priority: o.priority || 1, discount: computeDiscount(o) });
     }
 
-    // Calculate category offer discounts
-    for (const offer of categoryOffers) {
-      let discount = 0;
-      if (offer.discountType === 'percentage') {
-        discount = (itemTotal * offer.discountValue) / 100;
-      } else {
-        discount = offer.discountValue;
-      }
+    if (candidates.length === 0) return null;
 
-      // Apply max discount limit
-      discount = Math.min(discount, offer.maxDiscount, itemTotal);
-
-      if (discount > maxDiscount) {
-        maxDiscount = discount;
-        bestOffer = {
-          type: 'category',
-          offer: offer,
-          discount: discount
-        };
-      }
+    // Priority-first: get highest priority, then max discount among those
+    const maxPriority = Math.max(...candidates.map(c => c.priority || 1));
+    const top = candidates.filter(c => (c.priority || 1) === maxPriority);
+    let best = top[0];
+    for (const c of top) {
+      if (c.discount > best.discount) best = c;
     }
 
-    return bestOffer;
-
+    return {
+      type: best.scope,
+      offer: best.offer,
+      discount: best.discount,
+    };
   } catch (error) {
     console.error('Error calculating best offer:', error);
     return null;
@@ -447,170 +463,161 @@ exports.getActiveOffersForDisplay = async () => {
 };
 
 // Referral Offer Management
-// exports.addReferralOffer = async (req, res) => {
-//   try {
-//     const {
-//       name, description, referrerRewardType, referrerRewardValue, referrerMaxReward,
-//       refereeRewardType, refereeRewardValue, refereeMaxReward, minPurchaseAmount,
-//       maxReferralsPerUser, startDate, endDate, isActive
-//     } = req.body;
+exports.addReferralOffer = async (req, res) => {
+  try {
+    const {
+      name, description, referrerRewardType, referrerRewardValue, referrerMaxReward,
+      refereeRewardType, refereeRewardValue, refereeMaxReward, minPurchaseAmount,
+      maxReferralsPerUser, startDate, endDate, isActive
+    } = req.body;
 
-//     // Validate required fields
-//     if (!name || !description || !referrerRewardType || !referrerRewardValue || !referrerMaxReward ||
-//         !refereeRewardType || !refereeRewardValue || !refereeMaxReward || !startDate || !endDate) {
-//       return res.status(400).json({ success: false, message: 'All fields are required' });
-//     }
+    if (!name || !description || !referrerRewardType || referrerRewardValue == null || referrerMaxReward == null ||
+        !refereeRewardType || refereeRewardValue == null || refereeMaxReward == null || !startDate || !endDate) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
 
-//     // Validate dates
-//     const start = new Date(startDate);
-//     const end = new Date(endDate);
-//     if (start >= end) {
-//       return res.status(400).json({ success: false, message: 'End date must be after start date' });
-//     }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (isNaN(start) || isNaN(end) || start >= end) {
+      return res.status(400).json({ success: false, message: 'End date must be after start date' });
+    }
 
-//     // Validate reward values
-//     if (referrerRewardValue <= 0 || refereeRewardValue <= 0) {
-//       return res.status(400).json({ success: false, message: 'Reward values must be greater than 0' });
-//     }
+    if (parseFloat(referrerRewardValue) <= 0 || parseFloat(refereeRewardValue) <= 0) {
+      return res.status(400).json({ success: false, message: 'Reward values must be greater than 0' });
+    }
+    if (parseFloat(referrerMaxReward) < 0 || parseFloat(refereeMaxReward) < 0) {
+      return res.status(400).json({ success: false, message: 'Max reward values cannot be negative' });
+    }
 
-//     if (referrerMaxReward <= 0 || refereeMaxReward <= 0) {
-//       return res.status(400).json({ success: false, message: 'Max reward values must be greater than 0' });
-//     }
+    const newReferralOffer = new ReferralOffer({
+      name,
+      description,
+      referrerRewardType,
+      referrerRewardValue: parseFloat(referrerRewardValue),
+      referrerMaxReward: parseFloat(referrerMaxReward),
+      refereeRewardType,
+      refereeRewardValue: parseFloat(refereeRewardValue),
+      refereeMaxReward: parseFloat(refereeMaxReward),
+      minPurchaseAmount: parseFloat(minPurchaseAmount) || 0,
+      maxReferralsPerUser: parseInt(maxReferralsPerUser) || 10,
+      startDate: start,
+      endDate: end,
+      isActive: isActive === 'on' || isActive === true,
+      isBlocked: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
-//     // Create new referral offer
-//     const newReferralOffer = new ReferralOffer({
-//       name,
-//       description,
-//       referrerRewardType,
-//       referrerRewardValue: parseFloat(referrerRewardValue),
-//       referrerMaxReward: parseFloat(referrerMaxReward),
-//       refereeRewardType,
-//       refereeRewardValue: parseFloat(refereeRewardValue),
-//       refereeMaxReward: parseFloat(refereeMaxReward),
-//       minPurchaseAmount: parseFloat(minPurchaseAmount) || 0,
-//       maxReferralsPerUser: parseInt(maxReferralsPerUser) || 10,
-//       startDate: start,
-//       endDate: end,
-//       isActive: isActive === 'on' || isActive === true,
-//       isBlocked: false,
-//       createdAt: new Date(),
-//       updatedAt: new Date()
-//     });
+    await newReferralOffer.save();
+    res.status(200).json({ success: true, message: 'Referral offer added successfully' });
 
-//     await newReferralOffer.save();
-//     res.status(200).json({ success: true, message: 'Referral offer added successfully' });
+  } catch (error) {
+    console.error('Error adding referral offer:', error);
+    res.status(500).json({ success: false, message: 'Failed to add referral offer' });
+  }
+};
 
-//   } catch (error) {
-//     console.error('Error adding referral offer:', error);
-//     res.status(500).json({ success: false, message: 'Failed to add referral offer' });
-//   }
-// };
+exports.updateReferralOffer = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      name, description, referrerRewardType, referrerRewardValue, referrerMaxReward,
+      refereeRewardType, refereeRewardValue, refereeMaxReward, minPurchaseAmount,
+      maxReferralsPerUser, startDate, endDate, isActive
+    } = req.body;
 
-// exports.updateReferralOffer = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const {
-//       name, description, referrerRewardType, referrerRewardValue, referrerMaxReward,
-//       refereeRewardType, refereeRewardValue, refereeMaxReward, minPurchaseAmount,
-//       maxReferralsPerUser, startDate, endDate, isActive
-//     } = req.body;
+    const referralOffer = await ReferralOffer.findById(id);
+    if (!referralOffer) {
+      return res.status(404).json({ success: false, message: 'Referral offer not found' });
+    }
 
-//     // Find the referral offer
-//     const referralOffer = await ReferralOffer.findById(id);
-//     if (!referralOffer) {
-//       return res.status(404).json({ success: false, message: 'Referral offer not found' });
-//     }
+    if (!name || !description || !referrerRewardType || referrerRewardValue == null || referrerMaxReward == null ||
+        !refereeRewardType || refereeRewardValue == null || refereeMaxReward == null || !startDate || !endDate) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
 
-//     // Validate required fields
-//     if (!name || !description || !referrerRewardType || !referrerRewardValue || !referrerMaxReward ||
-//         !refereeRewardType || !refereeRewardValue || !refereeMaxReward || !startDate || !endDate) {
-//       return res.status(400).json({ success: false, message: 'All fields are required' });
-//     }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (isNaN(start) || isNaN(end) || start >= end) {
+      return res.status(400).json({ success: false, message: 'End date must be after start date' });
+    }
 
-//     // Validate dates
-//     const start = new Date(startDate);
-//     const end = new Date(endDate);
-//     if (start >= end) {
-//       return res.status(400).json({ success: false, message: 'End date must be after start date' });
-//     }
+    referralOffer.name = name;
+    referralOffer.description = description;
+    referralOffer.referrerRewardType = referrerRewardType;
+    referralOffer.referrerRewardValue = parseFloat(referrerRewardValue);
+    referralOffer.referrerMaxReward = parseFloat(referrerMaxReward);
+    referralOffer.refereeRewardType = refereeRewardType;
+    referralOffer.refereeRewardValue = parseFloat(refereeRewardValue);
+    referralOffer.refereeMaxReward = parseFloat(refereeMaxReward);
+    referralOffer.minPurchaseAmount = parseFloat(minPurchaseAmount) || 0;
+    referralOffer.maxReferralsPerUser = parseInt(maxReferralsPerUser) || 10;
+    referralOffer.startDate = start;
+    referralOffer.endDate = end;
+    referralOffer.isActive = isActive === 'on' || isActive === true;
+    referralOffer.updatedAt = new Date();
 
-//     // Update referral offer
-//     referralOffer.name = name;
-//     referralOffer.description = description;
-//     referralOffer.referrerRewardType = referrerRewardType;
-//     referralOffer.referrerRewardValue = parseFloat(referrerRewardValue);
-//     referralOffer.referrerMaxReward = parseFloat(referrerMaxReward);
-//     referralOffer.refereeRewardType = refereeRewardType;
-//     referralOffer.refereeRewardValue = parseFloat(refereeRewardValue);
-//     referralOffer.refereeMaxReward = parseFloat(refereeMaxReward);
-//     referralOffer.minPurchaseAmount = parseFloat(minPurchaseAmount) || 0;
-//     referralOffer.maxReferralsPerUser = parseInt(maxReferralsPerUser) || 10;
-//     referralOffer.startDate = start;
-//     referralOffer.endDate = end;
-//     referralOffer.isActive = isActive === 'on' || isActive === true;
-//     referralOffer.updatedAt = new Date();
+    await referralOffer.save();
+    res.status(200).json({ success: true, message: 'Referral offer updated successfully' });
 
-//     await referralOffer.save();
-//     res.status(200).json({ success: true, message: 'Referral offer updated successfully' });
+  } catch (error) {
+    console.error('Error updating referral offer:', error);
+    res.status(500).json({ success: false, message: 'Failed to update referral offer' });
+  }
+};
 
-//   } catch (error) {
-//     console.error('Error updating referral offer:', error);
-//     res.status(500).json({ success: false, message: 'Failed to update referral offer' });
-//   }
-// };
+exports.deleteReferralOffer = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-// exports.deleteReferralOffer = async (req, res) => {
-//   try {
-//     const { id } = req.params;
+    const referralOffer = await ReferralOffer.findById(id);
+    if (!referralOffer) {
+      return res.status(404).json({ success: false, message: 'Referral offer not found' });
+    }
 
-//     const referralOffer = await ReferralOffer.findById(id);
-//     if (!referralOffer) {
-//       return res.status(404).json({ success: false, message: 'Referral offer not found' });
-//     }
+    await ReferralOffer.findByIdAndDelete(id);
+    res.status(200).json({ success: true, message: 'Referral offer deleted successfully' });
 
-//     await ReferralOffer.findByIdAndDelete(id);
-//     res.status(200).json({ success: true, message: 'Referral offer deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting referral offer:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete referral offer' });
+  }
+};
 
-//   } catch (error) {
-//     console.error('Error deleting referral offer:', error);
-//     res.status(500).json({ success: false, message: 'Failed to delete referral offer' });
-//   }
-// };
+exports.toggleReferralOfferStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-// exports.toggleReferralOfferStatus = async (req, res) => {
-//   try {
-//     const { id } = req.params;
+    const referralOffer = await ReferralOffer.findById(id);
+    if (!referralOffer) {
+      return res.status(404).json({ success: false, message: 'Referral offer not found' });
+    }
 
-//     const referralOffer = await ReferralOffer.findById(id);
-//     if (!referralOffer) {
-//       return res.status(404).json({ success: false, message: 'Referral offer not found' });
-//     }
+    referralOffer.isBlocked = !referralOffer.isBlocked;
+    referralOffer.updatedAt = new Date();
+    await referralOffer.save();
 
-//     referralOffer.isBlocked = !referralOffer.isBlocked;
-//     referralOffer.updatedAt = new Date();
-//     await referralOffer.save();
+    const status = referralOffer.isBlocked ? 'blocked' : 'unblocked';
+    res.status(200).json({ success: true, message: `Referral offer ${status} successfully` });
 
-//     const status = referralOffer.isBlocked ? 'blocked' : 'unblocked';
-//     res.status(200).json({ success: true, message: `Referral offer ${status} successfully` });
+  } catch (error) {
+    console.error('Error toggling referral offer status:', error);
+    res.status(500).json({ success: false, message: 'Failed to toggle referral offer status' });
+  }
+};
 
-//   } catch (error) {
-//     console.error('Error toggling referral offer status:', error);
-//     res.status(500).json({ success: false, message: 'Failed to toggle referral offer status' });
-//   }
-// };
+exports.getReferralOfferDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const offer = await ReferralOffer.findById(id).lean();
 
-// exports.getReferralOfferDetails = async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const offer = await ReferralOffer.findById(id).lean();
+    if (!offer) {
+      return res.status(404).json({ success: false, message: 'Referral offer not found' });
+    }
 
-//     if (!offer) {
-//       return res.status(404).json({ success: false, message: 'Referral offer not found' });
-//     }
-
-//     res.status(200).json({ success: true, offer });
-//   } catch (error) {
-//     console.error('Error fetching referral offer details:', error);
-//     res.status(500).json({ success: false, message: 'Failed to fetch referral offer details' });
-//   }
-// };
+    res.status(200).json({ success: true, offer });
+  } catch (error) {
+    console.error('Error fetching referral offer details:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch referral offer details' });
+  }
+};

@@ -420,7 +420,7 @@
                             </p>
                         </div>
                     <% } else { %>
-                        <form method="post" action="/admin/orders/<%= order._id %>/status" id="statusForm" class="status-form">
+                        <form method="post" action="/admin/orders/<%= order._id %>/status" id="statusForm" class="status-form" onsubmit="return false;">
                             <select name="status" id="statusSelect">
                                 <%
                                 let availableStatuses = [];
@@ -440,7 +440,7 @@
                                     <option value="<%= st %>" <%= order.status===st?'selected':'' %>><%= st %></option>
                                 <% }) %>
                             </select>
-                            <button type="submit" class="btn btn-primary">Update Status</button>
+                            <button type="button" class="btn btn-primary" onclick="submitOrderStatus()">Update Status</button>
                         </form>
                     <% } %>
                     <% if (order.status === 'Return Requested') { %>
@@ -477,9 +477,6 @@
         </div>
     </main>
 
-    <!-- Sweet Alert CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         // Toggle sidebar collapse
         document.getElementById('collapseBtn').addEventListener('click', function() {
@@ -499,9 +496,10 @@
             }
         });
 
-        // Status form submission with SweetAlert
-        document.getElementById('statusForm')?.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Status update via explicit handler (prevents native submit)
+        function submitOrderStatus() {
+            const form = document.getElementById('statusForm');
+            if (!form) return false;
             Swal.fire({
                 title: 'Are you sure?',
                 text: 'Do you want to update the order status?',
@@ -511,22 +509,25 @@
                 cancelButtonText: 'No'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    fetch(this.action, {
+                    fetch(form.action, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: new URLSearchParams(new FormData(this))
+                        body: new URLSearchParams(new FormData(form))
                     })
                     .then(res => res.json())
                     .then(data => {
                         if (data.message) {
                             Swal.fire({
-                                title: 'Success',
-                                text: data.message,
                                 icon: 'success',
-                                confirmButtonText: 'OK'
-                            }).then(() => {
-                                if (!data.error) location.reload();
+                                title: 'Updated',
+                                text: data.message,
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 1500,
+                                timerProgressBar: true,
                             });
+                            if (!data.error) setTimeout(() => location.reload(), 1600);
                         } else if (data.error) {
                             Swal.fire({
                                 title: 'Error',
@@ -538,7 +539,8 @@
                     });
                 }
             });
-        });
+            return false;
+        }
 
         // Return form submission with SweetAlert
         document.getElementById('acceptReturnForm')?.addEventListener('submit', function(e) {

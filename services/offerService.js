@@ -25,56 +25,16 @@ class OfferService {
                 endDate: { $gte: now }
             }).sort({ priority: -1 });
 
-            // Find the best offer (highest discount)
-            let bestOffer = null;
-            let maxDiscount = 0;
-
-            // Check product offers
-            for (const offer of productOffers) {
-                if (offer.discountType === 'percentage') {
-                    // For percentage, we'll calculate based on a reference price
-                    // This will be calculated dynamically when applying
-                    if (offer.discountValue > maxDiscount) {
-                        maxDiscount = offer.discountValue;
-                        bestOffer = {
-                            ...offer.toObject(),
-                            offerType: 'product'
-                        };
-                    }
-                } else if (offer.discountType === 'fixed') {
-                    // For fixed amount, compare directly
-                    if (offer.discountValue > maxDiscount) {
-                        maxDiscount = offer.discountValue;
-                        bestOffer = {
-                            ...offer.toObject(),
-                            offerType: 'product'
-                        };
-                    }
-                }
-            }
-
-            // Check category offers
-            for (const offer of categoryOffers) {
-                if (offer.discountType === 'percentage') {
-                    if (offer.discountValue > maxDiscount) {
-                        maxDiscount = offer.discountValue;
-                        bestOffer = {
-                            ...offer.toObject(),
-                            offerType: 'category'
-                        };
-                    }
-                } else if (offer.discountType === 'fixed') {
-                    if (offer.discountValue > maxDiscount) {
-                        maxDiscount = offer.discountValue;
-                        bestOffer = {
-                            ...offer.toObject(),
-                            offerType: 'category'
-                        };
-                    }
-                }
-            }
-
-            return bestOffer;
+            // Priority-first selection (fallback: highest discountValue)
+            const candidates = [];
+            for (const o of productOffers) candidates.push({ ...o.toObject(), offerType: 'product', priority: o.priority || 1 });
+            for (const o of categoryOffers) candidates.push({ ...o.toObject(), offerType: 'category', priority: o.priority || 1 });
+            if (candidates.length === 0) return null;
+            const maxPriority = Math.max(...candidates.map(c => c.priority));
+            const top = candidates.filter(c => c.priority === maxPriority);
+            // Without price context here, break ties by larger discountValue normalized: percentage treated as their value, fixed as value
+            top.sort((a, b) => (b.discountValue || 0) - (a.discountValue || 0));
+            return top[0];
         } catch (error) {
             console.error('Error getting best offer for product:', error);
             return null;
@@ -84,9 +44,38 @@ class OfferService {
     // Calculate discounted price for a product
     static async calculateDiscountedPrice(product) {
         try {
-            const bestOffer = await this.getBestOfferForProduct(product._id, product.category._id || product.category);
-            
-            if (!bestOffer) {
+            const now = new Date();
+            // Fetch active offers
+            const productOffers = await ProductOffer.find({
+                applicableProducts: product._id,
+                isActive: true,
+                isBlocked: false,
+                startDate: { $lte: now },
+                endDate: { $gte: now }
+            }).lean();
+            const categoryId = product.category._id || product.category;
+            const categoryOffers = await CategoryOffer.find({
+                applicableCategories: categoryId,
+                isActive: true,
+                isBlocked: false,
+                startDate: { $lte: now },
+                endDate: { $gte: now }
+            }).lean();
+
+            const candidates = [];
+            const computeDiscount = (offer) => {
+                if (offer.discountType === 'percentage') {
+                    const d = (product.salePrice * offer.discountValue) / 100;
+                    return Math.min(d, offer.maxDiscount || 0, product.salePrice);
+                } else {
+                    // fixed amount, do not cap with maxDiscount
+                    return Math.min(offer.discountValue, product.salePrice);
+                }
+            };
+            for (const o of productOffers) candidates.push({ ...o, offerType: 'product', priority: o.priority || 1, discountAmount: computeDiscount(o) });
+            for (const o of categoryOffers) candidates.push({ ...o, offerType: 'category', priority: o.priority || 1, discountAmount: computeDiscount(o) });
+
+            if (candidates.length === 0) {
                 return {
                     originalPrice: product.salePrice,
                     discountedPrice: product.salePrice,
@@ -95,15 +84,13 @@ class OfferService {
                 };
             }
 
-            let discountAmount = 0;
-            if (bestOffer.discountType === 'percentage') {
-                discountAmount = (product.salePrice * bestOffer.discountValue) / 100;
-            } else if (bestOffer.discountType === 'fixed') {
-                discountAmount = bestOffer.discountValue;
-            }
+            // Priority-first: choose highest priority first, then by greatest computed discount
+            const maxPriority = Math.max(...candidates.map(c => c.priority));
+            const top = candidates.filter(c => c.priority === maxPriority);
+            top.sort((a, b) => (b.discountAmount || 0) - (a.discountAmount || 0));
+            const bestOffer = top[0];
 
-            // Apply maximum discount limit
-            discountAmount = Math.min(discountAmount, bestOffer.maxDiscount);
+            let discountAmount = bestOffer.discountAmount;
             
             const discountedPrice = Math.max(0, product.salePrice - discountAmount);
 
