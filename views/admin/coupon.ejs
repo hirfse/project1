@@ -465,6 +465,11 @@
                             <input type="number" id="usageLimit" name="usageLimit" class="form-input" required min="1">
                         </div>
                         <div class="form-group">
+                            <label for="perUserUse" class="form-label">Per-User Usage (optional):</label>
+                            <input type="number" id="perUserUse" name="perUserUse" class="form-input" min="0" placeholder="0 = unlimited per user">
+                            <small class="text-muted">Set to 1 to allow each user to use this coupon only once.</small>
+                        </div>
+                        <div class="form-group">
                             <label for="applicableType" class="form-label">Applicable To:</label>
                             <select id="applicableType" name="applicableType" class="form-input" onchange="toggleApplicability()">
                                 <option value="all">All Products</option>
@@ -520,6 +525,7 @@
                             <th>Start Date</th>
                             <th>End Date</th>
                             <th>Usage Limit</th>
+                            <th>Per User</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -554,6 +560,7 @@
                                 <td><%= new Date(coupon.startDate).toLocaleDateString() %></td>
                                 <td><%= new Date(coupon.endDate).toLocaleDateString() %></td>
                                 <td><%= coupon.usedBy.length %>/<%= coupon.usageLimit %></td>
+                                <td><%= coupon.perUserUse || 0 %></td>
                                 <td>
                                     <% if (coupon.isBlocked) { %>
                                         <span class="status-blocked">Blocked</span>
@@ -638,6 +645,7 @@
         const startDate = new Date(document.getElementById('startDate').value);
         const endDate = new Date(document.getElementById('endDate').value);
         const usageLimit = parseInt(document.getElementById('usageLimit').value);
+        const perUserUse = parseInt(document.getElementById('perUserUse').value || '0');
 
         // Validate coupon code
         if (!code || code.length < 3) {
@@ -709,6 +717,15 @@
             return false;
         }
 
+        if (perUserUse < 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Per-User Use',
+                text: 'Per-user usage cannot be negative'
+            });
+            return false;
+        }
+
         return true;
     }
 
@@ -738,6 +755,7 @@
 
         // Handle checkbox
         data.isActive = document.getElementById('isActive').checked;
+        data.perUserUse = document.getElementById('perUserUse').value || 0;
 
         // Get selected products and categories
         const selectedProducts = Array.from(document.getElementById('applicableProducts').selectedOptions)
@@ -808,6 +826,7 @@
                 document.getElementById('endDate').value = new Date(coupon.endDate).toISOString().slice(0, 16);
                 document.getElementById('usageLimit').value = coupon.usageLimit;
                 document.getElementById('isActive').checked = coupon.isActive;
+                document.getElementById('perUserUse').value = coupon.perUserUse || 0;
                 document.getElementById('applicableType').value = coupon.applicableType;
 
                 // Set form for editing

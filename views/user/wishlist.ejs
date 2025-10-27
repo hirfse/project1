@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.6.1/toastify.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * {
             margin: 0;
@@ -274,14 +275,15 @@
         .wishlist-item {
             background-color: #fff;
             border-radius: 12px;
-            padding: 25px;
+            padding: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             transition: all 0.3s ease;
             border: 1px solid rgba(0, 0, 0, 0.05);
-            min-height: 180px;
+            min-height: 220px;
+            position: relative;
+            overflow: hidden;
         }
         .wishlist-item:hover {
             transform: translateY(-3px);
@@ -316,16 +318,19 @@
             height: auto;
             border-radius: 8px;
             margin-bottom: 10px;
+            display: block;
         }
         .wishlist-item .actions {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             width: 100%;
-            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: auto; /* keep actions at bottom within card */
         }
         .wishlist-item button {
-            flex: 1;
-            padding: 12px 20px;
+            flex: 0 1 48%;
+            padding: 12px 16px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
@@ -334,6 +339,7 @@
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            box-sizing: border-box;
         }
         .wishlist-item button.buy-now {
             background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
@@ -395,6 +401,10 @@
             .wishlist-item .actions {
                 flex-direction: column;
                 gap: 8px;
+            }
+            .wishlist-item button {
+                flex: 1 1 auto;
+                width: 100%;
             }
 
             .wishlist-item button {
@@ -536,6 +546,7 @@
                                 </div>
                                 <div class="actions">
                                     <button class="buy-now" onclick="buyNow('<%= product._id %>')">Buy Now</button>
+                                    <button class="add-to-cart" onclick="addToCart('<%= product._id %>')">Add to Cart</button>
                                     <button class="remove" onclick="removeFromWishlist('<%= product._id %>')">Remove</button>
                                 </div>
                             </div>
@@ -662,91 +673,114 @@
                 method: 'POST',
                 data: { quantity: 1 },
                 success: function(response) {
-                    if (response.success) {
-                        Toastify({
-                            text: response.message || 'Added to cart successfully!',
-                            duration: 3000,
-                            close: true,
-                            gravity: 'top',
-                            position: 'right',
-                            backgroundColor: '#4caf50',
-                            stopOnFocus: true
-                        }).showToast();
+                    if (response && response.success) {
+                        // After adding to cart, auto-remove from wishlist then reload
+                        $.ajax({
+                            url: `/wishlist/remove/${productId}`,
+                            method: 'POST'
+                        }).always(function(){
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Added to Cart',
+                                text: 'Item moved to cart and removed from wishlist.',
+                                timer: 1200,
+                                showConfirmButton: false
+                            }).then(() => window.location.reload());
+                        });
+                    } else if (response && response.redirect) {
+                        // If backend sends redirect flag for auth
+                        window.location.href = response.redirect;
                     } else {
-                        Toastify({
-                            text: response.message || 'Failed to add to cart.',
-                            duration: 3000,
-                            close: true,
-                            gravity: 'top',
-                            position: 'right',
-                            backgroundColor: '#f44336',
-                            stopOnFocus: true
-                        }).showToast();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Unable to Add',
+                            text: (response && response.message) ? response.message : 'Failed to add to cart. Please try again.',
+                        });
                     }
                 },
-                error: function() {
-                    Toastify({
-                        text: 'An error occurred. Please try again.',
-                        duration: 3000,
-                        close: true,
-                        gravity: 'top',
-                        position: 'right',
-                        backgroundColor: '#f44336',
-                        stopOnFocus: true
-                    }).showToast();
+                error: function(xhr) {
+                    // If redirected to login, xhr.responseURL often includes '/login'
+                    if (xhr && (xhr.status === 401 || (xhr.responseURL && xhr.responseURL.includes('/login')))) {
+                        Swal.fire({
+                            icon: 'info',
+                            title: 'Please Login',
+                            text: 'You need to login to add items to the cart.',
+                            confirmButtonText: 'Go to Login'
+                        }).then(() => window.location.href = '/login');
+                    } else {
+                        // If server returned HTML instead of JSON (possible redirect), fallback
+                        const isHTML = xhr && typeof xhr.responseText === 'string' && /<\s*!doctype/i.test(xhr.responseText);
+                        if (isHTML) {
+                            window.location.reload();
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'An error occurred. Please try again.',
+                            });
+                        }
+                    }
                 }
             });
         }
 
         // Remove from Wishlist
         function removeFromWishlist(productId) {
-            if (confirm('Are you sure you want to remove this item from your wishlist?')) {
-                $.ajax({
-                    url: `/wishlist/remove/${productId}`,
-                    method: 'POST',
-                    success: function(response) {
-                        if (response.success) {
-                            $(`.wishlist-item[data-product-id="${productId}"]`).remove();
-                            Toastify({
-                                text: response.message || 'Removed from wishlist successfully!',
-                                duration: 3000,
-                                close: true,
-                                gravity: 'top',
-                                position: 'right',
-                                backgroundColor: '#4caf50',
-                                stopOnFocus: true
-                            }).showToast();
-                            if ($('.wishlist-grid').children().length === 0) {
-                                $('.wishlist-container').html(
-                                    '<p class="wishlist-empty">Your wishlist is empty.</p>' +
-                                    '<a href="/productListing" class="continue-shopping">Continue Shopping</a>'
-                                );
+            Swal.fire({
+                title: 'Remove from Wishlist?',
+                text: 'This item will be removed from your wishlist.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, remove',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/wishlist/remove/${productId}`,
+                        method: 'POST',
+                        success: function(response) {
+                            if (response.success) {
+                                $(`.wishlist-item[data-product-id="${productId}"]`).remove();
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Removed',
+                                    text: response.message || 'Item removed from wishlist.',
+                                    timer: 1000,
+                                    showConfirmButton: false
+                                });
+                                if ($('.wishlist-grid').children().length === 0) {
+                                    $('.wishlist-container').html(
+                                        '<p class="wishlist-empty">Your wishlist is empty.</p>' +
+                                        '<a href="/productListing" class="continue-shopping">Continue Shopping</a>'
+                                    );
+                                }
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Failed',
+                                    text: response.message || 'Failed to remove from wishlist.'
+                                });
                             }
-                        } else {
-                            Toastify({
-                                text: response.message || 'Failed to remove from wishlist.',
-                                duration: 3000,
-                                close: true,
-                                gravity: 'top',
-                                position: 'right',
-                                backgroundColor: '#f44336',
-                                stopOnFocus: true
-                            }).showToast();
+                        },
+                        error: function(xhr){
+                            if (xhr && (xhr.status === 401 || (xhr.responseURL && xhr.responseURL.includes('/login')))) {
+                                Swal.fire({
+                                    icon: 'info',
+                                    title: 'Please Login',
+                                    text: 'Login required to modify wishlist.',
+                                    confirmButtonText: 'Go to Login'
+                                }).then(() => window.location.href = '/login');
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: 'An error occurred. Please try again.'
+                                });
+                            }
                         }
-                    },
-                    error: function() {
-                        Toastify({
-                            text: 'An error occurred. Please try again.',
-                            duration: 3000,
-                            close: true,
-                            gravity: 'top',
-                            position: 'right',
-                            backgroundColor: '#f44336',
-                            stopOnFocus: true
-                        }).showToast();
-                    }
-                });
-            }
+                    });
+                }
+            });
         }
 
         function buyNow(productId) {

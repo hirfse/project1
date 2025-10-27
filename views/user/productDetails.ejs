@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
 /* Improved styles for product details page */
@@ -1019,7 +1020,7 @@
                             <button onclick="increaseQuantity()" id="increaseBtn" aria-label="Increase quantity">+</button>
                             <span class="stock-message" id="stockMessage"></span>
                         </div>
-                        <button onclick="addToCart('<%= product._id %>')" id="addToCartBtn" <%= product.quantity <= 0 ? 'disabled' : '' %>>Add to Cart</button>
+                        <button onclick="addToCart('<%= product._id %>')" id="addToCartBtn" <%= (product.quantity <= 0 || (typeof cartProductIds !== 'undefined' && cartProductIds.includes(product._id.toString()))) ? 'disabled' : '' %> title="<%= (typeof cartProductIds !== 'undefined' && cartProductIds.includes(product._id.toString())) ? 'Already in Cart' : 'Add to Cart' %>">Add to Cart</button>
                         <button class="wishlist" onclick="addToWishlist('<%= product._id %>')" id="wishlistBtn">Add to Wishlist</button>
                     </div>
                     <div class="buy-now">
@@ -1591,6 +1592,66 @@
     window.addEventListener('load', function() {
         startStockMonitoring();
     });
+</script>
+
+<script>
+// Add to Cart with SweetAlert and reload
+function addToCart(productId) {
+  const btn = document.getElementById('addToCartBtn');
+  const original = btn ? btn.innerText : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+  fetch('/cart/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ productId, quantity: parseInt(document.getElementById('quantityInput')?.value || '1', 10) })
+  })
+  .then(res => {
+    if (res.status === 401 || res.status === 403) throw new Error('Please login to add items to cart');
+    if (!res.ok) return res.json().then(err => { throw new Error(err.message || err.error || 'Failed to add to cart'); });
+    return res.json();
+  })
+  .then(result => {
+    Swal.fire({ icon: 'success', title: 'Added to Cart!', timer: 1000, showConfirmButton: false });
+    setTimeout(() => window.location.reload(), 700);
+  })
+  .catch(err => {
+    if (err.message.includes('login')) {
+      Swal.fire({ icon: 'warning', title: 'Login Required', text: 'Please login to add items to your cart', showCancelButton: true, confirmButtonText: 'Login Now' })
+      .then(r => { if (r.isConfirmed) window.location.href = '/login'; });
+    } else {
+      Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to add to cart' });
+    }
+  })
+  .finally(() => { if (btn) { btn.disabled = false; btn.innerText = original; } });
+}
+
+// Add to Wishlist with SweetAlert
+function addToWishlist(productId) {
+  const btn = document.getElementById('wishlistBtn');
+  const original = btn ? btn.innerText : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+  fetch(`/wishlist/add/${productId}`, { method: 'POST' })
+    .then(res => {
+      if (res.status === 401 || res.status === 403) throw new Error('Please login to manage wishlist');
+      return res.json();
+    })
+    .then(result => {
+      if (result.success) {
+        Swal.fire({ icon: 'success', title: 'Added to Wishlist!', timer: 1200, showConfirmButton: false });
+      } else {
+        throw new Error(result.message || 'Failed to add to wishlist');
+      }
+    })
+    .catch(err => {
+      if (err.message.includes('login')) {
+        Swal.fire({ icon: 'warning', title: 'Login Required', text: 'Please login to add items to your wishlist', showCancelButton: true, confirmButtonText: 'Login Now' })
+        .then(r => { if (r.isConfirmed) window.location.href = '/login'; });
+      } else {
+        Swal.fire({ icon: 'error', title: 'Error', text: err.message || 'Failed to add to wishlist' });
+      }
+    })
+    .finally(() => { if (btn) { btn.disabled = false; btn.innerText = original; } });
+}
 </script>
 </body>
 </html>

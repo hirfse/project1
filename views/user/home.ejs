@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap"
+        rel="stylesheet">
     <!-- 3d model  -->
     <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
     <style>
@@ -18,47 +22,51 @@
             font-family: 'Poppins', sans-serif;
 
         }
-        body{
+
+        body {
             background-image: url('/images/background/gray-wood-texture.jpg');
             background-size: contain;
         }
+
         .mainhead {
             display: flex;
             justify-content: space-between;
             margin: 10px;
             align-items: center;
         }
+
         .subhead {
             display: flex;
             justify-content: center;
             align-items: center;
         }
-        .buttons .searchBar{
+
+        .buttons .searchBar {
             width: 15rem;
             background-color: transparent;
-            border: 1px solid ;
+            border: 1px solid;
         }
 
-        .buttons img{
+        .buttons img {
             height: 25px;
             cursor: pointer;
         }
 
-        .buttons img:hover{
-            filter:contrast(0)
+        .buttons img:hover {
+            filter: contrast(0)
         }
 
-        .buttons button:hover{
+        .buttons button:hover {
             background-color: rgb(64, 63, 63);
-            color:aliceblue
+            color: aliceblue
         }
 
         .modal {
-            display: none; 
-            position: absolute; 
-            top: 50px; 
-            right: 10px; 
-            z-index: 1000; 
+            display: none;
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            z-index: 1000;
         }
 
         .modal-content {
@@ -66,18 +74,19 @@
             padding: 15px;
             border: 1px solid #888;
             border-radius: 8px;
-            width: 300px; /* Adjust width as needed */
+            width: 300px;
+            /* Adjust width as needed */
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
             text-align: center;
         }
 
-        .modal-content li{
+        .modal-content li {
             list-style-type: none;
             padding: 2px;
             color: black;
         }
 
-        .modal-content a{
+        .modal-content a {
             text-decoration: none;
         }
 
@@ -92,9 +101,9 @@
 
         .close:hover,
         .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
         }
 
 
@@ -103,17 +112,21 @@
             list-style: none;
         }
 
-        .subhead a{
-            text-decoration: none; 
+        .subhead a {
+            text-decoration: none;
             color: black;
         }
+
         .subhead li {
             margin: 20px 10px;
         }
+
         #banner {
             padding: 50px;
         }
-        #banner1, #banner2 {
+
+        #banner1,
+        #banner2 {
             margin: 10px;
             display: flex;
             justify-content: space-between;
@@ -121,22 +134,28 @@
             height: 25rem;
             border: 2px solid black;
         }
-        #banner1 p, #banner2 p {
+
+        #banner1 p,
+        #banner2 p {
             width: 35rem;
             margin: 20px;
             text-align: center;
             font-size: 20px;
         }
-        #banner1 img, #banner2 img {
+
+        #banner1 img,
+        #banner2 img {
             width: 20rem;
             height: auto;
         }
+
         #shopText {
             margin: 5rem 0;
             display: flex;
             justify-content: center;
             align-items: center;
         }
+
         #shopText p {
             font-family: 'playfair';
             font-size: 30px;
@@ -144,11 +163,14 @@
             text-align: center;
             color: gray;
         }
-        .textline, .text2line {
+
+        .textline,
+        .text2line {
             width: 10em;
             border-bottom: 2px solid grey;
             margin-bottom: 20px;
         }
+
         .categoryIcon ul {
             display: flex;
             justify-content: space-around;
@@ -156,6 +178,7 @@
             list-style: none;
             flex-wrap: wrap;
         }
+
         .categoryIcon ul li {
             display: flex;
             flex-direction: column;
@@ -164,30 +187,37 @@
             font-size: large;
             margin: 10px;
         }
+
         .categoryIcon ul li img {
             height: 100px;
             width: auto;
         }
-        #shopProductSection, #customProductSection {
+
+        #shopProductSection,
+        #customProductSection {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin: 20px;
             flex-wrap: wrap;
         }
-        .trendingText, .pointText {
+
+        .trendingText,
+        .pointText {
             display: flex;
             align-items: center;
             margin-top: 40px;
             font-weight: 500;
             font-size: large;
         }
-        .product, .customProduct {
+
+        .product,
+        .customProduct {
             margin: 30px;
             min-width: 200px;
         }
 
-        #shopProductSection img{
+        #shopProductSection img {
             border: 2px solid;
             width: 100%;
             max-width: 10rem;
@@ -195,37 +225,45 @@
             height: auto;
         }
 
-        .customProduct img{
+        .customProduct img {
             width: 100%;
             max-width: 10rem;
             filter: saturate(0);
             height: auto;
-        } 
+        }
+
         .customProductMain img {
             width: 100%;
             max-width: 25rem;
             filter: saturate(0);
             height: auto;
         }
+
         .price {
             color: gray;
             display: flex;
             gap: 10px;
             align-items: center;
         }
+
         .original-price {
             text-decoration: line-through;
         }
+
         .discount-price {
             color: #000000;
             font-weight: bold;
         }
-        .shopButton, .customShopButton {
+
+        .shopButton,
+        .customShopButton {
             display: flex;
             justify-content: center;
             margin: 20px 0;
         }
-        .shopButton button, .customShopButton button {
+
+        .shopButton button,
+        .customShopButton button {
             height: 4rem;
             width: 35rem;
             max-width: 100%;
@@ -237,6 +275,7 @@
             font-size: large;
             cursor: pointer;
         }
+
         .point {
             background-color: black;
             width: 20px;
@@ -245,13 +284,13 @@
             margin: 0 20px;
         }
 
-        .pointText{
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 5px;
-        font-weight: 500;
-        font-size: large;
+        .pointText {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            font-weight: 500;
+            font-size: large;
         }
 
         /* 3d model view  */
@@ -271,8 +310,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            display: none; /* Initially hidden */
-            background: rgba(255, 255, 255, 0.5); /* Optional: Add a light overlay */
+            display: none;
+            /* Initially hidden */
+            background: rgba(255, 255, 255, 0.5);
+            /* Optional: Add a light overlay */
         }
 
         .model-container:hover #modelViewer {
@@ -287,20 +328,25 @@
             padding: 40px 0;
             flex-wrap: wrap;
         }
+
         footer div {
             margin: 10px;
             min-width: 150px;
         }
+
         footer div p {
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         footer ul {
             list-style: none;
         }
+
         footer li {
             margin: 8px 0;
         }
+
         footer input[type="text"] {
             padding: 10px;
             margin-top: 10px;
@@ -308,34 +354,45 @@
             border: none;
             width: 200px;
         }
+
         .buttons {
             display: flex;
             gap: 10px;
             align-items: center;
         }
+
         .buttons input {
             padding: 8px;
             border-radius: 4px;
             border: 1px solid #ccc;
         }
+
         .buttons button {
             padding: 8px 15px;
             border-radius: 4px;
             cursor: pointer;
         }
+
         @media (max-width: 768px) {
-            #banner1, #banner2 {
+
+            #banner1,
+            #banner2 {
                 flex-direction: column;
                 height: auto;
                 padding: 20px;
             }
-            #banner1 img, #banner2 img {
+
+            #banner1 img,
+            #banner2 img {
                 order: -1;
                 margin-bottom: 20px;
             }
-            #shopProductSection, #customProductSection {
+
+            #shopProductSection,
+            #customProductSection {
                 flex-direction: column;
             }
+
             .mainhead {
                 flex-direction: column;
                 gap: 10px;
@@ -343,45 +400,65 @@
         }
     </style>
 </head>
+
 <body>
     <header>
         <div class="mainhead">
             <p>U-Craft .</p>
             <div class="buttons">
                 <input type="text" class="searchBar" placeholder="Search product...">
-                <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()"  class="profileImg">
+                <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()"
+                    class="profileImg">
                 <form action="/logout" method="POST" style="display:inline;">
                     <button type="submit">Logout</button>
                 </form>
             </div>
             <div id="profileViewModal" class="modal">
                 <div class="modal-content" onmouseleave="closeViewModal()">
-                    
+
                     <% if (userName) { %>
-                        <p>Welcome, <strong><%= userName.toUpperCase() %></strong>!</p>
-                    <% } else { %>
-                        <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
-                    <% } %>
-                    <ul>
-                        <a href="/profile"><li>Profile</li></a>
-                        <a href="/wishlist"><li>Wish List</li></a>
-                        <a href="/cart"><li>Cart</li></a>
-                        <a href="/wallet"><li>Wallet</li></a>
-                    </ul>
+                        <p>Welcome, <strong>
+                                <%= userName.toUpperCase() %>
+                            </strong>!</p>
+                        <% } else { %>
+                            <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
+                            <% } %>
+                                <ul>
+                                    <a href="/profile">
+                                        <li>Profile</li>
+                                    </a>
+                                    <a href="/wishlist">
+                                        <li>Wish List</li>
+                                    </a>
+                                    <a href="/cart">
+                                        <li>Cart</li>
+                                    </a>
+                                    <a href="/wallet">
+                                        <li>Wallet</li>
+                                    </a>
+                                </ul>
                 </div>
             </div>
-            
+
         </div>
         <div class="subhead">
             <nav>
                 <ul>
                     <li>Home</li>
-                    <a href="/productListing"><li>Shop</li></a>
-                    <a href="/customListing"><li>Custom</li></a>
-                    <a href="/about"><li>About</li></a>
-                    <a href="/contact"><li>Contact</li></a>
+                    <a href="/productListing">
+                        <li>Shop</li>
+                    </a>
+                    <a href="/customListing">
+                        <li>Custom</li>
+                    </a>
+                    <a href="/about">
+                        <li>About</li>
+                    </a>
+                    <a href="/contact">
+                        <li>Contact</li>
+                    </a>
                 </ul>
-            </nav> 
+            </nav>
         </div>
     </header>
     <main>
@@ -393,7 +470,7 @@
             <div id="banner2">
                 <img src="/images/project_icons/banner2.png" alt="">
                 <p>"Your Offer, Your Time!” ?Lock exclusive deals and claim them even after they're gone!<br>
-                    -  Coming Soon... !
+                    - Coming Soon... !
                 </p>
             </div>
         </div>
@@ -406,7 +483,7 @@
                 </p>
                 <div class="text2line"></div>
             </div>
-           
+
             <div class="categoryIcon">
                 <ul>
                     <li><img src="/images/project_icons/unisex.png" alt="">UNISEX</li>
@@ -421,8 +498,37 @@
                 <p>TRENDING</p>
             </div>
             <div id="shopProductSection">
-                <!-- Product 1 -->
-                <div class="product">
+
+                <% products.forEach(product=> { %>
+                    <div class="product">
+                        <div class="product-image">
+                            <img src="/Uploads/product-images/<%= Array.isArray(product.productImage) && product.productImage.length > 0 
+        ? product.productImage[0] 
+        : 'default.jpg' %>" alt="<%= product.productName %>" />
+                        </div>
+                        <a href="/product/<%= product._id %>" style="text-decoration: none; color: black;">
+                        <div class="product-details">
+                            <p>
+                                <%= product.productName %>
+                            </p>
+
+                            <p class="price">
+                                <% if (product.salePrice < product.regularPrice) { %>
+                                    <span class="original-price">Rs. <%= product.regularPrice.toLocaleString() %></span>
+                                    <span class="discount-price">Rs. <%= product.salePrice.toLocaleString() %></span>
+                                    <% } else { %>
+                                        <span class="discount-price">Rs. <%= product.regularPrice.toLocaleString() %>
+                                                </span>
+                                        <% } %>
+                            </p>
+                        </div>
+                        </a>
+                    </div>
+                    <% }) %>
+
+
+                        <!-- Product 1 -->
+                        <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product1.png" alt="Regular Fit Short-sleeved jersey shirt">
                     </div>
@@ -433,10 +539,10 @@
                             <span class="discount-price">Rs. 1,499.00</span>
                         </p>
                     </div>
-                </div>
-            
-                <!-- Product 2 -->
-                <div class="product">
+                </div> -->
+
+                        <!-- Product 2 -->
+                        <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product2.png" alt="ZW COLLECTION OPENWORK BLOUSE">
                     </div>
@@ -447,10 +553,10 @@
                             <span class="discount-price">Rs. 3,500.00</span>
                         </p>
                     </div>
-                </div>
-            
-                <!-- Product 3 -->
-                <div class="product">
+                </div> -->
+
+                        <!-- Product 3 -->
+                        <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product3.png" alt="Regular Fit Linen shirt">
                     </div>
@@ -461,10 +567,10 @@
                             <span class="discount-price">Rs. 2,999.00</span>
                         </p>
                     </div>
-                </div>
-            
-                <!-- Product 4 -->
-                <div class="product">
+                </div> -->
+
+                        <!-- Product 4 -->
+                        <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product4.png" alt="ZW COLLECTION CULOTTES">
                     </div>
@@ -475,11 +581,12 @@
                             <span class="discount-price">Rs. 3,500.00</span>
                         </p>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <div class="shopButton">
-                <a href="/productListing" style="text-decoration: none;"><button type="submit">Explore Fashion ></button></a>
+                <a href="/productListing" style="text-decoration: none;"><button type="submit">Explore Fashion
+                        ></button></a>
             </div>
         </div>
 
@@ -487,7 +594,8 @@
             <div id="shopText">
                 <div class="textline"></div>
                 <p>Your Way, Your Style .<br>
-                    Upload your image and customize the product effortlessly. Personalization made simple, right on your website - U-Craft.
+                    Upload your image and customize the product effortlessly. Personalization made simple, right on your
+                    website - U-Craft.
                 </p>
                 <div class="text2line"></div>
             </div>
@@ -509,8 +617,8 @@
                         </p>
                     </div>
                 </div>
-            
-               <!-- Product 2 -->
+
+                <!-- Product 2 -->
                 <div class="customProductMain">
                     <div class="pointText">
                         <div class="point"></div>
@@ -519,11 +627,8 @@
                     <div class="product-image">
                         <div class="model-container">
                             <img src="/images/custom_products/custom_hoodie_pair.png" alt="Custom Hoodie">
-                            <model-viewer id="modelViewer"
-                                class="model"
-                                src="/models/Fashion_Duo_0401103937_texture.glb"
-                                alt="3D Model"
-                                auto-rotate
+                            <model-viewer id="modelViewer" class="model"
+                                src="/models/Fashion_Duo_0401103937_texture.glb" alt="3D Model" auto-rotate
                                 camera-controls>
                             </model-viewer>
                         </div>
@@ -536,7 +641,7 @@
                     </div>
                 </div>
 
-            
+
                 <!-- Product 3 -->
                 <div class="customProduct">
                     <div class="pointText">
@@ -594,11 +699,11 @@
     </footer>
 
     <script>
-        function profileViewModal(){
+        function profileViewModal() {
             document.getElementById('profileViewModal').style.display = 'block';
         }
 
-        function closeViewModal(){
+        function closeViewModal() {
             document.getElementById('profileViewModal').style.display = 'none';
         }
 
@@ -612,4 +717,5 @@
         }
     </script>
 </body>
+
 </html>

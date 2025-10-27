@@ -144,10 +144,24 @@ exports.handleAdminLogin = async (req, res) => {
   }
 };
 
-exports.getAdminHome = (req, res) => {
-  res.render('admin/home', { error: null });
-};
 
+
+exports.getAdminHome = async(req, res) => {
+  try{
+    const totalOrders = await Order.countDocuments({});
+    const revenueResult = await Order.aggregate([
+      { $match: { status: 'Delivered' } },
+      { $group: { _id: null, totalRevenue: { $sum: '$total' } } }
+    ]);
+    const recentOrders = await Order.find({}).sort({ orderDate: -1 }).limit(5).populate('userId').lean();
+    const newUsers = await User.find({ createdAt: { $gte: new Date(Date.now() - 7*24*60*60*1000) } }).countDocuments();
+
+    res.render('admin/home', { totalOrders, revenues: revenueResult[0] ? revenueResult[0].totalRevenue : 0, recentOrders, newUsers ,error: null });
+  }catch(error){
+    console.error('Error loading admin home:', error);
+    res.render('admin/home', { totalOrders: 0, revenues: 0, recentOrders: [], error: 'Failed to load dashboard data' });
+  }
+}
 
 /////////
 ///user management

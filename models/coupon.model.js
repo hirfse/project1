@@ -37,6 +37,12 @@ const couponSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    // Optional per-user usage limit. 0 or undefined means unlimited per user.
+    perUserUse: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
     isActive: {
         type: Boolean,
         default: true

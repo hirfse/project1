@@ -26,7 +26,7 @@ exports.addCoupon = async (req, res) => {
   try {
     const {
       code, discountType, discountNumber, maxDiscount, minPurchase,
-      startDate, endDate, usageLimit, isActive, applicableType,
+      startDate, endDate, usageLimit, perUserUse, isActive, applicableType,
       applicableProducts, applicableCategories
     } = req.body;
 
@@ -72,6 +72,7 @@ exports.addCoupon = async (req, res) => {
       startDate: start,
       endDate: end,
       usageLimit: parseInt(usageLimit),
+      perUserUse: perUserUse !== undefined && perUserUse !== '' ? parseInt(perUserUse) : 0,
       isActive: isActive === 'on' || isActive === true,
       isBlocked: false,
       applicableType: applicableType || 'all',
@@ -115,7 +116,7 @@ exports.getCouponDetails = async (req, res) => {
 exports.updateCoupon = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, discountType, discountNumber, maxDiscount, minPurchase, startDate, endDate, usageLimit, isActive } = req.body;
+    const { code, discountType, discountNumber, maxDiscount, minPurchase, startDate, endDate, usageLimit, perUserUse, isActive } = req.body;
 
     // Find the coupon
     const coupon = await Coupon.findById(id);
@@ -154,6 +155,7 @@ exports.updateCoupon = async (req, res) => {
     coupon.startDate = start;
     coupon.endDate = end;
     coupon.usageLimit = parseInt(usageLimit);
+    coupon.perUserUse = perUserUse !== undefined && perUserUse !== '' ? parseInt(perUserUse) : 0;
     coupon.isActive = isActive === 'on' || isActive === true;
     coupon.updatedAt = new Date();
 
@@ -222,11 +224,11 @@ exports.getAvailableCoupons = async (userId, cartItems) => {
         const availableCoupons = [];
 
         for (const coupon of coupons) {
-            // Check if user has already used this coupon
-            const userUsage = coupon.usedBy.find(usage => usage.userId.toString() === userId.toString());
-            if (userUsage) continue;
+            // Check per-user usage
+            const userUses = coupon.usedBy.filter(usage => usage.userId && usage.userId.toString() === userId.toString()).length;
+            if (coupon.perUserUse > 0 && userUses >= coupon.perUserUse) continue;
 
-            // Check usage limit
+            // Check global usage limit
             if (coupon.usedBy.length >= coupon.usageLimit) continue;
 
             // Calculate eligible items and potential discount

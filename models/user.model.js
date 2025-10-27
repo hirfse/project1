@@ -46,7 +46,15 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    profileImage: { type: String } // stores only the filename, not the full path
+    profileImage: { type: String }, // stores only the filename, not the full path
+
+    // Referral fields
+    referralCode: { type: String, unique: true, sparse: true, index: true },
+    referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    referralCount: { type: Number, default: 0 },
+    // Optional wallet/points balances for referral rewards
+    walletBalance: { type: Number, default: 0 },
+    points: { type: Number, default: 0 }
 })
 
 const User = mongoose.model('User',userSchema)

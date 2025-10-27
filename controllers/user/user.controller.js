@@ -8,6 +8,7 @@ const Subcategory = require('../../models/subcategory.model');
 const Order = require('../../models/order.model');
 const OfferService = require('../../services/offerService');
 const mongoose = require('mongoose');
+const ReferralOffer = require('../../models/referralOffer.model');
 
 
 ///////to genertate order id
@@ -23,13 +24,30 @@ const generateOrderID = () => {
 ////// landing page controller
 /////////////////
 exports.getLandingPage = async (req, res) => {
-    try {
-        const products = await Product.find().limit(4);
-        res.render('user/landingPage', { error: null, products, userName: null });
-    } catch (error) {
-        console.error(error);
-        res.render('user/landingPage', { error: 'Failed to load products', products: [], userName: null });
+  try {
+    const products = await Product.find().limit(4);
+    res.render('user/landingPage', { error: null, products, userName: null });
+  } catch (error) {
+    console.error(error);
+    res.render('user/landingPage', { error: 'Failed to load products', products: [], userName: null });
+  }
+};
+
+// Referral landing: store referral code in session and redirect to signup
+exports.referralLanding = async (req, res) => {
+  try {
+    const { code } = req.params;
+    if (code) {
+      const refUser = await User.findOne({ referralCode: code }).lean();
+      if (refUser) {
+        req.session.referralCode = code;
+      }
     }
+  } catch (e) {
+    console.error('Error handling referral landing:', e);
+  } finally {
+    return res.redirect('/signup');
+  }
 };
 
 exports.getSignupPage = (req, res) => {
@@ -49,8 +67,6 @@ exports.handleSignupPage = async (req, res) => {
         if (existingUser) {
             return res.render('user/signup', { error: 'Email already exists' });
         }
-
-
         const otp = Math.floor(1000 + Math.random() * 9000);
         signupOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
 
@@ -95,13 +111,22 @@ exports.verifySignupOTP = (req, res) => {
         }
 
         try {
+            // Determine referredBy from session referralCode, if any (prevent self-referral)
+            let referredById = null;
+            if (req.session && req.session.referralCode) {
+                const referrer = await User.findOne({ referralCode: req.session.referralCode }).lean();
+                if (referrer && referrer.email.toLowerCase() !== email.toLowerCase()) {
+                    referredById = referrer._id;
+                }
+            }
             const newUser = new User({
                 fullName,
                 email,
                 phone,
                 password: hashedPassword,
                 role: 'user',
-                status: 'active'
+                status: 'active',
+                referredBy: referredById
             });
             await newUser.save();
 
@@ -109,6 +134,7 @@ exports.verifySignupOTP = (req, res) => {
             req.session.userEmail = newUser.email;
             req.session.userRole = newUser.role;
             req.session.userName = newUser.fullName;
+            if (req.session) delete req.session.referralCode;
 
             res.render('user/login', { error: 'Signup successful. Please log in.' });
         } catch (error) {
@@ -1041,7 +1067,9 @@ exports.getProductListing = async (req, res) => {
         // Apply offers to products
         const userId = req.session.userId;
         const productsWithOffers = await OfferService.applyOffersToProducts(filteredProducts);
-        const cart = Cart.findOne({userId})
+        const cart = await Cart.findOne({ userId });
+        const cartProductIds = cart ? cart.items.map(i => i.productId.toString()) : [];
+        const cartCount = cart ? cart.items.reduce((sum, it) => sum + (it.quantity || 0), 0) : 0;
         const categories = await Category.find();
         let subcategories = [];
         if (category) {
@@ -1062,7 +1090,8 @@ exports.getProductListing = async (req, res) => {
             minPrice: minPrice || '',
             maxPrice: maxPrice || '',
             subcategories,
-            cart
+            cartProductIds,
+            cartCount
         });
     } catch (error) {
         console.error('Error fetching product listing:', error.message);
@@ -1124,10 +1153,16 @@ exports.getProductDetails = async (req, res) => {
         const productWithOffer = await OfferService.calculateDiscountedPrice(product);
         const relatedProductsWithOffers = await OfferService.applyOffersToProducts(filteredRelated);
 
+        const cart = await Cart.findOne({ userId: req.session.userId });
+        const cartProductIds = cart ? cart.items.map(i => i.productId.toString()) : [];
+        const cartCount = cart ? cart.items.reduce((sum, it) => sum + (it.quantity || 0), 0) : 0;
+
         res.render('user/productDetails', {
             product: { ...product.toObject(), ...productWithOffer },
             relatedProducts: relatedProductsWithOffers,
-            userName: req.session.userName || null
+            userName: req.session.userName || null,
+            cartProductIds,
+            cartCount
         });
     } catch (error) {
         // Render a user-friendly error page
@@ -1179,6 +1214,7 @@ const Cart = require('../../models/cart.model');
 const Wishlist = require('../../models/wishlist.model'); // Assuming a wishlist model exists
 const Offer = require('../../models/offer.model');
 const Coupon = require('../../models/coupon.model');
+const AdminCouponController = require('../admin/coupon.controller');
 const MAX_QUANTITY_PER_PRODUCT = 10; // Define maximum quantity per product
 
 // Add to Cart
@@ -1225,16 +1261,22 @@ exports.addToCart = async (req, res) => {
         const productId = req.params.id;
         const userId = req.session.userId;
         const { quantity } = req.body;
+        const qty = parseInt(quantity, 10);
 
-        console.log('addToCart called with:', { productId, userId, quantity });
+        console.log('addToCart called with:', { productId, userId, quantity: qty });
+
+        // Authentication check
+        if (!userId) {
+            return res.status(401).json({ success: false, message: 'Please login to add items to cart', redirect: '/login' });
+        }
 
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             console.warn('Invalid product ID:', productId);
             return res.status(400).json({ success: false, message: 'Invalid product ID' });
         }
 
-        if (!quantity || isNaN(quantity) || quantity < 1) {
-            console.warn('Invalid quantity:', quantity);
+        if (!qty || isNaN(qty) || qty < 1) {
+            console.warn('Invalid quantity:', qty);
             return res.status(400).json({ success: false, message: 'Invalid quantity' });
         }
 
@@ -1284,7 +1326,7 @@ exports.addToCart = async (req, res) => {
         let newQuantity;
         if (cartItem) {
             // Check if increasing quantity exceeds stock or max limit
-            newQuantity = cartItem.quantity + quantity;
+            newQuantity = cartItem.quantity + qty;
             if (newQuantity > product.quantity) {
                 console.warn('Insufficient stock:', { requested: newQuantity, available: product.quantity });
                 return res.status(400).json({ success: false, message: 'Insufficient stock' });
@@ -1297,17 +1339,17 @@ exports.addToCart = async (req, res) => {
             console.log('Updated cart item quantity:', cartItem.quantity);
         } else {
             // Add new item to cart
-            if (quantity > product.quantity) {
-                console.warn('Requested quantity exceeds stock:', { requested: quantity, available: product.quantity });
+            if (qty > product.quantity) {
+                console.warn('Requested quantity exceeds stock:', { requested: qty, available: product.quantity });
                 return res.status(400).json({ success: false, message: 'Insufficient stock' });
             }
-            if (quantity > MAX_QUANTITY_PER_PRODUCT) {
-                console.warn('Requested quantity exceeds max limit:', { requested: quantity, max: MAX_QUANTITY_PER_PRODUCT });
+            if (qty > MAX_QUANTITY_PER_PRODUCT) {
+                console.warn('Requested quantity exceeds max limit:', { requested: qty, max: MAX_QUANTITY_PER_PRODUCT });
                 return res.status(400).json({ success: false, message: `Cannot add more than ${MAX_QUANTITY_PER_PRODUCT} units of this product` });
             }
-            cart.items.push({ productId, quantity });
-            newQuantity = quantity;
-            console.log('Added new item to cart:', { productId, quantity });
+            cart.items.push({ productId, quantity: qty });
+            newQuantity = qty;
+            console.log('Added new item to cart:', { productId, quantity: qty });
         }
 
         // Remove from wishlist if exists
@@ -1322,7 +1364,7 @@ exports.addToCart = async (req, res) => {
         res.status(200).json({ success: true, message: 'Product added to cart' });
     } catch (error) {
         console.error('Error adding to cart:', error.message, error.stack);
-        res.status(500).json({ success: false, message: 'Failed to add to cart' });
+        res.status(500).json({ success: false, message: 'Failed to add to cart. Please try again.' });
     }
 };
 
@@ -1589,6 +1631,7 @@ exports.getCart = async (req, res) => {
 
     // Filter out invalid items (blocked products, unlisted categories, or out of stock)
     const validItems = [];
+    let hasStockIssue = false;
     for (const item of cart.items) {
       const product = await Product.findById(item.productId).populate('category');
       if (
@@ -1603,6 +1646,9 @@ exports.getCart = async (req, res) => {
           isAvailable: item.quantity <= product.quantity,
           maxStock: product.quantity
         });
+        if (item.quantity > product.quantity) {
+          hasStockIssue = true;
+        }
       }
     }
 
@@ -1612,11 +1658,14 @@ exports.getCart = async (req, res) => {
       await cart.save();
     }
 
+    const cartCount = validItems.reduce((sum, it) => sum + (it.quantity || 0), 0);
     res.render('user/cart', {
       cart: { items: validItems },
       userName: req.session.userName || null,
       error: null,
-      categories
+      categories,
+      cartCount,
+      hasStockIssue
     });
   } catch (error) {
     console.error('Error fetching cart:', error);
@@ -1659,42 +1708,159 @@ exports.removeFromCart = async (req, res) => {
   }
 };
 
-// Update cart quantity via AJAX
+// Update quantity for both cart and buy now
+// This function now handles both cart updates and buy now updates
 exports.setCartQuantity = async (req, res) => {
   try {
     const productId = req.params.id;
-    const userId      = req.session.userId;
-    const { quantity } = req.body;          // <- must be present
+    const userId = req.session.userId;
+    const { quantity, isBuyNow } = req.body;
 
-    if (!quantity || quantity < 1)
+    console.log('setCartQuantity called with:', { productId, quantity, userId, isBuyNow });
+
+    if (!quantity || quantity < 1) {
+      console.log('Invalid quantity:', quantity);
       return res.status(400).json({ success: false, message: 'Invalid quantity' });
+    }
 
-    if (!mongoose.Types.ObjectId.isValid(productId))
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      console.log('Invalid product ID:', productId);
       return res.status(400).json({ success: false, message: 'Invalid product ID' });
+    }
 
-    const product = await Product.findById(productId);
-    if (!product)
+    const product = await Product.findById(productId).populate('category');
+    if (!product) {
+      console.log('Product not found:', productId);
       return res.status(404).json({ success: false, message: 'Product not found' });
+    }
 
-    if (product.quantity < quantity)
-      return res.status(400).json({ success: false, message: `Only ${product.quantity} left` });
+    const MAX_QUANTITY_PER_PRODUCT = 10;
+    if (product.quantity < quantity) {
+      console.log('Insufficient stock:', { requested: quantity, available: product.quantity });
+      return res.status(400).json({ 
+        success: false, 
+        message: `Only ${product.quantity} item${product.quantity === 1 ? '' : 's'} available` 
+      });
+    }
 
-    const cart = await Cart.findOne({ userId });
-    if (!cart)
-      return res.status(404).json({ success: false, message: 'Cart not found' });
+    if (quantity > MAX_QUANTITY_PER_PRODUCT) {
+      console.log('Exceeds max quantity:', { requested: quantity, max: MAX_QUANTITY_PER_PRODUCT });
+      return res.status(400).json({ 
+        success: false, 
+        message: `Cannot add more than ${MAX_QUANTITY_PER_PRODUCT} units of this product` 
+      });
+    }
 
-    const item = cart.items.find(i => i.productId.toString() === productId);
-    if (!item)
-      return res.status(404).json({ success: false, message: 'Item not in cart' });
+    let subtotal, tax, shipping, discount, total, itemTotal, updatedItem;
+    let cartCount = 0;
 
-    item.quantity = quantity;
-    await cart.save();
+    if (isBuyNow) {
+      // Handle Buy Now case
+      console.log('Processing Buy Now update');
+      
+      // Calculate item total
+      itemTotal = quantity * product.salePrice;
+      
+      // Calculate price summary for Buy Now
+      subtotal = itemTotal;
+      tax = subtotal * 0.05; // 5% tax
+      shipping = subtotal > 1000 ? 0 : 50; // Free shipping for orders over 1000
+      discount = 0; // You can add discount calculation here if needed
+      total = subtotal + tax + shipping - discount;
+      
+      // Create updated item for response
+      updatedItem = {
+        productId: product,
+        quantity: quantity,
+        _id: product._id // For consistency with cart response
+      };
+      
+      // Update the session for Buy Now
+      if (req.session.buyNowProduct) {
+        req.session.buyNowProduct.quantity = quantity;
+      }
+      
+      // Get cart count separately for the header
+      const cart = await Cart.findOne({ userId });
+      cartCount = cart ? cart.items.reduce((count, item) => count + item.quantity, 0) : 0;
+    } else {
+      // Handle Cart case
+      let cart = await Cart.findOne({ userId });
+      if (!cart) {
+        console.log('Cart not found for user:', userId);
+        return res.status(404).json({ success: false, message: 'Cart not found' });
+      }
 
-    const itemTotal = item.quantity * product.salePrice;
-    res.json({ success: true, itemTotal });
+      const itemIndex = cart.items.findIndex(i => i.productId.toString() === productId);
+      if (itemIndex === -1) {
+        console.log('Item not in cart:', { productId, cartItems: cart.items });
+        return res.status(404).json({ success: false, message: 'Item not in cart' });
+      }
+
+      // Update the quantity
+      cart.items[itemIndex].quantity = quantity;
+      
+      // Save the cart
+      await cart.save();
+      console.log('Cart updated successfully');
+
+      // Calculate the new totals
+      const updatedCart = await Cart.findOne({ userId }).populate('items.productId');
+      updatedItem = updatedCart.items.find(i => i.productId._id.toString() === productId);
+      
+      if (!updatedItem) {
+        console.error('Failed to find updated item in cart after save');
+        return res.status(500).json({ success: false, message: 'Failed to update cart' });
+      }
+
+      // Calculate all the price components
+      subtotal = updatedCart.items.reduce((sum, it) => {
+        return sum + (it.quantity * (it.productId?.salePrice || 0));
+      }, 0);
+      
+      tax = subtotal * 0.05; // 5% tax as shown in the frontend
+      shipping = subtotal > 1000 ? 0 : 50; // Free shipping for orders over 1000
+      discount = 0; // You can add discount calculation here if needed
+      total = subtotal + tax + shipping - discount;
+      
+      itemTotal = updatedItem.quantity * updatedItem.productId.salePrice;
+      cartCount = updatedCart.items.reduce((count, item) => count + item.quantity, 0);
+    }
+    
+    console.log('Price calculation:', { 
+      subtotal, 
+      tax, 
+      shipping, 
+      discount, 
+      total,
+      isBuyNow,
+      itemTotal,
+      quantity: updatedItem.quantity
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Quantity updated successfully',
+      data: {
+        itemTotal: itemTotal.toFixed(2),
+        quantity: updatedItem.quantity,
+        priceSummary: {
+          subtotal: subtotal.toFixed(2),
+          tax: tax.toFixed(2),
+          shipping: shipping.toFixed(2),
+          discount: discount.toFixed(2),
+          total: total.toFixed(2)
+        },
+        cartCount: cartCount
+      }
+    });
   } catch (err) {
-    console.error(err);                         // <— log the real error
-    res.status(500).json({ success: false, message: 'Could not update cart' });
+    console.error('Error in setCartQuantity:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Could not update cart',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
@@ -2012,12 +2178,19 @@ exports.getCheckout = async (req, res) => {
 
         // Get available offers for user
         const availableOffers = await getAvailableOffers(userId, checkoutItems);
+        // Get available coupons for user
+        const availableCoupons = await AdminCouponController.getAvailableCoupons(userId, checkoutItems);
 
+        // Get user details for Razorpay
+        const user = await User.findById(userId).select('email phone').lean();
+        
         res.render('user/checkout', {
             addresses,
             selectedAddress,
             cart: { items: checkoutItems },
             userName: req.session.userName || null,
+            userEmail: user?.email || '',
+            userPhone: user?.phone || '',
             error: checkoutItems.length === 0 ? (isBuyNow ? 'Product not available for purchase' : 'Your cart is empty') : null,
             categories,
             subtotal,
@@ -2027,7 +2200,8 @@ exports.getCheckout = async (req, res) => {
             total,
             isBuyNow: isBuyNow,
             appliedOffer: req.session.appliedOffer || null,
-            availableOffers: availableOffers
+            availableOffers: availableOffers,
+            availableCoupons: availableCoupons
         });
     } catch (error) {
         console.error('Error fetching checkout page:', error);
@@ -2326,10 +2500,13 @@ exports.placeOrder = async (req, res) => {
         });
         await order.save();
 
-        // Track offer usage if applied
+        // Apply referral rewards if eligible
+        try { await applyReferralRewards(order); } catch (e) { console.error('Referral reward error (COD):', e); }
+
+        // Track coupon usage if applied
         if (appliedOffer && appliedOffer.code) {
             try {
-                await Offer.findOneAndUpdate(
+                await Coupon.findOneAndUpdate(
                     { code: appliedOffer.code.toUpperCase() },
                     {
                         $push: {
@@ -2343,10 +2520,10 @@ exports.placeOrder = async (req, res) => {
                         $set: { updatedAt: new Date() }
                     }
                 );
-                console.log(`Offer ${appliedOffer.code} usage tracked for order ${order.orderID}`);
+                console.log(`Coupon ${appliedOffer.code} usage tracked for order ${order.orderID}`);
             } catch (error) {
-                console.error('Error tracking offer usage:', error);
-                // Don't fail the order if offer tracking fails
+                console.error('Error tracking coupon usage:', error);
+                // Don't fail the order if coupon tracking fails
             }
         }
 
@@ -3306,10 +3483,10 @@ async function processOrderAfterPayment(userId, cartItems, selectedAddress, paym
 
     await order.save();
 
-    // Track offer usage if applied
+    // Track coupon usage if applied
     if (appliedOffer && appliedOffer.code) {
       try {
-        await Offer.findOneAndUpdate(
+        await Coupon.findOneAndUpdate(
           { code: appliedOffer.code.toUpperCase() },
           {
             $push: {
@@ -3324,9 +3501,12 @@ async function processOrderAfterPayment(userId, cartItems, selectedAddress, paym
           }
         );
       } catch (error) {
-        console.error('Error tracking offer usage:', error);
+        console.error('Error tracking coupon usage:', error);
       }
     }
+
+    // Apply referral rewards if eligible
+    try { await applyReferralRewards(order); } catch (e) { console.error('Referral reward error (Razorpay):', e); }
 
     return { success: true, orderId: order._id, orderNumber: order.orderID };
   } catch (error) {
@@ -3459,15 +3639,15 @@ async function validateAndApplyOffer(offerCode, userId, cartItems) {
             return { success: false, message: 'Offer has expired' };
         }
 
-        // Check usage limit
+        // Check global usage limit
         if (offer.usedBy.length >= offer.usageLimit) {
             return { success: false, message: 'Offer usage limit exceeded' };
         }
 
-        // Check if user has already used this offer
-        const userUsage = offer.usedBy.find(usage => usage.userId && usage.userId.toString() === userId.toString());
-        if (userUsage) {
-            return { success: false, message: 'You have already used this offer' };
+        // Check per-user usage limit
+        const userUses = offer.usedBy.filter(usage => usage.userId && usage.userId.toString() === userId.toString()).length;
+        if (typeof offer.perUserUse === 'number' && offer.perUserUse > 0 && userUses >= offer.perUserUse) {
+            return { success: false, message: 'You have reached the usage limit for this offer' };
         }
 
         // Calculate eligible items and discount
@@ -3637,6 +3817,109 @@ async function getAvailableOffers(userId, cartItems) {
     }
 }
 
+// Apply referral rewards for the referee's first eligible order
+async function applyReferralRewards(order) {
+    try {
+        if (!order || !order.userId) return;
+        const user = await User.findById(order.userId);
+        if (!user || !user.referredBy) return; // No referral associated
+
+        // Ensure there is an active referral offer
+        const now = new Date();
+        const offer = await ReferralOffer.findOne({
+            isActive: true,
+            isBlocked: false,
+            startDate: { $lte: now },
+            endDate: { $gte: now }
+        });
+        if (!offer) return;
+
+        // Check min purchase amount
+        const orderTotal = order.total || 0;
+        if (orderTotal < (offer.minPurchaseAmount || 0)) return;
+
+        // Ensure this is the first eligible order for the referee
+        const priorOrders = await Order.countDocuments({ userId: order.userId, _id: { $ne: order._id } });
+        if (priorOrders > 0) return;
+
+        // Check referrer limit
+        const referrer = await User.findById(user.referredBy);
+        if (!referrer) return;
+        if (typeof offer.maxReferralsPerUser === 'number' && offer.maxReferralsPerUser >= 0) {
+            if ((referrer.referralCount || 0) >= offer.maxReferralsPerUser) return;
+        }
+
+        // Helper to compute reward amount/points
+        const computeReward = (type, value, maxCap, base) => {
+            if (type === 'percentage') {
+                const amt = (base * value) / 100;
+                return Math.min(amt, maxCap || amt);
+            } else if (type === 'amount') {
+                return value;
+            } else if (type === 'points') {
+                return Math.max(0, Math.floor(value));
+            }
+            return 0;
+        };
+
+        // Calculate rewards
+        const referrerType = offer.referrerRewardType;
+        const referrerValue = offer.referrerRewardValue;
+        const referrerMax = offer.referrerRewardType === 'percentage' ? offer.referrerMaxReward : undefined;
+        const refereeType = offer.refereeRewardType;
+        const refereeValue = offer.refereeRewardValue;
+        const refereeMax = offer.refereeRewardType === 'percentage' ? offer.refereeMaxReward : undefined;
+
+        const referrerReward = computeReward(referrerType, referrerValue, referrerMax, orderTotal);
+        const refereeReward = computeReward(refereeType, refereeValue, refereeMax, orderTotal);
+
+        // Credit referrer
+        if (referrerType === 'points') {
+            referrer.points = (referrer.points || 0) + referrerReward;
+        } else {
+            let refWallet = await Wallet.findOne({ userId: referrer._id });
+            if (!refWallet) refWallet = new Wallet({ userId: referrer._id, balance: 0, transactions: [] });
+            refWallet.balance += referrerReward;
+            refWallet.transactions.push({
+                type: 'credit',
+                amount: referrerReward,
+                description: `Referral reward (referrer) for order ${order.orderID}`,
+                orderId: order._id
+            });
+            await refWallet.save();
+        }
+
+        // Credit referee
+        if (refereeType === 'points') {
+            user.points = (user.points || 0) + refereeReward;
+        } else {
+            let refWallet2 = await Wallet.findOne({ userId: user._id });
+            if (!refWallet2) refWallet2 = new Wallet({ userId: user._id, balance: 0, transactions: [] });
+            refWallet2.balance += refereeReward;
+            refWallet2.transactions.push({
+                type: 'credit',
+                amount: refereeReward,
+                description: `Referral reward (referee) for order ${order.orderID}`,
+                orderId: order._id
+            });
+            await refWallet2.save();
+        }
+
+        // Update counts and tracking
+        referrer.referralCount = (referrer.referralCount || 0) + 1;
+        await referrer.save();
+        await user.save();
+
+        offer.totalReferrals = (offer.totalReferrals || 0) + 1;
+        const paid = (referrerType === 'points' ? 0 : referrerReward) + (refereeType === 'points' ? 0 : refereeReward);
+        offer.totalRewardsPaid = (offer.totalRewardsPaid || 0) + paid;
+        offer.updatedAt = new Date();
+        await offer.save();
+
+    } catch (err) {
+        console.error('applyReferralRewards error:', err);
+    }
+}
 
 // Helper to generate OTP
 function generateOTP() {
@@ -3655,6 +3938,34 @@ exports.handleLogout = (req,res) =>{
 }
 
 // Wallet Management
+// Generate or return the current user's referral code and share link
+exports.getReferralCode = async (req, res) => {
+    try {
+        const userId = req.session.userId;
+        if (!userId) return res.status(401).json({ success: false, message: 'Not authenticated' });
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        if (!user.referralCode) {
+            const base = (user.fullName || 'USER').replace(/\s+/g, '').slice(0, 4).toUpperCase();
+            let code;
+            do {
+                const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
+                code = `${base}${rand}`;
+            } while (await User.exists({ referralCode: code }));
+            user.referralCode = code;
+            await user.save();
+        }
+
+        const link = `${req.protocol}://${req.get('host')}/r/${user.referralCode}`;
+        return res.json({ success: true, code: user.referralCode, link });
+    } catch (error) {
+        console.error('Error getting referral code:', error);
+        return res.status(500).json({ success: false, message: 'Failed to get referral code' });
+    }
+};
+
 exports.getWallet = async (req, res) => {
     try {
         const userId = req.session.userId;
@@ -3687,7 +3998,7 @@ exports.getWallet = async (req, res) => {
 };
 
 // Helper function to process wallet refund
-async function processWalletRefund(userId, amount, description) {
+exports.processWalletRefund = async function(userId, amount, description) {
     try {
         console.log(`Processing wallet refund: User ${userId}, Amount: ₹${amount}, Description: ${description}`);
 
@@ -3732,5 +4043,7 @@ async function processWalletRefund(userId, amount, description) {
         console.error('Error processing wallet refund:', error);
         throw error;
     }
-}
+};
 
+// Export the module
+module.exports = exports;

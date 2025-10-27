@@ -110,10 +110,19 @@
 
         /* Main content container */
         main {
-            max-width: 1200px;
+            flex: 1 0 auto;
+            padding-bottom: 60px;
+            min-height: calc(100vh - 200px);
             margin: 0 auto;
             padding: 0 20px;
-            flex: 1;
+        }
+
+        footer {
+            flex-shrink: 0;
+            margin-top: auto;
+            position: relative;
+            z-index: 10;
+            background-color: #fff;
         }
 
         /* Filter and Sort section */
@@ -294,16 +303,59 @@
 }
 
         /* Product grid */
+        /* Product image hover effect */
+        .product-image-container {
+            position: relative;
+            width: 100%;
+            padding-top: 100%; /* 1:1 Aspect Ratio */
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .product-image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s ease-in-out;
+        }
+        
+        .product-image-container .primary-image {
+            opacity: 1;
+            z-index: 1;
+        }
+        
+        .product-image-container .secondary-image {
+            opacity: 0;
+            z-index: 2;
+        }
+        
+        .product-image-container:hover .primary-image {
+            opacity: 0;
+        }
+        
+        .product-image-container:hover .secondary-image {
+            opacity: 1;
+        }
+        
         .allProduct {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 20px;
             justify-content: center;
             margin: 30px auto;
+            padding-bottom: 40px;
+            padding-bottom: 100px; /* Add padding at the bottom to prevent footer overlap */
         }
 
         .product {
             background-color: #ffffff4c;
+            display: flex;
+            flex-direction: column;
+            width: 90%;
+            aspect-ratio: 1/1.5; /* Makes the container 1:1.5 aspect ratio (width:height) */
             border-radius: 8px;
             box-shadow: 0 8px 9px rgba(0, 0, 0, 0.1);
             padding: 15px;
@@ -317,19 +369,32 @@
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
 
-        .product img {
+        .product-image-container {
+            position: relative;
             width: 100%;
-            height: auto;
+            padding-top: 100%; /* Creates a square container */
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .product img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
-            aspect-ratio: 1/1;
+            transition: opacity 0.3s ease;
             border-radius: 4px;
         }
 
         .product p {
-            font-size: 1rem;
-            margin: 10px 0;
+            font-size: 14px;
+            margin: 8px 0;
             color: #333;
             font-weight: 500;
+            flex-grow: 1;
         }
 
         .price {
@@ -371,7 +436,10 @@
 
         .product-link {
             text-decoration: none;
-            color: inherit;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
             display: block;
         }
 
@@ -588,6 +656,12 @@
                 <form method="GET" action="/productListing" class="search">
                     <input type="text" class="searchBar" name="search" placeholder="Search product..." value="<%= searchQuery || '' %>" onkeyup="searchProducts()">
                 </form>
+                <a href="/cart" style="position:relative; display:inline-flex; align-items:center;">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span id="cart-badge" style="position:absolute; top:-6px; right:-10px; background:#dc3545; color:#fff; border-radius:10px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">
+                        <%= typeof cartCount !== 'undefined' ? cartCount : 0 %>
+                    </span>
+                </a>
                 <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()" class="profileImg">
                 <form action="/logout" method="POST" style="display:inline;">
                     <button type="submit">Logout</button>
@@ -711,7 +785,14 @@
                 <% products.forEach(product => { %>
                     <div class="product" data-name="<%= product.productName.toLowerCase() %>" data-price="<%= product.salePrice %>" data-date="<%= product.createdAt %>" data-category="<%= product.category ? product.category._id : '' %>">
                         <a href="/product/<%= product._id %>" class="product-link">
-                            <img src="/Uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                            <div class="product-image-container">
+                                <img src="/Uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="primary-image">
+                                <% if (product.productImage.length > 1) { %>
+                                    <img src="/Uploads/product-images/<%= product.productImage[1] %>" alt="<%= product.productName %> - Alternative view" class="secondary-image">
+                                <% } else { %>
+                                    <img src="/Uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="secondary-image">
+                                <% } %>
+                            </div>
                             <p><%= product.productName %></p>
                             <div class="price">
                                 <% if (product.offer && product.discount > 0) { %>
@@ -733,8 +814,11 @@
                                 <% } %>
                             </div>
                         </a>
-                        <button class="add-to-cart-btn" id="cart-btn-<%= product._id %>" onclick="addToCart('<%= product._id %>')" <%= product.quantity === 0 ? 'disabled' : '' %> title="Add to Cart">
+                        <button class="add-to-cart-btn" id="cart-btn-<%= product._id %>" onclick="addToCart('<%= product._id %>')" <%= (product.quantity === 0 || (typeof cartProductIds !== 'undefined' && cartProductIds.includes(product._id.toString()))) ? 'disabled' : '' %> title="<%= (typeof cartProductIds !== 'undefined' && cartProductIds.includes(product._id.toString())) ? 'Already in Cart' : 'Add to Cart' %>">
                             <i class="fas fa-shopping-cart"></i>
+                        </button>
+                        <button class="add-to-cart-btn" style="background-color:#dc3545" id="wish-btn-<%= product._id %>" onclick="addToWishlist('<%= product._id %>')" title="Add to Wishlist">
+                            <i class="fas fa-heart"></i>
                         </button>
                     </div>
                 <% }) %>
@@ -987,11 +1071,10 @@
             button.innerHTML = '<i class="fas fa-check"></i>';
             button.style.backgroundColor = '#28a745';
 
+            // Refresh to reflect disabled state for items now in cart
             setTimeout(() => {
-                button.innerHTML = originalContent;
-                button.style.backgroundColor = '';
-                button.disabled = false;
-            }, 1500);
+                window.location.reload();
+            }, 800);
 
         })
         .catch(error => {

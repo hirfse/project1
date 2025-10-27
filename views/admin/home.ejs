@@ -160,7 +160,7 @@
             <i class="fas fa-rupee-sign"></i>
           </div>
         </div>
-        <span class="stat-value">₹24,780</span>
+        <span class="stat-value"> &#8377; <%= revenues %></span>
         <div class="stat-change up">
           <i class="fas fa-arrow-up"></i>
           <span>12.5% from last month</span>
@@ -173,7 +173,7 @@
             <i class="fas fa-shopping-cart"></i>
           </div>
         </div>
-        <span class="stat-value">1,245</span>
+        <span class="stat-value"><%= totalOrders %></span>
         <div class="stat-change up">
           <i class="fas fa-arrow-up"></i>
           <span>8.2% from last month</span>
@@ -186,7 +186,7 @@
             <i class="fas fa-users"></i>
           </div>
         </div>
-        <span class="stat-value">324</span>
+        <span class="stat-value"><%= newUsers %></span>
         <div class="stat-change down">
           <i class="fas fa-arrow-down"></i>
           <span>3.1% from last month</span>
@@ -249,105 +249,37 @@
             <th>Date</th>
             <th>Amount</th>
             <th>Status</th>
-            <th>Action</th>
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>#ORD-0001</td>
-            <td>
-              <div class="order-item">
+            <% recentOrders.forEach(order => { %>
+              <tr>
+                <td><%= order.orderID %></td>
+                <td>
+                    <div class="order-item">
                 <div class="order-icon">
                   <i class="fas fa-user"></i>
                 </div>
-                <span>John Smith</span>
+                <span><%= order.userId.fullName ? order.userId.fullName : 'Guest' %></span>
               </div>
-            </td>
-            <td>12 May 2023</td>
-            <td>$245.00</td>
-            <td>
-              <span class="status-badge status-completed">Completed</span>
-            </td>
-            <td>
-              <i class="fas fa-ellipsis-v action-icon"></i>
-            </td>
-          </tr>
-          <tr>
-            <td>#ORD-0002</td>
-            <td>
-              <div class="order-item">
-                <div class="order-icon">
-                  <i class="fas fa-user"></i>
-                </div>
-                <span>Sarah Johnson</span>
-              </div>
-            </td>
-            <td>11 May 2023</td>
-            <td>$189.50</td>
-            <td>
-              <span class="status-badge status-processing">Processing</span>
-            </td>
-            <td>
-              <i class="fas fa-ellipsis-v action-icon"></i>
-            </td>
-          </tr>
-          <tr>
-            <td>#ORD-0003</td>
-            <td>
-              <div class="order-item">
-                <div class="order-icon">
-                  <i class="fas fa-user"></i>
-                </div>
-                <span>Michael Brown</span>
-              </div>
-            </td>
-            <td>10 May 2023</td>
-            <td>$320.75</td>
-            <td>
-              <span class="status-badge status-pending">Pending</span>
-            </td>
-            <td>
-              <i class="fas fa-ellipsis-v action-icon"></i>
-            </td>
-          </tr>
-          <tr>
-            <td>#ORD-0004</td>
-            <td>
-              <div class="order-item">
-                <div class="order-icon">
-                  <i class="fas fa-user"></i>
-                </div>
-                <span>Emily Davis</span>
-              </div>
-            </td>
-            <td>9 May 2023</td>
-            <td>$175.20</td>
-            <td>
-              <span class="status-badge status-completed">Completed</span>
-            </td>
-            <td>
-              <i class="fas fa-ellipsis-v action-icon"></i>
-            </td>
-          </tr>
-          <tr>
-            <td>#ORD-0005</td>
-            <td>
-              <div class="order-item">
-                <div class="order-icon">
-                  <i class="fas fa-user"></i>
-                </div>
-                <span>Robert Wilson</span>
-              </div>
-            </td>
-            <td>8 May 2023</td>
-            <td>$420.00</td>
-            <td>
-              <span class="status-badge status-completed">Completed</span>
-            </td>
-            <td>
-              <i class="fas fa-ellipsis-v action-icon"></i>
-            </td>
-          </tr>
+                </td>
+                <td><%= order.orderDate.toLocaleDateString() %></td>
+                <td>₹ <%= order.total %></td>
+                <td>
+                  <span class="status-badge 
+                    <% if (order.status === 'Delivered') { %>status-completed<% } 
+                      else if (order.status === 'Pending') { %>status-pending<% } 
+                      else if (order.status === 'Canceled') { %>status-canceled<% } 
+                      else if (order.status === 'Shipped') { %>status-shipped<% } 
+                      else if (order.status === 'Out for Delivery') { %>status-outfordelivery<% } 
+                      else if (order.status === 'Returned') { %>status-returned<% } 
+                      else { %>status-default<% } %>">
+                    <%= order.status %>
+                  </span>
+                </td>
+
+              </tr>
+            <% }) %>
         </tbody>
       </table>
     </div>

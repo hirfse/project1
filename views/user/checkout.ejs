@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.27/dist/sweetalert2.all.min.js" integrity="sha256-t0FDfwj/WsxM3Fh9kZryyEODv2tG+QAlMlM4Pz0L+Q=" crossorigin="anonymous"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         body {
@@ -261,7 +262,7 @@ footer p {
 }
     </style>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans" data-buy-now="<%= isBuyNow ? 'true' : 'false' %>">
     <!-- Header -->
     <header class="bg-white shadow">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
@@ -299,22 +300,31 @@ footer p {
                 <% if (!addresses || addresses.length === 0) { %>
                     <p class="text-gray-600">No addresses found. Please add an address to proceed.</p>
                 <% } else { %>
-                    <form id="addressForm" action="/checkout/select-address" method="POST">
+                    <form id="addressForm" method="POST">
                         <% addresses.forEach((address, index) => { %>
                             <div class="border p-4 rounded-lg mb-4 <%= address.isDefault ? 'border-blue-500' : 'border-gray-200' %>">
-                                <label class="flex items-center">
-                                    <input type="radio" name="selectedAddress" value="<%= address._id %>" <%= address.isDefault ? 'checked' : '' %> class="mr-2">
+                                <label class="flex items-start">
+                                    <input 
+                                        type="radio" 
+                                        name="selectedAddress" 
+                                        value="<%= address._id %>" 
+                                        <%= address.isDefault ? 'checked' : '' %> 
+                                        class="mt-1 mr-3"
+                                        required
+                                    >
                                     <div>
                                         <p class="font-semibold"><%= address.fullName %> (<%= address.addressType %>)</p>
                                         <p><%= address.houseName %>, <%= address.city %>, <%= address.state %> - <%= address.pincode %></p>
-                                        <p>Phone: <%= address.phone %> <% if (address.secPhone) { %>, Alt: <%= address.secPhone %><% } %></p>
-                                        <p>Landmark: <%= address.landMark %></p>
-                                        <a href="/addresses/edit/<%= address._id %>" class="text-blue-600 hover:underline">Edit</a>
+                                        <p>Phone: <%= address.phone %><% if (address.secPhone) { %>, Alt: <%= address.secPhone %><% } %></p>
+                                        <p class="text-sm text-gray-600">Landmark: <%= address.landMark %></p>
+                                        <a href="/addresses/edit/<%= address._id %>" class="text-blue-600 hover:underline text-sm">Edit</a>
                                     </div>
                                 </label>
                             </div>
                         <% }) %>
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Save Address Selection</button>
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-save mr-2"></i>Save Address Selection
+                        </button>
                     </form>
                 <% } %>
 
@@ -355,12 +365,18 @@ footer p {
                                 <div class="flex-1">
                                     <h4 class="font-semibold"><%= item.productId.productName %></h4>
                                     <div class="flex items-center gap-2">
-                                        <button type="button" class="bg-gray-200 px-2 py-1 rounded" onclick="updateQuantity('<%= item.productId._id %>', 'decrement')">-</button>
-                                        <span id="qty-<%= item.productId._id %>"><%= item.quantity %></span>
-                                        <button type="button" class="bg-gray-200 px-2 py-1 rounded" onclick="updateQuantity('<%= item.productId._id %>', 'increment')">+</button>
+                                        <button type="button" 
+                                                class="quantity-btn decrement bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition-colors" 
+                                                data-product-id="<%= item.productId._id %>"
+                                                onclick="updateQuantity('<%= item.productId._id %>', 'decrement', event)">-</button>
+                                        <span id="qty-<%= item.productId._id %>" class="min-w-[20px] text-center"><%= item.quantity %></span>
+                                        <button type="button" 
+                                                class="quantity-btn increment bg-gray-200 px-2 py-1 rounded hover:bg-gray-300 transition-colors"
+                                                data-product-id="<%= item.productId._id %>"
+                                                onclick="updateQuantity('<%= item.productId._id %>', 'increment', event)">+</button>
                                     </div>
                                     <p class="text-gray-600">Price: ₹<%= item.productId.salePrice.toFixed(2) %></p>
-                                    <p class="font-semibold">Total: ₹<span id="total-<%= item.productId._id %>"><%= (item.quantity * item.productId.salePrice).toFixed(2) %></span></p>
+                                    <p class="font-semibold">Total: <span id="total-<%= item.productId._id %>" data-item-total="<%= item.productId._id %>">₹<%= (item.quantity * item.productId.salePrice).toFixed(2) %></span></p>
                                 </div>
                             </div>
                         <% }) %>
@@ -462,11 +478,58 @@ footer p {
                                             <% }) %>
                                         </div>
                                     </div>
-                                <% } else { %>
+                                <% } %>
+
+                                <!-- Available Coupons Display -->
+                                <% if (availableCoupons && availableCoupons.length > 0) { %>
+                                    <div class="mt-6">
+                                        <h4 class="text-md font-medium mb-3 text-gray-700">
+                                            <i class="fas fa-ticket-alt text-blue-600"></i> Available Coupons for You
+                                        </h4>
+                                        <div class="space-y-3 max-h-60 overflow-y-auto offer-scroll">
+                                            <% availableCoupons.forEach(c => { %>
+                                                <div class="offer-card rounded-lg p-3 bg-white cursor-pointer" onclick="applyOfferCode('<%= c.code %>')">
+                                                    <div class="flex justify-between items-start">
+                                                        <div class="flex-1">
+                                                            <div class="flex items-center gap-2 mb-1">
+                                                                <span class="font-semibold text-blue-800 text-sm"><%= c.code %></span>
+                                                                <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                                                    Coupon
+                                                                </span>
+                                                            </div>
+                                                            <p class="text-sm text-gray-600 mb-1">
+                                                                <% if (c.discountType === 'percentage') { %>
+                                                                    Get <%= c.discountNumber %>% off (up to ₹<%= c.maxDiscount %>)
+                                                                <% } else { %>
+                                                                    Get ₹<%= c.discountNumber %> off
+                                                                <% } %>
+                                                            </p>
+                                                            <div class="flex items-center gap-4 text-xs text-gray-500">
+                                                                <span>Min: ₹<%= c.minPurchase %></span>
+                                                                <span>Expires: <%= new Date(c.endDate).toLocaleDateString('en-IN') %></span>
+                                                                <span><%= c.usageRemaining %> uses left</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="text-right">
+                                                            <div class="text-green-600 font-semibold text-sm">
+                                                                Save up to ₹<%= c.potentialDiscount.toFixed(2) %>
+                                                            </div>
+                                                            <button type="button"
+                                                                    class="mt-1 px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                                                    onclick="event.stopPropagation(); applyOfferCode('<%= c.code %>')">
+                                                                Apply
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <% }) %>
+                                        </div>
+                                    </div>
+                                <% } else if (!availableOffers || availableOffers.length === 0) { %>
                                     <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                                         <p class="text-sm text-yellow-800">
                                             <i class="fas fa-info-circle"></i>
-                                            No offers available for your current cart items.
+                                            No offers or coupons available for your current cart items.
                                         </p>
                                     </div>
                                 <% } %>
@@ -477,31 +540,25 @@ footer p {
                         <div class="mt-6">
                             <div class="flex justify-between">
                                 <span>Subtotal</span>
-                                <span>₹<%= subtotal.toFixed(2) %></span>
+                                <span data-subtotal>₹<%= subtotal.toFixed(2) %></span>
                             </div>
                             <div class="flex justify-between">
                                 <span>Shipping</span>
-                                <span>₹<%= shipping.toFixed(2) %></span>
+                                <span data-shipping>₹<%= shipping.toFixed(2) %></span>
                             </div>
                             <div class="flex justify-between">
                                 <span>Tax (5%)</span>
-                                <span>₹<%= tax.toFixed(2) %></span>
+                                <span data-tax>₹<%= tax.toFixed(2) %></span>
                             </div>
-                            <% if (discount > 0) { %>
-                                <div class="flex justify-between text-green-600">
-                                    <span>Product/Category Discount</span>
-                                    <span>- ₹<%= discount.toFixed(2) %></span>
-                                </div>
-                            <% } %>
                             <% if (appliedOffer && appliedOffer.discountAmount > 0) { %>
                                 <div class="flex justify-between text-green-600">
                                     <span>Offer Discount (<%= appliedOffer.code %>)</span>
-                                    <span>- ₹<%= appliedOffer.discountAmount.toFixed(2) %></span>
+                                    <span data-offer-discount>- ₹<%= appliedOffer.discountAmount.toFixed(2) %></span>
                                 </div>
                             <% } %>
                             <div class="flex justify-between font-semibold text-lg mt-4">
                                 <span>Total</span>
-                                <span>₹<%= total.toFixed(2) %></span>
+                                <span class="total-amount" id="grand-total" data-total>₹<%= total.toFixed(2) %></span>
                             </div>
                         </div>
 
@@ -523,88 +580,92 @@ footer p {
             <p>&copy; 2025 U-Craft. All rights reserved.</p>
         </div>
     </footer>
+<script>
+    // Consolidated checkout script - U-Craft
 
-    <script>
-        // Get DOM elements
-        const razorpayButton = document.getElementById('razorpayButton');
+    // Configuration and DOM elements
+    const CONFIG = {
+        userData: {
+            name: '<%= userName || "" %>',
+            email: '<%= userEmail || "" %>',
+            phone: '<%= userPhone || "" %>'
+        },
+        selectors: {
+            razorpayButton: '#razorpayButton',
+            addressForm: '#addressForm',
+            paymentForm: '#paymentMethodForm',
+            paymentMethodInput: '#paymentMethodInput',
+            placeOrderForm: '#placeOrderForm',
+            offerCode: '#offerCode',
+            offerMessage: '#offerMessage',
+            breadcrumbs: '#breadcrumbs'
+        }
+    };
 
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeBreadcrumbs();
+        initializeEventListeners();
+        initializePaymentHandlers();
+        
         // Client-side validation for address selection
-        document.getElementById('addressForm')?.addEventListener('submit', function(e) {
-            const selected = document.querySelector('input[name="selectedAddress"]:checked');
-            if (!selected) {
-                e.preventDefault();
-                alert('Please select a delivery address.');
-            }
-        });
+        setupAddressValidation();
+    });
 
-        function updateQuantity(productId, action) {
-            fetch('/cart/update-quantity/' + productId, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Reload the page to update totals and quantities
-                    location.reload();
-                } else {
-                    alert(data.message || 'Failed to update quantity');
-                }
-            })
-            .catch(() => alert('Failed to update quantity'));
+    // Breadcrumbs initialization
+    function initializeBreadcrumbs() {
+        const prettyNames = {
+            '': 'Home', 'home': 'Home', 'productlisting': 'Shop', 'customlisting': 'Custom',
+            'profile': 'Profile', 'cart': 'Cart', 'wishlist': 'Wishlist', 'addresses': 'Addresses',
+            'orders': 'Orders', 'checkout': 'Checkout', 'about': 'About', 'contact': 'Contact'
+        };
+
+        function toTitle(str) {
+            return prettyNames[str.toLowerCase()] || str.charAt(0).toUpperCase() + str.slice(1);
         }
 
-        // Dynamic Breadcrumbs
-        (function() {
-            const prettyNames = {
-                '': 'Home',
-                'home': 'Home',
-                'productlisting': 'Shop',
-                'customlisting': 'Custom',
-                'profile': 'Profile',
-                'cart': 'Cart',
-                'wishlist': 'Wishlist',
-                'addresses': 'Addresses',
-                'orders': 'Orders',
-                'checkout': 'Checkout',
-                'about': 'About',
-                'contact': 'Contact'
-            };
-            function toTitle(str) {
-                return prettyNames[str.toLowerCase()] || str.charAt(0).toUpperCase() + str.slice(1);
-            }
-            const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
-            let crumbs = [];
-            let url = '';
-            for (let i = 0; i < path.length; i++) {
-                url += '/' + path[i];
-                crumbs.push({
-                    name: toTitle(path[i]),
-                    url: i < path.length - 1 ? url : null
-                });
-            }
-            if (crumbs.length === 0 || crumbs[0].name !== 'Home') {
-                crumbs.unshift({ name: 'Home', url: '/' });
-            }
-            const nav = document.getElementById('breadcrumbs');
-            if (nav) {
-                nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
-                    crumbs.map((crumb, idx) => {
-                        if (crumb.url) {
-                            return `<li><a href="${crumb.url}" style="color:#888;text-decoration:none;">${crumb.name}</a></li>` +
-                                (idx < crumbs.length - 1 ? '<li style="color:#888;">/</li>' : '');
-                        } else {
-                            return `<li style="color:#333;">${crumb.name}</li>`;
-                        }
-                    }).join('') +
-                    '</ol>';
-            }
-        })();
+        const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+        let crumbs = [];
+        let url = '';
 
-        // Payment method selection logic
-        const paymentForm = document.getElementById('paymentMethodForm');
-        const paymentMethodInput = document.getElementById('paymentMethodInput');
+        for (let i = 0; i < path.length; i++) {
+            url += '/' + path[i];
+            crumbs.push({
+                name: toTitle(path[i]),
+                url: i < path.length - 1 ? url : null
+            });
+        }
+
+        if (crumbs.length === 0 || crumbs[0].name !== 'Home') {
+            crumbs.unshift({ name: 'Home', url: '/' });
+        }
+
+        const nav = document.querySelector(CONFIG.selectors.breadcrumbs);
+        if (nav) {
+            nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
+                crumbs.map((crumb, idx) => {
+                    if (crumb.url) {
+                        return `<li><a href="${crumb.url}" style="color:#888;text-decoration:none;">${crumb.name}</a></li>` +
+                            (idx < crumbs.length - 1 ? '<li style="color:#888;">/</li>' : '');
+                    } else {
+                        return `<li style="color:#333;">${crumb.name}</li>`;
+                    }
+                }).join('') +
+                '</ol>';
+        }
+    }
+
+    // Event listeners initialization
+    function initializeEventListeners() {
+        // Address form submission
+        const addressForm = document.querySelector(CONFIG.selectors.addressForm);
+        if (addressForm) {
+            addressForm.addEventListener('submit', handleAddressSubmit);
+        }
+
+        // Payment method selection
+        const paymentForm = document.querySelector(CONFIG.selectors.paymentForm);
+        const paymentMethodInput = document.querySelector(CONFIG.selectors.paymentMethodInput);
         if (paymentForm && paymentMethodInput) {
             paymentForm.addEventListener('change', function(e) {
                 const selected = paymentForm.querySelector('input[name="paymentMethod"]:checked');
@@ -614,231 +675,542 @@ footer p {
             });
         }
 
-        // Place order form logic
-        const placeOrderForm = document.getElementById('placeOrderForm');
+        // Place order form
+        const placeOrderForm = document.querySelector(CONFIG.selectors.placeOrderForm);
         if (placeOrderForm) {
-            placeOrderForm.addEventListener('submit', function(e) {
-                const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
-                if (!selectedPayment) {
-                    e.preventDefault();
-                    Toastify({
-                        text: "Please select a payment method.",
-                        duration: 3000,
-                        gravity: "top",
-                        position: "right",
-                        backgroundColor: "#f87171"
-                    }).showToast();
-                    return;
-                }
-                if (selectedPayment.value !== 'cod') {
-                    e.preventDefault();
-                    Toastify({
-                        text: "Coming soon!",
-                        duration: 3000,
-                        gravity: "top",
-                        position: "right",
-                        backgroundColor: "#f59e42"
-                    }).showToast();
+            placeOrderForm.addEventListener('submit', handlePlaceOrderSubmit);
+        }
+
+        // Offer code input
+        const offerCodeInput = document.querySelector(CONFIG.selectors.offerCode);
+        if (offerCodeInput) {
+            offerCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    applyOffer();
                 }
             });
         }
 
+        // Quantity buttons using event delegation
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.quantity-btn')) {
+                const button = e.target.closest('.quantity-btn');
+                const productId = button.getAttribute('data-product-id');
+                const action = button.classList.contains('increment') ? 'increment' : 'decrement';
+                updateQuantity(productId, action, e);
+            }
+        });
+    }
 
-
-        // Razorpay integration
+    // Payment handlers initialization
+    function initializePaymentHandlers() {
+        const razorpayButton = document.querySelector(CONFIG.selectors.razorpayButton);
         if (razorpayButton) {
-            razorpayButton.addEventListener('click', function(e) {
-                e.preventDefault(); // Prevent any form submission
+            razorpayButton.addEventListener('click', handleRazorpayPayment);
+        }
+    }
+
+    // Address validation setup
+    function setupAddressValidation() {
+        const addressForm = document.querySelector(CONFIG.selectors.addressForm);
+        if (addressForm) {
+            addressForm.addEventListener('submit', function(e) {
+                const selected = document.querySelector('input[name="selectedAddress"]:checked');
+                if (!selected) {
+                    e.preventDefault();
+                    showToast('Please select a delivery address.', 'error');
+                }
+            });
+        }
+    }
+
+    // Event handlers
+    async function handleAddressSubmit(e) {
+        e.preventDefault();
+        
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalButtonText = submitButton.innerHTML;
+        
+        try {
+            // Show loading state
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+            
+            const formData = new FormData(this);
+            const response = await fetch('/checkout/select-address', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams(formData).toString()
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                await showSuccess(result.message || 'Address selected successfully');
+                window.location.reload();
+            } else {
+                throw new Error(result.message || 'Failed to select address');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            await showError(error.message || 'An error occurred while saving the address');
+        } finally {
+            // Reset button state
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalButtonText;
+        }
+    }
+
+    function handlePlaceOrderSubmit(e) {
+        const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+        if (!selectedPayment) {
+            e.preventDefault();
+            showToast("Please select a payment method.", "error");
+            return;
+        }
+        if (selectedPayment.value !== 'cod') {
+            e.preventDefault();
+            showToast("Coming soon!", "warning");
+        }
+    }
+
+    async function handleRazorpayPayment(e) {
+        e.preventDefault();
+        
+        try {
             const selectedAddress = document.querySelector('input[name="selectedAddress"]:checked');
+            const isBuyNow = document.body.getAttribute('data-buy-now') === 'true';
 
             if (!selectedAddress) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Address Required',
-                    text: 'Please select a delivery address before proceeding with payment.'
-                });
+                await showError('Please select a delivery address');
                 return;
             }
 
-            // First place order to store checkout data
-            fetch('/place-order', {
+            const totalElement = document.querySelector('[data-total]') || 
+                               document.querySelector('.total-amount') ||
+                               document.getElementById('grand-total');
+            
+            if (!totalElement) {
+                throw new Error('Could not find total amount element');
+            }
+
+            const totalAmount = parseFloat(totalElement.textContent.replace(/[^0-9.]/g, '').trim());
+            
+            if (isNaN(totalAmount) || totalAmount <= 0) {
+                throw new Error('Invalid order total. Please try again.');
+            }
+
+            console.log('Processing payment for amount:', totalAmount);
+
+            // Store checkout data in session first
+            const addressResponse = await fetch('/checkout/select-address', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     selectedAddress: selectedAddress.value,
-                    paymentMethod: 'razorpay'
+                    paymentMethod: 'razorpay',
+                    isBuyNow: isBuyNow
                 })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.redirect) {
-                    // Now create Razorpay order
-                    const totalAmount = parseFloat('<%= total %>');
-                    return fetch('/create-order', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ amount: totalAmount })
-                    });
-                } else {
-                    throw new Error(data.message || 'Failed to prepare order');
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // Initialize Razorpay and open checkout
-                    const options = {
-                        key: '<%= process.env.RAZORPAY_KEY_ID %>',
-                        amount: data.order.amount,
-                        currency: 'INR',
-                        name: 'U-Craft',
-                        description: 'Order Payment',
-                        order_id: data.order.id,
-                        handler: function(response) {
-                            // Verify payment
-                            fetch('/verify-payment', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    razorpay_order_id: response.razorpay_order_id,
-                                    razorpay_payment_id: response.razorpay_payment_id,
-                                    razorpay_signature: response.razorpay_signature
-                                })
-                            })
-                            .then(res => res.json())
-                            .then(verifyData => {
-                                if (verifyData.success) {
-                                    window.location.href = `/payment-success?orderId=${verifyData.orderId}`;
-                                } else {
-                                    window.location.href = `/payment-failure?reason=${encodeURIComponent(verifyData.message)}`;
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Payment verification error:', error);
-                                window.location.href = '/payment-failure?reason=Payment verification failed';
-                            });
-                        },
-                        modal: {
-                            ondismiss: function() {
-                                window.location.href = '/payment-failure?reason=Payment cancelled by user';
-                            }
-                        },
-                        theme: {
-                            color: '#667eea'
-                        }
-                    };
-                    const rzp = new Razorpay(options);
-                    rzp.open();
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Payment Error',
-                        text: data.message || 'Failed to initialize payment'
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Payment error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Payment Error',
-                    text: error.message || 'Failed to process payment'
-                });
             });
-        });
-        }
 
-        // Offer application functions
-        async function applyOffer() {
-            const offerCode = document.getElementById('offerCode').value.trim();
-            const messageDiv = document.getElementById('offerMessage');
-
-            if (!offerCode) {
-                showOfferMessage('Please enter an offer code', 'error');
-                return;
+            const addressData = await addressResponse.json();
+            if (!addressResponse.ok || !addressData.success) {
+                throw new Error(addressData.message || 'Failed to update checkout data');
             }
 
-            try {
-                const response = await fetch('/checkout/apply-offer', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ offerCode })
-                });
+            // Create Razorpay order
+            const orderResponse = await fetch('/create-order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    amount: totalAmount,
+                    currency: 'INR',
+                    receipt: `order_${Date.now()}`
+                })
+            });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    showOfferMessage(result.message, 'success');
-                    // Reload page to show updated totals
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1500);
-                } else {
-                    showOfferMessage(result.message, 'error');
-                }
-            } catch (error) {
-                console.error('Error applying offer:', error);
-                showOfferMessage('Failed to apply offer. Please try again.', 'error');
+            const orderData = await orderResponse.json();
+            if (!orderResponse.ok || !orderData.success) {
+                throw new Error(orderData.error || 'Failed to create payment order');
             }
-        }
 
-        async function removeOffer() {
-            try {
-                const response = await fetch('/checkout/remove-offer', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+            // Initialize Razorpay
+            const options = {
+                key: '<%= process.env.RAZORPAY_KEY_ID %>',
+                amount: orderData.order.amount,
+                currency: 'INR',
+                name: 'U-Craft',
+                description: 'Order Payment',
+                order_id: orderData.order.id,
+                handler: async function(response) {
+                    try {
+                        const verifyResponse = await fetch('/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                amount: totalAmount
+                            })
+                        });
+
+                        const verifyData = await verifyResponse.json();
+                        if (verifyData.success) {
+                            window.location.href = '/payment-success';
+                        } else {
+                            throw new Error(verifyData.message || 'Payment verification failed');
+                        }
+                    } catch (error) {
+                        console.error('Payment verification error:', error);
+                        await showError(error.message || 'Failed to verify payment. Please contact support.');
                     }
+                },
+                prefill: {
+                    name: CONFIG.userData.name || '',
+                    email: CONFIG.userData.email || '',
+                    contact: CONFIG.userData.phone || ''
+                },
+                notes: { address: 'Razorpay Corporate Office' },
+                theme: { color: '#667eea', hide_topbar: false }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function(response) {
+                console.error('Payment failed:', response.error);
+                const failureUrl = `/payment-failure?reason=${encodeURIComponent(response.error.description || 'Payment was cancelled or failed')}`;
+                window.location.href = failureUrl;
+            });
+
+            rzp.open();
+
+        } catch (error) {
+            console.error('Payment processing error:', error);
+            const failureUrl = `/payment-failure?reason=${encodeURIComponent(error.message || 'An error occurred while processing your payment')}`;
+            window.location.href = failureUrl;
+        }
+    }
+
+    // Utility functions
+    async function showError(message) {
+        console.error('Error:', message);
+        if (typeof Swal !== 'undefined') {
+            return Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: message,
+                confirmButtonColor: '#3b82f6',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            alert(message);
+            return Promise.resolve();
+        }
+    }
+
+    async function showSuccess(message) {
+        if (typeof Swal !== 'undefined') {
+            return Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: message,
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'OK'
+            });
+        } else {
+            alert(message);
+            return Promise.resolve();
+        }
+    }
+
+    function showToast(message, type = 'info') {
+        const colors = {
+            error: '#f87171',
+            warning: '#f59e42',
+            info: '#3b82f6',
+            success: '#10b981'
+        };
+
+        if (typeof Toastify !== 'undefined') {
+            Toastify({
+                text: message,
+                duration: 3000,
+                gravity: "top",
+                position: "right",
+                backgroundColor: colors[type] || colors.info
+            }).showToast();
+        } else {
+            alert(message);
+        }
+    }
+
+    // Quantity update function
+    async function updateQuantity(productId, action, event) {
+        console.log('Updating quantity:', { productId, action });
+        
+        if (!event || !event.target) {
+            console.error('Event object is missing or invalid');
+            return showError('An error occurred. Please try again.');
+        }
+        
+        // Get the button that was clicked
+        const clickedButton = event.target.closest('.quantity-btn');
+        const originalButtonHTML = clickedButton.innerHTML;
+        
+        // Disable all quantity buttons for this product during update
+        const productButtons = document.querySelectorAll(`.quantity-btn[data-product-id="${productId}"]`);
+        productButtons.forEach(btn => {
+            btn.disabled = true;
+            if (btn === clickedButton) {
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            }
+        });
+        
+        try {
+            // Get current quantity from the DOM
+            const quantityElement = document.getElementById('qty-' + productId);
+            const totalElement = document.getElementById('total-' + productId);
+            const grandTotalElement = document.querySelector('.total-amount') || 
+                                  document.getElementById('grand-total') ||
+                                  document.querySelector('[data-grand-total]');
+            
+            if (!quantityElement || !totalElement) {
+                console.error('Required elements not found');
+                return showError('Could not update quantity. Please refresh the page and try again.');
+            }
+            
+            let newQuantity = parseInt(quantityElement.textContent, 10);
+            
+            // Calculate new quantity based on action
+            if (action === 'increment') {
+                newQuantity += 1;
+            } else if (action === 'decrement') {
+                newQuantity = Math.max(1, newQuantity - 1);
+            } else {
+                throw new Error('Invalid action');
+            }
+            
+            console.log('Updating quantity to:', newQuantity);
+            
+            // Check if this is a Buy Now flow
+            const isBuyNow = document.body.getAttribute('data-buy-now') === 'true';
+            
+            // Send the update request
+            let response;
+            try {
+                const url = isBuyNow ? '/buy-now/update-quantity' : '/cart/update-quantity/' + productId;
+                response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        productId,
+                        quantity: newQuantity
+                    })
                 });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    // Reload page to show updated totals
-                    location.reload();
-                } else {
-                    alert(result.message || 'Failed to remove offer');
-                }
             } catch (error) {
-                console.error('Error removing offer:', error);
-                alert('Failed to remove offer. Please try again.');
+                console.error('Network error:', error);
+                return showError('Network error. Please check your connection and try again.');
             }
+
+            console.log('Response status:', response.status);
+            let data;
+            try {
+                data = await response.json();
+                console.log('Response data:', data);
+            } catch (e) {
+                console.error('Error parsing JSON:', e);
+                return showError('Invalid response from server. Please try again.');
+            }
+
+            if (!response.ok) {
+                const errorMessage = data.message || `Server error: ${response.status} ${response.statusText}`;
+                console.error('Server error:', errorMessage);
+                return showError(errorMessage);
+            }
+
+            if (data.success) {
+                console.log('Quantity updated successfully');
+                
+                // Update the UI with the new values
+                if (data.data) {
+                    // Update quantity display
+                    if (data.data.quantity !== undefined) {
+                        quantityElement.textContent = data.data.quantity;
+                    }
+                    
+                    // Update item total
+                    if (data.data.itemTotal !== undefined) {
+                        const formattedTotal = parseFloat(data.data.itemTotal).toFixed(2);
+                        // Update all elements that might display this item's total
+                        document.querySelectorAll(`[data-item-total="${productId}"], #total-${productId}`).forEach(el => {
+                            el.textContent = `₹${formattedTotal}`;
+                        });
+                    }
+                    
+                    // Update all price summary elements
+                    if (data.data.priceSummary) {
+                        const { subtotal, tax, shipping, discount, total } = data.data.priceSummary;
+                        
+                        // Update subtotal
+                        const subtotalElements = document.querySelectorAll('[data-subtotal]');
+                        if (subtotalElements.length) {
+                            subtotalElements.forEach(el => {
+                                el.textContent = `₹${parseFloat(subtotal).toFixed(2)}`;
+                            });
+                        }
+                        
+                        // Update tax
+                        const taxElements = document.querySelectorAll('[data-tax]');
+                        if (taxElements.length) {
+                            taxElements.forEach(el => {
+                                el.textContent = `₹${parseFloat(tax).toFixed(2)}`;
+                            });
+                        }
+                        
+                        // Update shipping
+                        const shippingElements = document.querySelectorAll('[data-shipping]');
+                        if (shippingElements.length) {
+                            shippingElements.forEach(el => {
+                                el.textContent = `₹${parseFloat(shipping).toFixed(2)}`;
+                            });
+                        }
+                        
+                        // Update discount if exists
+                        if (discount > 0) {
+                            const discountElements = document.querySelectorAll('[data-discount]');
+                            if (discountElements.length) {
+                                discountElements.forEach(el => {
+                                    el.textContent = `- ₹${parseFloat(discount).toFixed(2)}`;
+                                });
+                            }
+                        }
+                        
+                        // Update total
+                        const totalElements = document.querySelectorAll('[data-total], .total-amount, #grand-total');
+                        if (totalElements.length) {
+                            totalElements.forEach(el => {
+                                el.textContent = `₹${parseFloat(total).toFixed(2)}`;
+                            });
+                        }
+                    }
+
+                    // Update the cart count in the header if it exists
+                    const cartCountElement = document.querySelector('.cart-count, #cart-count, [data-cart-count]');
+                    if (cartCountElement && data.data.cartCount !== undefined) {
+                        cartCountElement.textContent = data.data.cartCount;
+                    }
+                }
+                
+                // Show success message
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Quantity updated',
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            } else {
+                const errorMessage = data.message || 'Failed to update quantity';
+                console.error('Update failed:', errorMessage);
+                await showError(errorMessage);
+            }
+        } catch (error) {
+            console.error('Error updating quantity:', error);
+            if (typeof Swal !== 'undefined') {
+                await showError(error.message || 'An error occurred while updating quantity. Please try again.');
+            } else {
+                alert(error.message || 'An error occurred while updating quantity. Please try again.');
+            }
+        } finally {
+            // Re-enable all quantity buttons for this product
+            const productButtons = document.querySelectorAll(`.quantity-btn[data-product-id="${productId}"]`);
+            productButtons.forEach(btn => {
+                btn.disabled = false;
+                const btnAction = btn.classList.contains('increment') ? '+' : '-';
+                btn.innerHTML = btnAction;
+            });
+        }
+    }
+
+    // Offer functions
+    async function applyOffer() {
+        const offerCodeInput = document.querySelector(CONFIG.selectors.offerCode);
+        const messageDiv = document.querySelector(CONFIG.selectors.offerMessage);
+
+        if (!offerCodeInput) return;
+
+        const offerCode = offerCodeInput.value.trim();
+
+        if (!offerCode) {
+            showOfferMessage('Please enter an offer code', 'error');
+            return;
         }
 
-        function showOfferMessage(message, type) {
-            const messageDiv = document.getElementById('offerMessage');
-            if (messageDiv) {
-                messageDiv.textContent = message;
-                messageDiv.className = `mt-2 text-sm ${type === 'success' ? 'text-green-600' : 'text-red-600'}`;
+        try {
+            const response = await fetch('/checkout/apply-offer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ offerCode })
+            });
 
-                // Clear message after 5 seconds
-                setTimeout(() => {
-                    messageDiv.textContent = '';
-                    messageDiv.className = 'mt-2 text-sm';
-                }, 5000);
+            const result = await response.json();
+
+            if (result.success) {
+                showOfferMessage(result.message, 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showOfferMessage(result.message, 'error');
             }
+        } catch (error) {
+            console.error('Error applying offer:', error);
+            showOfferMessage('Failed to apply offer. Please try again.', 'error');
         }
+    }
 
-        // Apply offer code from available offers
-        function applyOfferCode(code) {
-            document.getElementById('offerCode').value = code;
+    async function removeOffer() {
+        try {
+            const response = await fetch('/checkout/remove-offer', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                location.reload();
+            } else {
+                alert(result.message || 'Failed to remove offer');
+            }
+        } catch (error) {
+            console.error('Error removing offer:', error);
+            alert('Failed to remove offer. Please try again.');
+        }
+    }
+
+    function showOfferMessage(message, type) {
+        const messageDiv = document.querySelector(CONFIG.selectors.offerMessage);
+        if (messageDiv) {
+            messageDiv.textContent = message;
+            messageDiv.className = `mt-2 text-sm ${type === 'success' ? 'text-green-600' : 'text-red-600'}`;
+
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.className = 'mt-2 text-sm';
+            }, 5000);
+        }
+    }
+
+    // Global function to apply offer code from available offers
+    function applyOfferCode(code) {
+        const offerCodeInput = document.querySelector(CONFIG.selectors.offerCode);
+        if (offerCodeInput) {
+            offerCodeInput.value = code;
             applyOffer();
         }
-
-        // Allow Enter key to apply offer
-        document.getElementById('offerCode')?.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyOffer();
-            }
-        });
-    </script>
+    }
+</script>
 </body>
 </html>

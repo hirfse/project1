@@ -5,6 +5,7 @@
     <title>Order Confirmation - U-Craft</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
     <style>
         /* Importing Poppins font */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
@@ -26,51 +27,39 @@ html, body {
     min-height: 100vh;
 }
 
-/* Header styles */
-header {
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 16px 20px;
-}
-
-header .container {
-    max-width: 1200px;
-    margin: 0 auto;
+/* Header styles (matching product listing) */
+.mainhead {
     display: flex;
     justify-content: space-between;
+    margin: 10px;
     align-items: center;
 }
-
-header h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: #333;
-}
-
-header nav {
+.buttons {
     display: flex;
-    gap: 16px;
+    gap: 10px;
+    align-items: center;
 }
-
-header nav a {
-    font-size: 16px;
-    font-weight: 500;
-    color: #666;
-    text-decoration: none;
-    transition: color 0.3s ease;
+.buttons .searchBar {
+    width: 15rem;
+    background-color: transparent;
+    border: 1px solid #ccc;
+    padding: 8px;
+    border-radius: 4px;
 }
-
-header nav a:hover {
-    color: #000;
-}
-
-header nav a.logout {
-    color: #dc2626;
-}
-
-header nav a.logout:hover {
-    color: #b91c1c;
-}
+.buttons img { height: 25px; cursor: pointer; }
+.buttons img:hover { filter: contrast(0); }
+.buttons button { padding: 8px 15px; border-radius: 4px; border: 1px solid #ccc; background-color: #fff; cursor: pointer; }
+.buttons button:hover { background-color: #403f3f; color: #f0f8ff; }
+.modal { display: none; position: absolute; top: 50px; right: 10px; z-index: 1000; }
+.modal-content { background-color: #ffffff; padding: 15px; border: 1px solid #888; border-radius: 8px; width: 300px; box-shadow: 0px 0px 10px rgba(0,0,0,0.2); text-align: center; }
+.modal-content ul { list-style: none; }
+.modal-content li { padding: 2px; color: #333; }
+.modal-content a { text-decoration: none; color: #333; }
+.modal-content a:hover { color: #000; }
+.subhead { display: flex; justify-content: center; align-items: center; }
+.subhead nav ul { display: flex; list-style: none; gap: 20px; }
+.subhead nav a { text-decoration: none; color: #333; }
+.subhead nav a:hover { color: #000; }
 
 /* Main content */
 main {
@@ -218,19 +207,48 @@ footer p {
     </style>
 </head>
 <body class="bg-gray-100 font-sans">
-    <header class="bg-white shadow">
-        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold">U-Craft</h1>
-            <nav>
-                <a href="/home" class="text-gray-600 hover:text-gray-900 mx-2">Home</a>
-                <a href="/cart" class="text-gray-600 hover:text-gray-900 mx-2">Cart</a>
-                <a href="/profile" class="text-gray-600 hover:text-gray-900 mx-2">Profile</a>
-                <form action="/logout" method="POST" style="display:inline;">
-                    <button type="submit" class="text-red-600 hover:text-red-800 mx-2 bg-transparent border-none cursor-pointer">Logout</button>
+    <header>
+        <div class="mainhead">
+            <p>U-Craft .</p>
+            <div class="buttons">
+                <form method="GET" action="/productListing" class="search">
+                    <input type="text" class="searchBar" name="search" placeholder="Search product...">
                 </form>
+                <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()" class="profileImg">
+                <form action="/logout" method="POST" style="display:inline;">
+                    <button type="submit">Logout</button>
+                </form>
+            </div>
+            <div id="profileViewModal" class="modal">
+                <div class="modal-content" onmouseleave="closeViewModal()">
+                    <% if (userName) { %>
+                        <p>Welcome, <strong><%= userName.toUpperCase() %></strong>!</p>
+                    <% } else { %>
+                        <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
+                    <% } %>
+                    <ul>
+                        <a href="/profile"><li>Profile</li></a>
+                        <a href="/wishlist"><li>Wish List</li></a>
+                        <a href="/cart"><li>Cart</li></a>
+                        <a href="/wallet"><li>Wallet</li></a>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="subhead">
+            <nav>
+                <ul>
+                    <a href="/"><li>Home</li></a>
+                    <a href="/productListing"><li>Shop</li></a>
+                    <a href="/customListing"><li>Custom</li></a>
+                    <a href="/about"><li>About</li></a>
+                    <a href="/contact"><li>Contact</li></a>
+                </ul>
             </nav>
         </div>
     </header>
+    <!-- Breadcrumbs -->
+    <nav id="breadcrumbs" style="margin: 18px 0 0 30px;"></nav>
     <main class="container mx-auto px-4 py-8">
         <div class="bg-white rounded-lg shadow p-8 max-w-xl mx-auto text-center">
             <h2 class="text-3xl font-semibold text-green-600 mb-4"><%= message || 'Order placed successfully!' %></h2>
@@ -255,7 +273,7 @@ footer p {
                         <% orderDetails.items.forEach(function(item) { %>
                             <li class="py-2 flex items-center justify-between">
                                 <span>
-                                    <%= item.productId && item.productId.productName ? item.productId.productName : 'Product' %>
+                                    <%= (item.productName) || (item.productId && item.productId.productName) || 'Product' %>
                                     (x<%= item.quantity %>)
                                 </span>
                             </li>
@@ -273,5 +291,29 @@ footer p {
             <p>&copy; 2025 U-Craft. All rights reserved.</p>
         </div>
     </footer>
+
+    <script>
+        function profileViewModal() {
+            const el = document.getElementById('profileViewModal');
+            if (el) el.style.display = 'block';
+        }
+        function closeViewModal() {
+            const el = document.getElementById('profileViewModal');
+            if (el) el.style.display = 'none';
+        }
+        // Dynamic Breadcrumbs (same pattern used elsewhere)
+        (function() {
+            const prettyNames = { '': 'Home', 'home': 'Home', 'productlisting': 'Shop', 'customlisting': 'Custom', 'profile': 'Profile', 'cart': 'Cart', 'wishlist': 'Wishlist', 'addresses': 'Addresses', 'orders': 'Orders', 'checkout': 'Checkout', 'about': 'About', 'contact': 'Contact', 'order-confirmation': 'Order Confirmation' };
+            const path = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
+            let crumbs = []; let url = '';
+            for (let i = 0; i < path.length; i++) { url += '/' + path[i]; crumbs.push({ name: (prettyNames[path[i]?.toLowerCase()] || (path[i].charAt(0).toUpperCase() + path[i].slice(1))), url: i < path.length - 1 ? url : null }); }
+            if (crumbs.length === 0 || crumbs[0].name !== 'Home') { crumbs.unshift({ name: 'Home', url: '/' }); }
+            const nav = document.getElementById('breadcrumbs');
+            if (nav) {
+                nav.innerHTML = '<ol style="list-style:none;display:flex;gap:5px;font-size:14px;color:#888;">' +
+                crumbs.map((c, idx) => c.url ? `<li><a href="${c.url}" style="color:#888;text-decoration:none;">${c.name}</a></li>` + (idx < crumbs.length - 1 ? '<li style="color:#888;">/</li>' : '') : `<li style="color:#333;">${c.name}</li>`).join('') + '</ol>';
+            }
+        })();
+    </script>
 </body>
 </html>

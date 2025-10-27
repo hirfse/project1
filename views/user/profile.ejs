@@ -401,6 +401,27 @@
                     <td colspan="2"><a href="/profile/edit" style="text-decoration: none;"><button>Edit Profile</button></a></td>
                 </tr>
             </table>
+
+            <div class="section" id="referral-section">
+                <h2>Referral</h2>
+                <p>Share your referral link with friends. They sign up and place their first eligible order, both of you get rewards per the active referral offer.</p>
+                <div style="margin-top:12px; max-width:520px;">
+                    <label for="refCode">Your Code</label>
+                    <input id="refCode" type="text" readonly placeholder="Click 'Get Referral Link'">
+                    <button type="button" onclick="copyText('refCode')">Copy Code</button>
+
+                    <label for="refLink" style="margin-top:10px; display:block;">Shareable Link</label>
+                    <input id="refLink" type="text" readonly placeholder="Click 'Get Referral Link'">
+                    <div style="display:flex; gap:10px; margin-top:8px;">
+                        <button type="button" onclick="copyText('refLink')">Copy Link</button>
+                        <button type="button" onclick="openWhatsAppShare()">Share on WhatsApp</button>
+                    </div>
+
+                    <div style="margin-top:12px;">
+                        <button type="button" onclick="fetchReferralCode()">Get Referral Link</button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <script>
@@ -473,6 +494,42 @@
                 }
             });
         });
+
+        // Referral helpers
+        async function fetchReferralCode() {
+            try {
+                const res = await fetch('/referral-code');
+                const data = await res.json();
+                if (!data.success) {
+                    alert(data.message || 'Failed to fetch referral code');
+                    return;
+                }
+                document.getElementById('refCode').value = data.code;
+                document.getElementById('refLink').value = data.link;
+            } catch (err) {
+                console.error(err);
+                alert('Failed to fetch referral code');
+            }
+        }
+
+        function copyText(inputId) {
+            const el = document.getElementById(inputId);
+            if (!el || !el.value) return;
+            navigator.clipboard.writeText(el.value).then(() => {
+                // Optional: small visual feedback
+            }).catch(() => {
+                // Fallback
+                el.select();
+                document.execCommand('copy');
+            });
+        }
+
+        function openWhatsAppShare() {
+            const link = document.getElementById('refLink').value;
+            const text = encodeURIComponent(`Join U-Craft with my referral link: ${link}`);
+            const wa = `https://wa.me/?text=${text}`;
+            window.open(wa, '_blank');
+        }
     </script>
     <footer>
         <div id="exclusive">

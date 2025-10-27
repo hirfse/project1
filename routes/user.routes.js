@@ -3,10 +3,10 @@ const router = express.Router();
 const passport = require('passport');
 const Razorpay = require('razorpay');
 const userController = require('../controllers/user/user.controller');
-const { checkUserSession, preventBackAfterLogout, checkUserStatus  } = require('../middlewares/auth.middleware'); // Use user-specific session check
+const { checkUserSession, preventBackAfterLogout, checkUserStatus  } = require('../middlewares/auth.middleware'); 
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs'); // Add this at the top with other requires
+const fs = require('fs'); 
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -28,6 +28,17 @@ const upload = multer({ storage: storage });
 
 //   Public Routes (No authentication required)
 router.get('/', userController.getLandingPage);
+
+//productListing
+
+router.get('/productListing', userController.getProductListing);
+
+//productDetails
+
+router.get('/product/:id', userController.getProductDetails);
+
+// Referral landing: store code in session and redirect to signup/home
+router.get('/r/:code', userController.referralLanding);
 
 // Coming Soon Pages
 router.get('/custom', userController.getCustomPage);
@@ -58,20 +69,20 @@ router.post('/resetPassword', userController.handleResetPassword);
 router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get(
-    '/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login' }),
-    (req, res) => {
-      console.log('Google Authentication Successful:', req.user);
-  
-      //   Add this part to save session
-      req.session.userId = req.user._id;
-      req.session.userEmail = req.user.email;
-      req.session.userName = req.user.fullName;
-  
-      res.redirect('/home');
-    }
-  );
-  
+  '/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login' }),
+  (req, res) => {
+    console.log('Google Authentication Successful:', req.user);
+    
+    //   Add this part to save session
+    req.session.userId = req.user._id;
+    req.session.userEmail = req.user.email;
+    req.session.userName = req.user.fullName;
+    
+    res.redirect('/home');
+  }
+);
+
 
 //   Protected Routes (Require Login)
 router.use(checkUserStatus); 
@@ -91,11 +102,8 @@ router.post('/resend-email-otp', userController.resendEmailOTP);
 // router.post('/change-password', userController.handleChangePassword);
 // router.get('/verify-password-otp', userController.verifyPasswordOTP); 
 // router.post('/verify-password-otp', userController.verifyPasswordOTP); 
- 
-//productListing
 
 
-router.get('/productListing', userController.getProductListing);
 
 
 /////////
@@ -111,21 +119,22 @@ router.post('/addresses/delete/:id', userController.deleteAddress);
 
 // Cart Management Routes
 router.post('/cart/add/:id', userController.addToCart);
-router.post('/cart/add', userController.addToCartFromListing); // For product listing page
+router.post('/cart/add', userController.addToCartFromListing); 
 router.get('/cart', userController.getCart);
 router.get('/product/:id/json', userController.getProductDetailsJson);
 router.post('/products/bulk-stock-check', userController.bulkStockCheck);
 router.post('/cart/remove/:id', userController.removeFromCart);
-router.post('/cart/update-quantity/:id', userController.adjustCartQuantity);
+router.post('/cart/update-quantity/:id', userController.setCartQuantity);
+router.post('/buy-now/update-quantity', userController.setCartQuantity);
 
 router.post('/wishlist/add/:id', userController.addToWishlist);
 router.post('/wishlist/remove/:id', userController.removeFromWishlist);
 router.get('/wishlist', userController.getWishlist);
 
-router.get('/customListing', userController.getCustomList);
 
-router.get('/product/:id', userController.getProductDetails);
+
 router.post('/product/:id/addReview', userController.addReview);
+router.get('/customListing', userController.getCustomList);
 
 //checkout 
 
@@ -152,6 +161,9 @@ router.get('/orders/invoice/:id', userController.downloadInvoice);
 
 // Wallet Management
 router.get('/wallet', userController.getWallet);
+
+// Referral: get or generate current user's referral code
+router.get('/referral-code', userController.getReferralCode);
 
 
 //   Logout Route

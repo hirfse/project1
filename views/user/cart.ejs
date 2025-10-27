@@ -307,7 +307,7 @@
             <!-- badge span added for live count -->
             <a href="/cart">
                 <img src="/images/icons/shopping-bag.svg" alt="Cart">
-                <span id="cart-badge"><%= cart ? cart.items.length : 0 %></span>
+                <span id="cart-badge"><%= typeof cartCount !== 'undefined' ? cartCount : (cart ? cart.items.length : 0) %></span>
             </a>
 
             <a href="/profile"><img src="/images/icons/user.svg" alt="Profile"></a>
@@ -349,7 +349,10 @@
                 %>
                     <tr id="cart-item-<%= item.productId._id %>">
                         <td>
-                            <%= item.productId.productName %>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <img src="/Uploads/product-images/<%= item.productId.productImage && item.productId.productImage[0] ? item.productId.productImage[0] : '' %>" alt="<%= item.productId.productName %>" style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
+                                <span><%= item.productId.productName %></span>
+                            </div>
                             <div class="stock-status" id="stock-status-<%= item.productId._id %>">
                                 <% if (item.productId.quantity === 0) { %>
                                     <small style="color:red">⚠️ Out of Stock</small>
@@ -363,7 +366,7 @@
                             </div>
                         </td>
                         <td>
-                            <input type="number"
+                            <input type="number" name="quantity"
                                    id="qty-<%= item.productId._id %>"
                                    value="<%= item.quantity %>"
                                    min="1"
@@ -385,7 +388,11 @@
                 <div class="cart-total">Total: ₹<span id="grand-total"><%= cartTotal.toFixed(2) %></span></div>
                 <div>
                     <a href="/productListing" class="continue-shopping">Continue Shopping</a>
-                    <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+                    <% if (typeof hasStockIssue !== 'undefined' && hasStockIssue) { %>
+                        <button class="checkout-btn" disabled title="Resolve stock issues in your cart to proceed">Proceed to Checkout</button>
+                    <% } else { %>
+                        <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+                    <% } %>
                 </div>
             </div>
         <% } %>
