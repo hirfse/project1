@@ -1708,24 +1708,22 @@ exports.removeFromCart = async (req, res) => {
   }
 };
 
-// Update quantity for both cart and buy now
-// This function now handles both cart updates and buy now updates
-exports.setCartQuantity = async (req, res) => {
+// Update quantity for buy-now flow
+exports.updateBuyNowQuantity = async (req, res) => {
   try {
-    const productId = req.params.id;
+    const { productId, quantity } = req.body;
     const userId = req.session.userId;
-    const { quantity, isBuyNow } = req.body;
 
-    console.log('setCartQuantity called with:', { productId, quantity, userId, isBuyNow });
+    console.log('updateBuyNowQuantity called with:', { productId, quantity, userId });
 
     if (!quantity || quantity < 1) {
       console.log('Invalid quantity:', quantity);
       return res.status(400).json({ success: false, message: 'Invalid quantity' });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      console.log('Invalid product ID:', productId);
-      return res.status(400).json({ success: false, message: 'Invalid product ID' });
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+      console.log('Invalid or missing product ID:', productId);
+      return res.status(400).json({ success: false, message: 'Invalid or missing product ID' });
     }
 
     const product = await Product.findById(productId).populate('category');
@@ -1740,6 +1738,117 @@ exports.setCartQuantity = async (req, res) => {
       return res.status(400).json({ 
         success: false, 
         message: `Only ${product.quantity} item${product.quantity === 1 ? '' : 's'} available` 
+      });
+    }
+
+    if (quantity > MAX_QUANTITY_PER_PRODUCT) {
+      console.log('Exceeds max quantity:', { requested: quantity, max: MAX_QUANTITY_PER_PRODUCT });
+      return res.status(400).json({ 
+        success: false, 
+        message: `Cannot add more than ${MAX_QUANTITY_PER_PRODUCT} units of this product` 
+      });
+    }
+
+    // Calculate prices for buy-now
+    const itemTotal = quantity * product.salePrice;
+    const subtotal = itemTotal;
+    const tax = subtotal * 0.05; // 5% tax
+    const shipping = subtotal > 1000 ? 0 : 50; // Free shipping for orders over 1000
+    const discount = 0; // No discount applied by default
+    const total = subtotal + tax + shipping - discount;
+
+    // Update the buy-now product in session
+    if (req.session.buyNowProduct) {
+      req.session.buyNowProduct.quantity = quantity;
+    }
+
+    return res.json({
+      success: true,
+      message: 'Quantity updated successfully',
+      data: {
+        itemTotal: itemTotal.toFixed(2),
+        quantity: quantity,
+        priceSummary: {
+          subtotal: subtotal.toFixed(2),
+          tax: tax.toFixed(2),
+          shipping: shipping.toFixed(2),
+          discount: discount.toFixed(2),
+          total: total.toFixed(2)
+        },
+        cartCount: 0 // No cart count update for buy now
+      }
+    });
+  } catch (error) {
+    console.error('Error in updateBuyNowQuantity:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Could not update quantity',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Update quantity for cart items
+exports.setCartQuantity = async (req, res) => {
+  try {
+    // Get productId from URL params or request body
+    const productId = req.params.id || req.body.productId;
+    const userId = req.session.userId;
+    const { quantity, isBuyNow } = req.body;
+
+    console.log('setCartQuantity called with:', { productId, quantity, userId, isBuyNow });
+
+    if (!quantity || quantity < 1) {
+      console.log('Invalid quantity:', quantity);
+      return res.status(400).json({ success: false, message: 'Invalid quantity' });
+    }
+
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+      console.log('Invalid or missing product ID:', productId);
+      return res.status(400).json({ success: false, message: 'Invalid or missing product ID' });
+    }
+
+    const product = await Product.findById(productId).populate('category');
+    if (!product) {
+      console.log('Product not found:', productId);
+      return res.status(404).json({ success: false, message: 'Product not found' });
+    }
+
+    const MAX_QUANTITY_PER_PRODUCT = 10;
+    if (product.quantity < quantity) {
+      console.log('Insufficient stock:', { requested: quantity, available: product.quantity });
+      return res.status(400).json({ 
+        success: false, 
+        message: `Only ${product.quantity} item${product.quantity === 1 ? '' : 's'} available` 
+      });
+    }
+    
+    // Check if this is a Buy Now flow
+    if (isBuyNow) {
+      // For Buy Now, we don't need to update the cart
+      // Just return the updated product info and calculated prices
+      const itemTotal = quantity * product.salePrice;
+      const subtotal = itemTotal;
+      const tax = subtotal * 0.05; // 5% tax
+      const shipping = subtotal > 1000 ? 0 : 50; // Free shipping for orders over 1000
+      const discount = 0; // No discount applied by default
+      const total = subtotal + tax + shipping - discount;
+
+      return res.json({
+        success: true,
+        message: 'Quantity updated successfully',
+        data: {
+          itemTotal: itemTotal.toFixed(2),
+          quantity: quantity,
+          priceSummary: {
+            subtotal: subtotal.toFixed(2),
+            tax: tax.toFixed(2),
+            shipping: shipping.toFixed(2),
+            discount: discount.toFixed(2),
+            total: total.toFixed(2)
+          },
+          cartCount: 0 // No cart count update for buy now
+        }
       });
     }
 
@@ -2224,7 +2333,7 @@ exports.getCheckout = async (req, res) => {
 // Select Default Address
 exports.selectAddress = async (req, res) => {
     try {
-        const { selectedAddress } = req.body;
+        const { selectedAddress, paymentMethod = 'razorpay' } = req.body;
         const userId = req.session.userId;
 
         if (!mongoose.Types.ObjectId.isValid(selectedAddress)) {
@@ -2236,20 +2345,45 @@ exports.selectAddress = async (req, res) => {
             return res.status(404).json({ success: false, message: 'No addresses found' });
         }
 
-        // Reset all addresses to non-default
-        addressDoc.address.forEach(addr => (addr.isDefault = false));
-        // Set selected address as default
-        const addressIndex = addressDoc.address.findIndex(addr => addr._id.toString() === selectedAddress);
-        if (addressIndex === -1) {
+        // Find the selected address
+        const selectedAddr = addressDoc.address.id(selectedAddress);
+        if (!selectedAddr) {
             return res.status(404).json({ success: false, message: 'Address not found' });
         }
-        addressDoc.address[addressIndex].isDefault = true;
+
+        // Reset all addresses to non-default and set selected as default
+        addressDoc.address.forEach(addr => (addr.isDefault = false));
+        selectedAddr.isDefault = true;
         await addressDoc.save();
 
-        res.status(200).json({ success: true, message: 'Address selected successfully' });
+        // Store selected address in session
+        req.session.selectedAddressId = selectedAddress;
+        
+        // Also store in checkoutData for the payment flow
+        req.session.checkoutData = req.session.checkoutData || {};
+        req.session.checkoutData.selectedAddress = selectedAddress;
+        req.session.checkoutData.paymentMethod = paymentMethod;
+        
+        // Save the session
+        await new Promise((resolve, reject) => {
+            req.session.save(err => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+        
+        res.status(200).json({ 
+            success: true, 
+            message: 'Address selected successfully',
+            address: selectedAddr
+        });
     } catch (error) {
         console.error('Error selecting address:', error);
-        res.status(500).json({ success: false, message: 'Failed to select address' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to select address',
+            error: error.message 
+        });
     }
 };
 
@@ -2387,17 +2521,35 @@ exports.placeOrder = async (req, res) => {
                 continue;
             }
             if (product.quantity < item.quantity) {
+                const categories = await Category.find({ isListed: true });
+                const user = await User.findById(userId).select('email phone').lean();
+                let availableOffers = [];
+                let availableCoupons = [];
+                
+                // Only fetch offers and coupons if not in buy-now mode
+                if (!isBuyNow) {
+                    availableOffers = await getAvailableOffers(userId, orderItems);
+                    availableCoupons = await AdminCouponController.getAvailableCoupons(userId, orderItems);
+                }
+                
                 return res.render('user/checkout', {
-                    addresses: addressDoc.address,
-                    selectedAddress: addressDoc.address.find(addr => addr._id.toString() === selectedAddress),
+                    addresses: addressDoc ? addressDoc.address : [],
+                    selectedAddress: addressDoc ? addressDoc.address.find(addr => addr._id.toString() === selectedAddress) : null,
                     cart: { items: orderItems },
+                    isBuyNow: isBuyNow || false,
+                    appliedOffer: req.session.appliedOffer || null,
+                    availableOffers: availableOffers,
+                    availableCoupons: availableCoupons,
                     userName: req.session.userName || null,
+                    userEmail: user?.email || '',
+                    userPhone: user?.phone || '',
                     error: `Insufficient stock for ${product.productName}`,
-                    categories: await Category.find({ isListed: true }),
+                    categories: categories,
                     subtotal: 0,
                     tax: 0,
                     shipping: 0,
                     discount: 0,
+                    offerDiscount: req.session.appliedOffer?.discountAmount || 0,
                     total: 0
                 });
             }
@@ -2486,9 +2638,9 @@ exports.placeOrder = async (req, res) => {
             },
             paymentMethod,
             subtotal,
-            tax,
+            tax,  
             shipping,
-            discount,
+            discount,  
             offerDiscount: offerDiscount,
             appliedOffer: appliedOffer ? {
                 code: appliedOffer.code,

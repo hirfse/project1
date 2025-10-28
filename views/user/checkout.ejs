@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.27/dist/sweetalert2.all.min.js" integrity="sha256-t0FDfwj/WsxM3Fh9kZryyEODv2tG+QAlMlM4Pz0L+Q=" crossorigin="anonymous"></script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
@@ -724,19 +725,59 @@ footer p {
         }
     }
 
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        // If Toastify is not loaded, fall back to alert
+        if (typeof Toastify !== 'function') {
+            alert(message);
+            return;
+        }
+
+        const toast = Toastify({
+            text: message,
+            duration: 3000,
+            newWindow: true,
+            close: true,
+            gravity: 'top',
+            position: 'right',
+            stopOnFocus: true,
+            style: {
+                background: type === 'success' ? '#10B981' : '#EF4444',
+                color: 'white',
+                padding: '12px 24px',
+                borderRadius: '4px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                fontFamily: 'inherit',
+                fontSize: '14px',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                minWidth: '300px',
+                maxWidth: '400px'
+            },
+            onClick: function() {
+                toast.hideToast();
+            }
+        });
+
+        toast.showToast();
+    }
+
     // Event handlers
     async function handleAddressSubmit(e) {
         e.preventDefault();
         
         const submitButton = this.querySelector('button[type="submit"]');
         const originalButtonText = submitButton.innerHTML;
+        const form = this;
         
         try {
             // Show loading state
             submitButton.disabled = true;
             submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
             
-            const formData = new FormData(this);
+            const formData = new FormData(form);
             const response = await fetch('/checkout/select-address', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -744,15 +785,36 @@ footer p {
             });
 
             const result = await response.json();
+            
             if (result.success) {
-                await showSuccess(result.message || 'Address selected successfully');
-                window.location.reload();
+                // Update the UI to show the selected address
+                const radioInputs = form.querySelectorAll('input[type="radio"]');
+                radioInputs.forEach(input => {
+                    const parentDiv = input.closest('.border');
+                    if (input.value === result.address._id) {
+                        parentDiv.classList.add('border-blue-500');
+                        parentDiv.classList.remove('border-gray-200');
+                        input.checked = true;
+                    } else {
+                        parentDiv.classList.remove('border-blue-500');
+                        parentDiv.classList.add('border-gray-200');
+                    }
+                });
+                
+                // Update the hidden input in the place order form
+                const placeOrderForm = document.getElementById('placeOrderForm');
+                if (placeOrderForm) {
+                    placeOrderForm.querySelector('input[name="selectedAddress"]').value = result.address._id;
+                    placeOrderForm.querySelector('button[type="submit"]').disabled = false;
+                }
+                
+                showToast(result.message || 'Address selected successfully');
             } else {
                 throw new Error(result.message || 'Failed to select address');
             }
         } catch (error) {
             console.error('Error:', error);
-            await showError(error.message || 'An error occurred while saving the address');
+            showToast(error.message || 'An error occurred while saving the address', 'error');
         } finally {
             // Reset button state
             submitButton.disabled = false;
@@ -856,7 +918,7 @@ footer p {
 
                         const verifyData = await verifyResponse.json();
                         if (verifyData.success) {
-                            window.location.href = '/payment-success';
+                            window.location.href = `/payment-success?orderId=${verifyData.orderId}`;
                         } else {
                             throw new Error(verifyData.message || 'Payment verification failed');
                         }

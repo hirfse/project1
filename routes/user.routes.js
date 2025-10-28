@@ -125,7 +125,7 @@ router.get('/product/:id/json', userController.getProductDetailsJson);
 router.post('/products/bulk-stock-check', userController.bulkStockCheck);
 router.post('/cart/remove/:id', userController.removeFromCart);
 router.post('/cart/update-quantity/:id', userController.setCartQuantity);
-router.post('/buy-now/update-quantity', userController.setCartQuantity);
+router.post('/buy-now/update-quantity', userController.updateBuyNowQuantity);
 
 router.post('/wishlist/add/:id', userController.addToWishlist);
 router.post('/wishlist/remove/:id', userController.removeFromWishlist);
