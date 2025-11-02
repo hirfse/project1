@@ -1,4 +1,6 @@
 // user.controller.js
+const HTTP_STATUS = require('../../constants/httpStatus');
+const MESSAGES = require('../../constants/messages');
 const User = require('../../models/user.model');
 const Product = require('../../models/product.model');
 const Review = require('../../models/review.model');
@@ -29,7 +31,11 @@ exports.getLandingPage = async (req, res) => {
     res.render('user/landingPage', { error: null, products, userName: null });
   } catch (error) {
     console.error(error);
-    res.render('user/landingPage', { error: 'Failed to load products', products: [], userName: null });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/landingPage', { 
+      error: MESSAGES.PRODUCT.NOT_FOUND, 
+      products: [], 
+      userName: null 
+    });
   }
 };
 
@@ -46,26 +52,35 @@ exports.referralLanding = async (req, res) => {
   } catch (e) {
     console.error('Error handling referral landing:', e);
   } finally {
-    return res.redirect('/signup');
+    return res.redirect(HTTP_STATUS.FOUND, '/signup');
   }
 };
 
 exports.getSignupPage = (req, res) => {
-    res.render('user/signup', { error: null });
+    res.status(HTTP_STATUS.OK).render('user/signup', { 
+        error: null 
+    });
 };
 
 exports.handleSignupPage = async (req, res) => {
     try {
         const { fullName, email, password, confirmPassword, phone } = req.body;
         if (!fullName || !email || !password || !confirmPassword) {
-            return res.render('user/signup', { error: 'All fields are required' });
+            return res.status(HTTP_STATUS.BAD_REQUEST).render('user/signup', { 
+                error: MESSAGES.AUTH.SIGNUP_REQUIRED_FIELDS 
+            });
         }
         if (password !== confirmPassword) {
-            return res.render('user/signup', { error: 'Password and confirm password do not match' });
+            return res.status(HTTP_STATUS.BAD_REQUEST).render('user/signup', { 
+                error: MESSAGES.VALIDATION.PASSWORD_MISMATCH 
+            });
         }
+        
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.render('user/signup', { error: 'Email already exists' });
+            return res.status(HTTP_STATUS.CONFLICT).render('user/signup', { 
+                error: MESSAGES.AUTH.SIGNUP_EMAIL_EXISTS 
+            });
         }
         const otp = Math.floor(1000 + Math.random() * 9000);
         signupOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
@@ -159,18 +174,21 @@ exports.handleLoginPage = async (req, res) => {
         console.log('User:', user);
 
         if (!user) {
-            return res.render('user/login', { error: 'User not found' });
+            return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { 
+                error: MESSAGES.AUTH.INVALID_CREDENTIALS 
+            });
         }
 
-        if (user.status === 'blocked') {
-            return res.render('user/login', {
-                error: 'Your account has been blocked by Admin. Please contact support.',
-                email
+        if (user.isBlocked) {
+            return res.status(HTTP_STATUS.FORBIDDEN).render('user/login', { 
+                error: MESSAGES.AUTH.ACCOUNT_BLOCKED 
             });
         }
 
         if (!user.password) {
-            return res.render('user/login', { error: 'Please log in using Google Authentication' });
+            return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { 
+                error: MESSAGES.AUTH.USE_GOOGLE_AUTH 
+            });
         }
 
         console.log('User Password:', user.password);
@@ -178,7 +196,9 @@ exports.handleLoginPage = async (req, res) => {
         const passwordCheck = await bcrypt.compare(password, user.password);
 
         if (!passwordCheck) {
-            return res.render('user/login', { error: 'Invalid credentials' });
+            return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { 
+                error: 'Invalid credentials' 
+            });
         }
 
         // Clear any existing admin session data
@@ -194,13 +214,17 @@ exports.handleLoginPage = async (req, res) => {
         req.session.save((err) => {
             if (err) {
                 console.error('Session save error:', err);
-                return res.render('user/login', { error: 'Login failed. Please try again.' });
+                return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/login', { 
+                    error: 'Login failed. Please try again.' 
+                });
             }
-            res.redirect('/home');
+            res.redirect(HTTP_STATUS.FOUND, '/home');
         });
     } catch (error) {
         console.error(error);
-        res.render('user/login', { error: 'Error occurred. Please try again.' });
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/login', { 
+            error: 'Error occurred. Please try again.' 
+        });
     }
 };
 
@@ -1438,7 +1462,7 @@ exports.addToCartFromListing = async (req, res) => {
         if (qty > product.quantity) {
             return res.status(400).json({
                 success: false,
-                error: `Only ${product.quantity} items available in stock`
+                error: `Only ${product.quantity} item${product.quantity === 1 ? '' : 's'} available`
             });
         }
 
@@ -1872,10 +1896,21 @@ exports.setCartQuantity = async (req, res) => {
       
       // Calculate price summary for Buy Now
       subtotal = itemTotal;
+
+      // Apply product or category offer
+      const productDiscount = product.offerPercentage ? (itemTotal * product.offerPercentage) / 100 : 0;
+      const categoryDiscount = product.category.categoryOffer ? (itemTotal * product.category.categoryOffer) / 100 : 0;
+      discount = Math.max(productDiscount, categoryDiscount);
+
       tax = subtotal * 0.05; // 5% tax
-      shipping = subtotal > 1000 ? 0 : 50; // Free shipping for orders over 1000
-      discount = 0; // You can add discount calculation here if needed
-      total = subtotal + tax + shipping - discount;
+
+      // Apply offer discount if available
+      let offerDiscount = 0;
+      if (req.session.appliedOffer) {
+        offerDiscount = req.session.appliedOffer.discountAmount || 0;
+      }
+
+      total = subtotal + tax + shipping - discount - offerDiscount;
       
       // Create updated item for response
       updatedItem = {
@@ -2258,7 +2293,11 @@ exports.getCheckout = async (req, res) => {
                         product.quantity >= item.quantity &&
                         product.status !== 'Out of Stock'
                     ) {
-                        validItems.push(item);
+                        validItems.push({
+                            ...item._doc,
+                            isAvailable: item.quantity <= product.quantity,
+                            maxStock: product.quantity
+                        });
                         const itemTotal = item.quantity * product.salePrice;
                         subtotal += itemTotal;
                         // Apply product or category offer
@@ -3370,7 +3409,7 @@ exports.createOrder = async (req,res) => {
     console.log('Create order request received:', req.body);
 
     if (!req.body.amount) {
-      return res.status(400).json({ success: false, error: 'Amount is required' });
+      return res.status(400).json({ success: false, message: 'Amount is required' });
     }
 
     const amount = req.body.amount * 100; // in paise
@@ -3386,7 +3425,7 @@ exports.createOrder = async (req,res) => {
     console.log('Razorpay instance available:', !!global.razorpayInstance);
 
     if (!global.razorpayInstance) {
-      return res.status(500).json({ success: false, error: 'Razorpay not initialized' });
+      return res.status(500).json({ success: false, message: 'Razorpay not initialized' });
     }
 
     const order = await global.razorpayInstance.orders.create(options);
@@ -3394,7 +3433,7 @@ exports.createOrder = async (req,res) => {
     res.json({ success: true, order });
   } catch (err) {
     console.error('Razorpay order creation error:', err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -3483,7 +3522,7 @@ exports.verifyPayment = async (req, res) => {
     }
   } catch (error) {
     console.error('Payment verification error:', error);
-    res.status(500).json({ success: false, message: 'Payment verification failed' });
+    res.status(500).json({ success: false, message: 'Internal server error' });
   }
 };
 
@@ -3632,7 +3671,6 @@ async function processOrderAfterPayment(userId, cartItems, selectedAddress, paym
       status: 'Pending',
       orderDate: new Date()
     });
-
     await order.save();
 
     // Track coupon usage if applied
@@ -3663,7 +3701,7 @@ async function processOrderAfterPayment(userId, cartItems, selectedAddress, paym
     return { success: true, orderId: order._id, orderNumber: order.orderID };
   } catch (error) {
     console.error('Error processing order:', error);
-    return { success: false, message: 'Failed to process order' };
+    return { success: false, message: 'Internal server error' };
   }
 }
 
@@ -3753,7 +3791,7 @@ exports.applyOffer = async (req, res) => {
 
     } catch (error) {
         console.error('Error applying offer:', error);
-        res.status(500).json({ success: false, message: 'Failed to apply offer' });
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
 
@@ -3764,7 +3802,7 @@ exports.removeOffer = async (req, res) => {
         res.status(200).json({ success: true, message: 'Offer removed successfully' });
     } catch (error) {
         console.error('Error removing offer:', error);
-        res.status(500).json({ success: false, message: 'Failed to remove offer' });
+        res.status(500).json({ success: false, message: 'Internal server error' });
     }
 };
 

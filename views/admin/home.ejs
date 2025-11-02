@@ -208,30 +208,72 @@
     </div>
 
     <div class="charts-container">
-      <div class="chart-card">
+      <!-- Sales Chart with Filter -->
+      <div class="chart-card chart-section">
         <div class="chart-header">
-          <h2 class="chart-title">Revenue Overview</h2>
+          <h2 class="chart-title">Sales Overview - <%= currentYear %></h2>
           <div class="chart-dropdown">
-            <button class="dropdown-toggle">
-              This Month <i class="fas fa-chevron-down"></i>
-            </button>
+            <select id="chartPeriod" class="period-select">
+              <option value="year">This Year</option>
+              <option value="month" selected>This Month</option>
+              <option value="week">This Week</option>
+            </select>
           </div>
         </div>
-        <div class="chart-canvas-container">
-          <canvas id="revenueChart"></canvas>
+        <div class="chart-canvas-container" id="chartContainer">
+          <!-- Loading Indicator -->
+          <div id="chartLoading" class="chart-loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading chart data...</p>
+          </div>
+          
+          <!-- Error Message Container -->
+          <div id="chartError" class="chart-error" style="display: none;"></div>
+          
+          <!-- Chart Canvas -->
+          <canvas id="salesChart"></canvas>
         </div>
       </div>
+      
+      <!-- Best Selling Categories -->
       <div class="chart-card">
         <div class="chart-header">
-          <h2 class="chart-title">Sales by Category</h2>
-          <div class="chart-dropdown">
-            <button class="dropdown-toggle">
-              This Year <i class="fas fa-chevron-down"></i>
-            </button>
-          </div>
+          <h2 class="chart-title">Top Selling Categories</h2>
         </div>
         <div class="chart-canvas-container">
           <canvas id="categoryChart"></canvas>
+        </div>
+      </div>
+      
+      <!-- Best Selling Products -->
+      <div class="chart-card full-width">
+        <div class="chart-header">
+          <h2 class="chart-title">Top 10 Best Selling Products</h2>
+        </div>
+        <div class="table-responsive">
+          <table class="best-sellers">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Quantity Sold</th>
+                <th>Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% bestSellingProducts.forEach(product => { %>
+                <tr>
+                  <td><%= product.productName %></td>
+                  <td class="text-center"><%= product.totalQuantity %></td>
+                  <td class="text-right">₹<%= product.totalRevenue.toFixed(2) %></td>
+                </tr>
+              <% }); %>
+              <% if (bestSellingProducts.length === 0) { %>
+                <tr>
+                  <td colspan="3" class="text-center">No sales data available</td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -371,11 +413,307 @@
     </ul>
   </div>
 
-<script>
-  // Sidebar Collapse
-const collapseBtn = document.getElementById('collapseBtn');
-const sidebar = document.getElementById('sidebar');
-const body = document.body;
+  <style>
+    /* Existing styles */
+    
+    /* Chart container styles */
+    .charts-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    
+    .chart-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .chart-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #2c3e50;
+      margin: 0;
+    }
+    
+    .chart-dropdown select {
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      background-color: white;
+      cursor: pointer;
+    }
+    
+    .chart-canvas-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+    
+    /* Best sellers table */
+    .best-sellers {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .best-sellers th,
+    .best-sellers td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .best-sellers th {
+      font-weight: 600;
+      color: #2c3e50;
+      background-color: #f8f9fa;
+    }
+    
+    .best-sellers tr:hover {
+      background-color: #f8f9fa;
+    }
+    
+    .text-center {
+      text-align: center;
+    }
+    
+    .text-right {
+      text-align: right;
+    }
+    
+    .table-responsive {
+      overflow-x: auto;
+    }
+  </style>
+
+  <script>
+    // Initialize Charts
+    document.addEventListener('DOMContentLoaded', function() {
+      // Sales Chart
+      const salesCtx = document.getElementById('salesChart').getContext('2d');
+      const salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+          labels: <%- JSON.stringify(monthlySales.labels) %>,
+          datasets: [
+            {
+              label: 'Total Sales (₹)',
+              data: <%- JSON.stringify(monthlySales.sales) %>,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              tension: 0.3,
+              fill: true,
+              yAxisID: 'y'
+            },
+            {
+              label: 'Number of Orders',
+              data: <%- JSON.stringify(monthlySales.orders) %>,
+              borderColor: 'rgba(54, 162, 235, 1)',
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              tension: 0.3,
+              borderDash: [5, 5],
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          scales: {
+            y: {
+              type: 'linear',
+              display: true,
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Sales (₹)'
+              }
+            },
+            y1: {
+              type: 'linear',
+              display: true,
+              position: 'right',
+              grid: {
+                drawOnChartArea: false,
+              },
+              title: {
+                display: true,
+                text: 'Number of Orders'
+              }
+            }
+          },
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    if (context.dataset.label.includes('Sales')) {
+                      label += '₹' + context.parsed.y.toLocaleString();
+                    } else {
+                      label += context.parsed.y;
+                    }
+                  }
+                  return label;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Category Chart
+      const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+      const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+          labels: <%- JSON.stringify(bestSellingCategories.map(cat => cat._id.categoryName)) %>,
+          datasets: [{
+            data: <%- JSON.stringify(bestSellingCategories.map(cat => cat.totalQuantity)) %>,
+            backgroundColor: [
+              'rgba(255, 99, 132, 0.7)',
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(255, 206, 86, 0.7)',
+              'rgba(75, 192, 192, 0.7)',
+              'rgba(153, 102, 255, 0.7)'
+            ],
+            borderColor: [
+              'rgba(255, 99, 132, 1)',
+              'rgba(54, 162, 235, 1)',
+              'rgba(255, 206, 86, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)'
+            ],
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.raw || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((value / total) * 100);
+                  return `${label}: ${value} units (${percentage}%)`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Function to update chart with new data
+      function updateChartData(chart, data) {
+        chart.data.labels = data.labels;
+        chart.data.datasets[0].data = data.sales;
+        chart.data.datasets[1].data = data.orders;
+        
+        // Update axis labels based on period
+        const period = document.getElementById('chartPeriod').value;
+        let xAxisTitle = '';
+        let yAxisTitle = 'Sales (₹)';
+        
+        if (period === 'year') {
+          xAxisTitle = 'Year';
+          chart.options.scales.x.title = { display: true, text: xAxisTitle };
+        } else if (period === 'month') {
+          xAxisTitle = 'Month';
+          chart.options.scales.x.title = { display: true, text: xAxisTitle };
+        } else if (period === 'week') {
+          xAxisTitle = 'Week';
+          chart.options.scales.x.title = { display: true, text: xAxisTitle };
+        }
+        
+        chart.options.plugins.title = {
+          display: true,
+          text: `Sales Overview - ${document.getElementById('chartPeriod').options[document.getElementById('chartPeriod').selectedIndex].text}`
+        };
+        
+        chart.update();
+      }
+
+      // Handle period change
+      document.getElementById('chartPeriod').addEventListener('change', async function() {
+        const period = this.value;
+        const loadingIndicator = document.getElementById('chartLoading');
+        const chartContainer = document.getElementById('chartContainer');
+        
+        try {
+          // Show loading state
+          if (loadingIndicator) loadingIndicator.style.display = 'flex';
+          if (chartContainer) chartContainer.style.opacity = '0.5';
+          
+          // Fetch new data from the API
+          const response = await fetch(`/admin/api/sales-data?period=${period}`);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            updateChartData(salesChart, result.data);
+          } else {
+            throw new Error(result.message || 'Failed to fetch data');
+          }
+          
+        } catch (error) {
+          console.error('Error updating chart:', error);
+          // Show error message to user
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'error-message';
+          errorDiv.textContent = 'Failed to load chart data. Please try again.';
+          
+          // Remove any existing error messages
+          const existingError = document.querySelector('.chart-error');
+          if (existingError) existingError.remove();
+          
+          // Add the new error message
+          errorDiv.className = 'error-message chart-error';
+          const chartSection = document.querySelector('.chart-section');
+          if (chartSection) {
+            chartSection.prepend(errorDiv);
+          }
+        } finally {
+          // Hide loading state
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+          if (chartContainer) chartContainer.style.opacity = '1';
+        }
+      });
+    });
+
+    // Sidebar Collapse
+    const collapseBtn = document.getElementById('collapseBtn');
+    const sidebar = document.getElementById('sidebar');
+    const body = document.body;
 
 // Check if we're on mobile and apply initial state
 function checkMobileView() {

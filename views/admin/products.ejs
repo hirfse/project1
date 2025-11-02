@@ -859,57 +859,85 @@
             let isValid = true;
             const validImageTypes = ['image/jpeg', 'image/png', 'image/jpg'];
 
+            // Product Name validation
             if (!productName.trim()) {
                 displayErrorMessage(`${prefix}-productName-error`, 'Product name is required');
                 isValid = false;
+            } else if (productName.trim().length < 3) {
+                displayErrorMessage(`${prefix}-productName-error`, 'Product name must be at least 3 characters long');
+                isValid = false;
             }
 
+            // Description validation
             if (!description.trim()) {
                 displayErrorMessage(`${prefix}-description-error`, 'Description is required');
                 isValid = false;
+            } else if (description.trim().length < 10) {
+                displayErrorMessage(`${prefix}-description-error`, 'Description must be at least 10 characters long');
+                isValid = false;
             }
 
+            // Regular Price validation
             if (!regularPrice || isNaN(regularPrice) || parseFloat(regularPrice) < 0) {
                 displayErrorMessage(`${prefix}-regularPrice-error`, 'Enter a valid non-negative price');
                 isValid = false;
-            }
-
-            if (!salePrice || isNaN(salePrice) || parseFloat(salePrice) < 0) {
-                displayErrorMessage(`${prefix}-salePrice-error`, 'Enter a valid non-negative price');
+            } else if (parseFloat(regularPrice) < 1) {
+                displayErrorMessage(`${prefix}-regularPrice-error`, 'Price must be at least ₹1');
                 isValid = false;
             }
 
-            // Check if sale price is not greater than regular price
-            if (parseFloat(salePrice) > parseFloat(regularPrice)) {
-                displayErrorMessage(`${prefix}-salePrice-error`, 'Sale price cannot be greater than regular price');
-                isValid = false;
+            // Sale Price validation
+            if (salePrice) { // Sale price is optional
+                if (isNaN(salePrice) || parseFloat(salePrice) < 0) {
+                    displayErrorMessage(`${prefix}-salePrice-error`, 'Enter a valid non-negative price');
+                    isValid = false;
+                } else if (parseFloat(salePrice) > parseFloat(regularPrice)) {
+                    displayErrorMessage(`${prefix}-salePrice-error`, 'Sale price cannot be greater than regular price');
+                    isValid = false;
+                } else if (parseFloat(salePrice) === parseFloat(regularPrice)) {
+                    displayErrorMessage(`${prefix}-salePrice-error`, 'Sale price should be less than regular price');
+                    isValid = false;
+                }
             }
 
+            // Quantity validation
             if (!quantity || isNaN(quantity) || !Number.isInteger(Number(quantity)) || quantity < 0) {
                 displayErrorMessage(`${prefix}-quantity-error`, 'Enter a valid non-negative whole number');
                 isValid = false;
+            } else if (parseInt(quantity) < 0) {
+                displayErrorMessage(`${prefix}-quantity-error`, 'Quantity cannot be negative');
+                isValid = false;
             }
 
+            // Category validation
             if (!category) {
                 displayErrorMessage(`${prefix}-category-error`, 'Select a category');
                 isValid = false;
             }
 
-            if (formId === 'addProductForm') {
+            // Image validation (only for add product or when new images are being uploaded)
+            if (formId === 'addProductForm' || (formId === 'editProductForm' && imageInputs.some(input => input.files.length > 0))) {
                 let uploadedImages = 0;
+                let hasInvalidType = false;
+                
                 imageInputs.forEach((input, index) => {
                     if (input.files && input.files.length > 0) {
                         const file = input.files[0];
                         if (!validImageTypes.includes(file.type)) {
-                            displayErrorMessage(`${prefix}-image-error-${index + 1}`, 'Only JPG or PNG files allowed');
+                            displayErrorMessage(`${prefix}-image-error-${index + 1}`, 'Only JPG, JPEG or PNG files allowed');
+                            isValid = false;
+                            hasInvalidType = true;
+                        } else if (file.size > 2 * 1024 * 1024) { // 2MB limit
+                            displayErrorMessage(`${prefix}-image-error-${index + 1}`, 'Image size should be less than 2MB');
                             isValid = false;
                         } else {
                             uploadedImages++;
                         }
                     }
                 });
-                if (uploadedImages < 3) {
-                    displayErrorMessage(`${prefix}-image-error-1`, 'Upload at least 3 images (JPG or PNG)');
+                
+                if (!hasInvalidType && uploadedImages < 3 && formId === 'addProductForm') {
+                    displayErrorMessage(`${prefix}-image-error-1`, 'Upload at least 3 images (JPG, JPEG or PNG)');
                     isValid = false;
                 }
             }
@@ -954,6 +982,7 @@
                 `${prefix}-salePrice-error`,
                 `${prefix}-quantity-error`,
                 `${prefix}-category-error`,
+                `${prefix}-subcategory-error`,
                 `${prefix}-status-error`,
                 `${prefix}-image-error`,
                 `${prefix}-image-error-1`,
@@ -961,20 +990,35 @@
                 `${prefix}-image-error-3`,
                 `${prefix}-image-error-4`
             ];
-            errorElements.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.innerText = '';
-                    el.classList.remove('show');
 
-                    // Also remove error class from input field
-                    const inputId = id.replace('-error', '');
-                    const inputElement = document.getElementById(inputId);
-                    if (inputElement) {
-                        inputElement.classList.remove('error');
-                    }
+            errorElements.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.innerText = '';
+                    element.classList.remove('show');
                 }
             });
+
+            // Also clear error classes from input fields
+            const form = document.getElementById(formId);
+            if (form) {
+                const inputs = form.querySelectorAll('input, select, textarea');
+                inputs.forEach(input => {
+                    input.classList.remove('error');
+                    
+                    // Add input event listeners to clear errors when user starts typing
+                    input.addEventListener('input', function() {
+                        const inputId = this.id;
+                        const errorElementId = inputId + '-error';
+                        const errorElement = document.getElementById(errorElementId);
+                        if (errorElement) {
+                            errorElement.innerText = '';
+                            errorElement.classList.remove('show');
+                        }
+                        this.classList.remove('error');
+                    });
+                });
+            }
         }
 
         // Image cropping
@@ -1153,6 +1197,11 @@
         function handleEditProduct(event) {
             event.preventDefault();
 
+            // Frontend validation before submission
+            if (!validateForm('editProductForm')) {
+                return;
+            }
+
             const form = document.getElementById('editProductForm');
             const formData = new FormData(form);
             const productId = document.getElementById('editProductId').value;
@@ -1161,17 +1210,33 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => {
-                        if (err.validationErrors) {
-                            displayValidationErrors(err.validationErrors, 'edit');
-                            return null; // Return null to indicate validation error
+            .then(async (response) => {
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const data = await response.json();
+                    if (!response.ok) {
+                        if (data && data.validationErrors) {
+                            displayValidationErrors(data.validationErrors, 'edit');
+                            return null; // handled
                         }
-                        throw new Error(err.message || err.error || 'Failed to update product');
-                    });
+                        throw new Error((data && (data.message || data.error)) || 'Failed to update product');
+                    }
+                    return data;
+                } else {
+                    // Likely an HTML redirect (e.g., session expired)
+                    const text = await response.text();
+                    if (text && text.startsWith('<!DOCTYPE')) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Session expired',
+                            text: 'Please login again to continue.',
+                        }).then(() => {
+                            window.location.href = '/admin/adminLogin';
+                        });
+                        return null;
+                    }
+                    throw new Error('Unexpected response from server');
                 }
-                return response.json();
             })
             .then(result => {
                 if (result === null) {

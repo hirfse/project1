@@ -77,5 +77,18 @@ app.set('views', path.join(__dirname, 'views'));
 app.use('/admin', adminRouter);
 app.use('/', userRouter);
 
+// 404 Handler - Must be after all other routes
+const { notFound, errorHandler } = require('./middlewares/errorHandler.middleware');
+app.use(notFound);
 
-app.listen(PORT, () => console.log(`Server started @ port ${PORT}`));
+// Error Handler - Must be the last middleware
+app.use(errorHandler);
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+    console.error('Unhandled Rejection:', err);
+    // Close server & exit process
+    server.close(() => process.exit(1));
+});
+
+const server = app.listen(PORT, () => console.log(`Server started @ port ${PORT}`));

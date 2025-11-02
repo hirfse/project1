@@ -334,10 +334,20 @@ footer p {
                     <h3 class="text-xl font-semibold mb-2">Payment Method</h3>
                     <form id="paymentMethodForm">
                         <div class="flex flex-col gap-2">
-                            <label class="flex items-center">
-                                <input type="radio" name="paymentMethod" value="cod" class="mr-2" checked>
-                                Cash on Delivery
-                            </label>
+                            <div class="flex items-center">
+                                <label class="flex items-center">
+                                    <input type="radio" 
+                                           name="paymentMethod" 
+                                           value="cod" 
+                                           class="mr-2" 
+                                           <%= total > 1000 ? 'disabled' : 'checked' %>
+                                           id="codRadio">
+                                    <span>Cash on Delivery</span>
+                                </label>
+                                <span class="ml-2 text-sm text-red-600 cod-message" style="display: <%= total > 1000 ? 'inline' : 'none' %>">
+                                    (Not available for orders above ₹1000)
+                                </span>
+                            </div>
                             <label class="flex items-center">
                                 <input type="radio" name="paymentMethod" value="card" class="mr-2">
                                 Card (Coming Soon)
@@ -584,6 +594,45 @@ footer p {
 <script>
     // Consolidated checkout script - U-Craft
 
+    // Function to update payment method based on total amount
+    function updatePaymentMethod() {
+        const totalAmount = parseFloat(document.getElementById('grand-total').textContent.replace(/[^0-9.]/g, ''));
+        const codRadio = document.getElementById('codRadio');
+        const cardRadio = document.querySelector('input[name="paymentMethod"][value="card"]');
+        const paymentMethodInput = document.getElementById('paymentMethodInput');
+        const codMessage = document.querySelector('.cod-message');
+        
+        if (totalAmount > 1000) {
+            // Disable COD for orders above ₹1000
+            if (codRadio.checked) {
+                cardRadio.checked = true;
+                paymentMethodInput.value = 'card';
+                if (typeof showToast !== 'undefined') {
+                    showToast('Cash on Delivery is not available for orders above ₹1000', 'warning');
+                }
+            }
+            codRadio.disabled = true;
+            if (codMessage) codMessage.style.display = 'inline';
+        } else {
+            // Enable COD for orders ₹1000 or below
+            codRadio.disabled = false;
+            if (codMessage) codMessage.style.display = 'none';
+        }
+    }
+
+    // Update payment method on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePaymentMethod();
+        
+        // Listen for quantity changes
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('quantity-btn')) {
+                // Wait for the quantity update to complete
+                setTimeout(updatePaymentMethod, 100);
+            }
+        });
+    });
+
     // Configuration and DOM elements
     const CONFIG = {
         userData: {
@@ -824,14 +873,27 @@ footer p {
 
     function handlePlaceOrderSubmit(e) {
         const selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+        const totalAmount = parseFloat(document.getElementById('grand-total').textContent.replace(/[^0-9.]/g, ''));
+        
         if (!selectedPayment) {
             e.preventDefault();
             showToast("Please select a payment method.", "error");
             return;
         }
-        if (selectedPayment.value !== 'cod') {
+        
+        // Check if COD is selected for order above ₹1000
+        if (selectedPayment.value === 'cod' && totalAmount > 1000) {
             e.preventDefault();
-            showToast("Coming soon!", "warning");
+            showToast("Cash on Delivery is not available for orders above ₹1000. Please choose another payment method.", "error");
+            // Force switch to card payment
+            document.querySelector('input[name="paymentMethod"][value="card"]').checked = true;
+            document.getElementById('paymentMethodInput').value = 'card';
+            return;
+        }
+        
+        if (selectedPayment.value === 'card') {
+            e.preventDefault();
+            showToast("Please use the Razorpay button to pay with card.", "info");
         }
     }
 

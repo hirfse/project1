@@ -1,4 +1,5 @@
-require('dotenv').config()
+require('dotenv').config();
+const HTTP_STATUS = require('../../constants/httpStatus');
 const User = require('../../models/user.model')
 const Product = require("../../models/product.model");
 const Category = require("../../models/category.model");
@@ -36,7 +37,7 @@ exports.listSubcategories = async (req, res) => {
     res.json({ subcategories: subs });
   } catch (err) {
     console.error('Error listing subcategories:', err);
-    res.status(500).json({ error: 'Failed to load subcategories' });
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({ error: 'Failed to load subcategories' });
   }
 };
 
@@ -44,7 +45,7 @@ exports.addSubcategory = async (req, res) => {
   try {
     const { name,  category } = req.body;
     if (!name || !category) {
-      return res.status(400).json({ error: 'Name and category are required' });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'Name and category are required' });
     }
 
     if (!mongoose.isValidObjectId(category)) {
@@ -146,22 +147,265 @@ exports.handleAdminLogin = async (req, res) => {
 
 
 
+// Helper function to get date range based on period
+const getDateRange = (period) => {
+  const now = new Date();
+  const start = new Date();
+  
+  switch(period) {
+    case 'year':
+      start.setFullYear(now.getFullYear() - 1);
+      break;
+    case 'month':
+      start.setMonth(now.getMonth() - 1);
+      break;
+    case 'week':
+      start.setDate(now.getDate() - 7);
+      break;
+    default: // 30 days
+      start.setDate(now.getDate() - 30);
+  }
+  
+  return { start, end: now };
+};
+
+// Get filtered sales data for charts
+exports.getSalesData = async (req, res) => {
+  try {
+    const { period, year } = req.query;
+    const now = new Date();
+    let startDate, endDate, groupBy, format;
+
+    // Set date range and grouping based on period
+    switch(period) {
+      case 'year':
+        // Last 5 years
+        startDate = new Date(now.getFullYear() - 4, 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 0, 1);
+        groupBy = { $year: '$orderDate' };
+        format = 'YYYY';
+        break;
+      case 'month':
+        // Last 12 months
+        startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        groupBy = { 
+          year: { $year: '$orderDate' },
+          month: { $month: '$orderDate' }
+        };
+        format = 'MMM YYYY';
+        break;
+      case 'week':
+        // Last 12 weeks
+        startDate = new Date();
+        startDate.setDate(startDate.getDate() - 84); // 12 weeks * 7 days
+        endDate = new Date();
+        groupBy = { 
+          year: { $isoWeekYear: '$orderDate' },
+          week: { $isoWeek: '$orderDate' }
+        };
+        format = 'MMM D, YYYY';
+        break;
+      default:
+        // Default to monthly view of current year
+        startDate = new Date(now.getFullYear(), 0, 1);
+        endDate = new Date(now.getFullYear() + 1, 0, 1);
+        groupBy = { $month: '$orderDate' };
+        format = 'MMM';
+    }
+
+    // Get sales data
+    const salesData = await Order.aggregate([
+      {
+        $match: {
+          status: 'Delivered',
+          orderDate: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: groupBy,
+          totalSales: { $sum: '$total' },
+          orderCount: { $sum: 1 },
+          date: { $first: '$orderDate' }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+
+    // Format the data for the chart
+    let labels = [];
+    const sales = [];
+    const orders = [];
+
+    salesData.forEach(item => {
+      let label;
+      if (period === 'year') {
+        label = item._id.toString();
+      } else if (period === 'month') {
+        label = new Date(item._id.year, item._id.month - 1).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      } else if (period === 'week') {
+        const date = new Date();
+        date.setFullYear(item._id.year, 0, 1);
+        date.setDate((item._id.week - 1) * 7);
+        label = `Week ${item._id.week}, ${item._id.year}`;
+      }
+      
+      labels.push(label);
+      sales.push(item.totalSales);
+      orders.push(item.orderCount);
+    });
+
+    res.json({
+      success: true,
+      data: {
+        labels,
+        sales,
+        orders
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching sales data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch sales data'
+    });
+  }
+};
+
 exports.getAdminHome = async(req, res) => {
-  try{
+  try {
+    // Basic stats
     const totalOrders = await Order.countDocuments({});
     const revenueResult = await Order.aggregate([
       { $match: { status: 'Delivered' } },
       { $group: { _id: null, totalRevenue: { $sum: '$total' } } }
     ]);
-    const recentOrders = await Order.find({}).sort({ orderDate: -1 }).limit(5).populate('userId').lean();
-    const newUsers = await User.find({ createdAt: { $gte: new Date(Date.now() - 7*24*60*60*1000) } }).countDocuments();
+    
+    const recentOrders = await Order.find({})
+      .sort({ orderDate: -1 })
+      .limit(5)
+      .populate('userId')
+      .lean();
+      
+    const newUsers = await User.find({ 
+      createdAt: { $gte: new Date(Date.now() - 7*24*60*60*1000) } 
+    }).countDocuments();
 
-    res.render('admin/home', { totalOrders, revenues: revenueResult[0] ? revenueResult[0].totalRevenue : 0, recentOrders, newUsers ,error: null });
-  }catch(error){
+    // Sales data for charts
+    const { start: thirtyDaysAgo } = getDateRange('30days');
+    
+    // Monthly sales data for the current year
+    const currentYear = new Date().getFullYear();
+    const monthlySales = await Order.aggregate([
+      {
+        $match: {
+          status: 'Delivered',
+          orderDate: {
+            $gte: new Date(`${currentYear}-01-01`),
+            $lt: new Date(`${currentYear + 1}-01-01`)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $month: '$orderDate' },
+          totalSales: { $sum: '$total' },
+          orderCount: { $sum: 1 }
+        }
+      },
+      { $sort: { '_id': 1 } }
+    ]);
+
+    // Top 10 best-selling products
+    const bestSellingProducts = await Order.aggregate([
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.productId',
+          productName: { $first: '$items.productName' },
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+        }
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 10 }
+    ]);
+
+    // Best selling categories
+    const bestSellingCategories = await Order.aggregate([
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'items.productId',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: '$product' },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'product.category',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      { $unwind: '$category' },
+      {
+        $group: {
+          _id: {
+            categoryId: '$category._id',
+            categoryName: '$category.name'
+          },
+          totalQuantity: { $sum: '$items.quantity' },
+          totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+        }
+      },
+      { $sort: { totalQuantity: -1 } },
+      { $limit: 5 }
+    ]);
+
+    // Prepare data for charts
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const salesData = Array(12).fill(0);
+    const orderCountData = Array(12).fill(0);
+    
+    monthlySales.forEach(sale => {
+      salesData[sale._id - 1] = sale.totalSales;
+      orderCountData[sale._id - 1] = sale.orderCount;
+    });
+
+    res.render('admin/home', { 
+      totalOrders, 
+      revenues: revenueResult[0] ? revenueResult[0].totalRevenue : 0, 
+      recentOrders, 
+      newUsers,
+      monthlySales: {
+        labels: months,
+        sales: salesData,
+        orders: orderCountData
+      },
+      bestSellingProducts,
+      bestSellingCategories,
+      currentYear,
+      error: null 
+    });
+  } catch(error) {
     console.error('Error loading admin home:', error);
-    res.render('admin/home', { totalOrders: 0, revenues: 0, recentOrders: [], error: 'Failed to load dashboard data' });
+    res.render('admin/home', { 
+      totalOrders: 0, 
+      revenues: 0, 
+      recentOrders: [], 
+      monthlySales: { labels: [], sales: [], orders: [] },
+      bestSellingProducts: [],
+      bestSellingCategories: [],
+      currentYear: new Date().getFullYear(),
+      error: 'Failed to load dashboard data' 
+    });
   }
-}
+};
 
 /////////
 ///user management
@@ -441,83 +685,293 @@ exports.addProducts = async (req, res) => {
   }
 };
 
+// Configure multer for file uploads
+const multer = require('multer');
+
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, '../../public/images/products');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'product-' + uniqueSuffix + path.extname(file.originalname).toLowerCase());
+  }
+});
+
+// File filter for images only
+const fileFilter = (req, file, cb) => {
+  const filetypes = /jpeg|jpg|png|webp/;
+  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = filetypes.test(file.mimetype);
+  
+  if (mimetype && extname) {
+    return cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed (jpeg, jpg, png, webp)'));
+  }
+};
+
+// Initialize multer with configuration
+exports.upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+}).array('images', 4); // 'images' is the field name, max 4 files
+
 exports.editProduct = async (req, res) => {
   try {
     const productId = req.params.id;
-    const { productName, description, regularPrice, salePrice, quantity, category, subCategory, status, deleteImages } = req.body;
+    
+    // Ensure we're getting JSON
+    res.setHeader('Content-Type', 'application/json');
+    
+    // Parse the existingImages from the form data
+    const { 
+      productName, 
+      description, 
+      regularPrice, 
+      salePrice, 
+      quantity, 
+      category, 
+      subCategory, 
+      status, 
+      existingImages: existingImagesStr // This will be a JSON string from the form
+    } = req.body;
+    
+    // Parse existingImages if it exists
+    let existingImages = [];
+    try {
+      existingImages = existingImagesStr ? JSON.parse(existingImagesStr) : [];
+    } catch (e) {
+      console.error('Error parsing existing images:', e);
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid existing images data',
+        error: e.message 
+      });
+    }
 
     // Validation
     if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({ error: 'Invalid product ID' });
-    }
-    if (!productName || !productName.trim()) {
-      return res.status(400).json({ error: 'Product name is required' });
-    }
-    if (!description || !description.trim()) {
-      return res.status(400).json({ error: 'Description is required' });
-    }
-    if (!category || !mongoose.Types.ObjectId.isValid(category)) {
-      return res.status(400).json({ error: 'Valid category is required' });
-    }
-    if (!regularPrice || isNaN(regularPrice) || regularPrice < 0) {
-      return res.status(400).json({ error: 'Valid regular price is required' });
-    }
-    if (!salePrice || isNaN(salePrice) || salePrice < 0) {
-      return res.status(400).json({ error: 'Valid sale price is required' });
-    }
-    if (!quantity || isNaN(quantity) || !Number.isInteger(Number(quantity)) || quantity < 0) {
-      return res.status(400).json({ error: 'Valid non-negative whole number for quantity is required' });
-    }
-    if (!['Available', 'Out of Stock'].includes(status)) {
-      return res.status(400).json({ error: 'Invalid status' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid product ID',
+        error: 'INVALID_PRODUCT_ID'
+      });
     }
 
+    // Find the product to update
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Product not found',
+        error: 'PRODUCT_NOT_FOUND'
+      });
     }
 
-    // Handle image deletions
-    let images = [...product.productImage];
-    if (deleteImages) {
-      const imagesToDelete = Array.isArray(deleteImages) ? deleteImages : [deleteImages];
-      images = images.filter(img => !imagesToDelete.includes(img));
+    // Handle existing images - if no new images are uploaded, keep the existing ones
+    let images = [];
+    try {
+      // We've already parsed existingImages above, now use it
+      images = existingImages && existingImages.length > 0 ? existingImages : [...product.productImage];
+    } catch (e) {
+      console.error('Error parsing existing images:', e);
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid existing images data',
+        error: 'INVALID_IMAGE_DATA'
+      });
     }
 
-    // Handle new images
-    ['image1', 'image2', 'image3', 'image4'].forEach((field, index) => {
-      if (req.files[field]) {
-        images[index] = req.files[field][0].filename;
-      }
-    });
+    // Handle new file uploads if any
+    if (req.files && req.files.length > 0) {
+      // Add new files to the images array
+      req.files.forEach(file => {
+        images.push(file.filename);
+      });
+      
+      // Limit to 4 images total
+      images = images.slice(0, 4);
+    }
 
-    // Update product
+    // Validate required fields
+    if (!productName || !productName.trim()) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Product name is required',
+        error: 'PRODUCT_NAME_REQUIRED'
+      });
+    }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Description is required',
+        error: 'DESCRIPTION_REQUIRED'
+      });
+    }
+    if (!category || !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Valid category is required',
+        error: 'INVALID_CATEGORY'
+      });
+    }
+    if (!regularPrice || isNaN(regularPrice) || regularPrice < 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Valid regular price is required',
+        error: 'INVALID_REGULAR_PRICE'
+      });
+    }
+    if (!salePrice || isNaN(salePrice) || salePrice < 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Valid sale price is required',
+        error: 'INVALID_SALE_PRICE'
+      });
+    }
+    if (!quantity || isNaN(quantity) || !Number.isInteger(Number(quantity)) || quantity < 0) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Valid non-negative whole number for quantity is required',
+        error: 'INVALID_QUANTITY'
+      });
+    }
+    if (!['Available', 'Out of Stock'].includes(status)) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Invalid status',
+        error: 'INVALID_STATUS'
+      });
+    }
+
+    // Clean up old images that are no longer needed
+    if (product.productImage && product.productImage.length > 0) {
+      const imagesToDelete = product.productImage.filter(img => !images.includes(img));
+      
+      // Delete the actual files
+      imagesToDelete.forEach(img => {
+        const imagePath = path.join(uploadDir, img);
+        if (fs.existsSync(imagePath)) {
+          try {
+            fs.unlinkSync(imagePath);
+          } catch (err) {
+            console.error(`Error deleting image ${img}:`, err);
+          }
+        }
+      });
+    }
+
+    // Update product fields
     product.productName = productName;
     product.description = description;
     product.regularPrice = parseFloat(regularPrice);
     product.salePrice = parseFloat(salePrice);
     product.quantity = parseInt(quantity);
     product.category = category;
+    
+    // Handle subcategory
     if (subCategory && mongoose.Types.ObjectId.isValid(subCategory)) {
-      const subcatDoc = await Subcategory.findById(subCategory);
-      if (!subcatDoc) {
-        return res.status(400).json({ error: 'Invalid subcategory' });
+      try {
+        const subcatDoc = await Subcategory.findById(subCategory);
+        if (!subcatDoc) {
+          return res.status(400).json({ 
+            success: false,
+            message: 'Invalid subcategory',
+            error: 'INVALID_SUBCATEGORY'
+          });
+        }
+        if (String(subcatDoc.category) !== String(category)) {
+          return res.status(400).json({ 
+            success: false,
+            message: 'Subcategory does not belong to selected category',
+            error: 'SUBCATEGORY_MISMATCH'
+          });
+        }
+        product.subCategory = subCategory;
+      } catch (error) {
+        console.error('Error validating subcategory:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error validating subcategory',
+          error: 'SUBCATEGORY_VALIDATION_ERROR'
+        });
       }
-      if (String(subcatDoc.category) !== String(category)) {
-        return res.status(400).json({ error: 'Subcategory does not belong to selected category' });
-      }
-      product.subCategory = subCategory;
     } else {
       product.subCategory = null;
     }
+    
     product.status = status;
     product.productImage = images;
+    product.updatedAt = new Date();
 
-    await product.save();
-    res.status(200).json({ message: 'Product updated successfully' });
+    // Save the updated product
+    try {
+      await product.save();
+      
+      // Return success response with updated product data
+      return res.status(200).json({ 
+        success: true, 
+        message: 'Product updated successfully',
+        data: {
+          id: product._id,
+          name: product.productName,
+          images: product.productImage,
+          regularPrice: product.regularPrice,
+          salePrice: product.salePrice,
+          quantity: product.quantity,
+          status: product.status
+        }
+      });
+      
+    } catch (saveError) {
+      console.error('Error saving product:', saveError);
+      throw saveError; // This will be caught by the outer catch block
+    }
+    
   } catch (error) {
-    console.error('Error editing product:', error);
-    res.status(500).json({ error: 'Failed to edit product' });
+    console.error('Error updating product:', error);
+    
+    // Clean up any uploaded files if there was an error
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        if (file && file.filename) {
+          const filePath = path.join(uploadDir, file.filename);
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+            } catch (err) {
+              console.error(`Error cleaning up file ${file.filename}:`, err);
+            }
+          }
+        }
+      });
+    }
+    
+    // Check if this is a validation error
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation error',
+        error: 'VALIDATION_ERROR',
+        details: error.message
+      });
+    }
+    
+    // For other types of errors
+    return res.status(500).json({ 
+      success: false, 
+      message: 'An error occurred while updating the product',
+      error: error.message || 'INTERNAL_SERVER_ERROR'
+    });
   }
 };
 

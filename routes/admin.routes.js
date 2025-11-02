@@ -36,6 +36,9 @@ router.post('/adminLogin',adminController.handleAdminLogin);
 router.use(checkAdminSession);
 router.use(preventBackAfterLogout); 
 
+// Sales Data API
+router.get('/api/sales-data', adminController.getSalesData);
+
 //   Admin Home & User Management
 router.get('/adminHome', adminController.getAdminHome);
 router.get('/userManagement', adminController.getAdminUserManagement);
@@ -64,12 +67,7 @@ router.delete('/delete-subcategory/:id', adminController.deleteSubcategory);
 
 router.get('/products', adminController.getProductList);
 router.post('/add-products', upload.any(), adminController.addProducts);
-router.post('/edit-product/:id', upload.fields([
-    { name: 'image1', maxCount: 1 },
-    { name: 'image2', maxCount: 1 },
-    { name: 'image3', maxCount: 1 },
-    { name: 'image4', maxCount: 1 }
-]), adminController.editProduct);
+router.post('/edit-product/:id', upload.array('images', 4), adminController.editProduct);
 router.post('/toggle-block-product/:id', adminController.toggleBlockProduct);
 
 

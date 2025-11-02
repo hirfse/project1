@@ -166,6 +166,12 @@ router.get('/wallet', userController.getWallet);
 router.get('/referral-code', userController.getReferralCode);
 
 
+// Test route - add this to your routes
+router.get('/test-error', (req, res, next) => {
+    // This will be caught by our error handler
+    throw new Error('This is a test error');
+});
+
 //   Logout Route
 
 router.post('/logout', userController.handleLogout);
