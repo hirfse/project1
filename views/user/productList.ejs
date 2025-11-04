@@ -786,11 +786,11 @@
                     <div class="product" data-name="<%= product.productName.toLowerCase() %>" data-price="<%= product.salePrice %>" data-date="<%= product.createdAt %>" data-category="<%= product.category ? product.category._id : '' %>">
                         <a href="/product/<%= product._id %>" class="product-link">
                             <div class="product-image-container">
-                                <img src="/Uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="primary-image">
+                                <img src="/uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="primary-image">
                                 <% if (product.productImage.length > 1) { %>
-                                    <img src="/Uploads/product-images/<%= product.productImage[1] %>" alt="<%= product.productName %> - Alternative view" class="secondary-image">
+                                    <img src="/uploads/product-images/<%= product.productImage[1] %>" alt="<%= product.productName %> - Alternative view" class="secondary-image">
                                 <% } else { %>
-                                    <img src="/Uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="secondary-image">
+                                    <img src="/uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>" class="secondary-image">
                                 <% } %>
                             </div>
                             <p><%= product.productName %></p>

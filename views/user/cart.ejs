@@ -350,7 +350,7 @@
                     <tr id="cart-item-<%= item.productId._id %>">
                         <td>
                             <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="/Uploads/product-images/<%= item.productId.productImage && item.productId.productImage[0] ? item.productId.productImage[0] : '' %>" alt="<%= item.productId.productName %>" style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
+                                <img src="/uploads/product-images/<%= item.productId.productImage && item.productId.productImage[0] ? item.productId.productImage[0] : '' %>" alt="<%= item.productId.productName %>" style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
                                 <span><%= item.productId.productName %></span>
                             </div>
                             <div class="stock-status" id="stock-status-<%= item.productId._id %>">

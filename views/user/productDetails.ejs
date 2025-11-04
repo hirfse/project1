@@ -958,14 +958,14 @@
             <div class="product-header">
                 <div class="product-images">
                     <div class="main-image-container">
-                        <img id="mainImage" class="main-image" src="/Uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                        <img id="mainImage" class="main-image" src="/uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>">
                     </div>
                     <div class="image-gallery">
                         <% product.productImage.forEach((image, index) => { %>
                             <div class="thumbnail-container <%= index === 0 ? 'active' : '' %>">
                                 <img 
                                     class="thumbnail" 
-                                    src="/Uploads/product-images/<%= image %>" 
+                                    src="/uploads/product-images/<%= image %>" 
                                     alt="<%= product.productName %> image <%= index+1 %>"
                                     onclick="changeMainImage(this.src, this)"
                                 >

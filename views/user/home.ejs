@@ -502,7 +502,7 @@
                 <% products.forEach(product=> { %>
                     <div class="product">
                         <div class="product-image">
-                            <img src="/Uploads/product-images/<%= Array.isArray(product.productImage) && product.productImage.length > 0 
+                            <img src="/uploads/product-images/<%= Array.isArray(product.productImage) && product.productImage.length > 0 
         ? product.productImage[0] 
         : 'default.jpg' %>" alt="<%= product.productName %>" />
                         </div>
