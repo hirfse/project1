@@ -17,13 +17,33 @@ const categoryOfferSchema = new mongoose.Schema({
     discountValue: {
         type: Number,
         required: true,
-        min: 0
+        min: 0,
+        validate: {
+            validator: function(value) {
+                if (this.discountType === 'percentage') {
+                    return value > 0 && value <= 99;
+                }
+                return value > 0;
+            },
+            message: 'Discount percentage must be between 1 and 99%'
+        }
     },
     maxDiscount: {
         type: Number,
         required: function() { return this.discountType === 'percentage'; },
         min: 0,
-        default: 0
+        default: 0,
+        validate: {
+            validator: function(value) {
+                return value >= 0;
+            },
+            message: 'Maximum discount must be a positive number'
+        }
+    },
+    minPrice: {
+        type: Number,
+        default: 50,
+        min: 0
     },
     startDate: {
         type: Date,

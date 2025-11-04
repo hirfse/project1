@@ -14,7 +14,16 @@ const couponSchema = new mongoose.Schema({
     },
     discountNumber: {
         type: Number,
-        required: true
+        required: true,
+        validate: {
+            validator: function(value) {
+                if (this.discountType === 'percentage') {
+                    return value > 0 && value <= 99;
+                }
+                return value > 0;
+            },
+            message: 'Discount percentage must be between 1 and 99%'
+        }
     },
     maxDiscount: {
         type: Number,

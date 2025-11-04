@@ -46,8 +46,27 @@ exports.addProductOffer = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!name || !description || !discountType || !discountValue || !maxDiscount || !startDate || !endDate || !applicableProducts) {
+    if (!name || !description || !discountType || !discountValue || !startDate || !endDate || !applicableProducts) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    // Convert values to numbers
+    const discountVal = parseFloat(discountValue);
+    const maxDisc = discountType === 'percentage' ? parseFloat(maxDiscount) : 0;
+    const minPrice = 50; // Minimum price after discount
+
+    // Validate discount value
+    if (isNaN(discountVal) || discountVal <= 0) {
+      return res.status(400).json({ success: false, message: 'Discount value must be greater than 0' });
+    }
+
+    if (discountType === 'percentage' && (discountVal < 1 || discountVal > 99)) {
+      return res.status(400).json({ success: false, message: 'Discount percentage must be between 1% and 99%' });
+    }
+
+    // For fixed discount, ensure it's at least 1 rupee and less than the minimum price
+    if (discountType === 'fixed' && discountVal < 1) {
+      return res.status(400).json({ success: false, message: 'Fixed discount must be at least ₹1' });
     }
 
     // Validate priority (1-10 integer)
@@ -67,18 +86,42 @@ exports.addProductOffer = async (req, res) => {
     // Process applicable products
     const processedProducts = Array.isArray(applicableProducts) ? applicableProducts : [applicableProducts];
 
+    // Get product prices to validate minimum price after discount
+    const products = await Product.find({ _id: { $in: processedProducts } });
+    
+    // Check if any product would go below minimum price after discount
+    for (const product of products) {
+      const price = product.salePrice;
+      let discountedPrice = price;
+      
+      if (discountType === 'percentage') {
+        const discountAmount = Math.min((price * discountVal) / 100, maxDisc);
+        discountedPrice = price - discountAmount;
+      } else {
+        discountedPrice = price - discountVal;
+      }
+      
+      if (discountedPrice < minPrice) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Discount would make ${product.productName} price (₹${price}) go below minimum price of ₹${minPrice}. Maximum allowed discount: ₹${price - minPrice}` 
+        });
+      }
+    }
+
     // Create new product offer
     const newProductOffer = new ProductOffer({
       name,
       description,
       discountType,
-      discountValue: parseFloat(discountValue),
-      maxDiscount: parseFloat(maxDiscount),
+      discountValue: discountVal,
+      maxDiscount: maxDisc,
       startDate: start,
       endDate: end,
       isActive: isActive === 'on' || isActive === true,
       applicableProducts: processedProducts,
       priority: p,
+      minPrice: minPrice,
       createdAt: new Date(),
       updatedAt: new Date()
     });
@@ -97,12 +140,37 @@ exports.updateProductOffer = async (req, res) => {
     const { id } = req.params;
     const {
       name, description, discountType, discountValue, maxDiscount,
-      startDate, endDate, isActive, priority
+      startDate, endDate, isActive, priority, applicableProducts
     } = req.body;
 
     const offer = await ProductOffer.findById(id);
     if (!offer) {
       return res.status(404).json({ success: false, message: 'Product offer not found' });
+    }
+
+    // Convert values to numbers
+    const discountVal = parseFloat(discountValue);
+    const maxDisc = discountType === 'percentage' ? parseFloat(maxDiscount) : 0;
+    const minPrice = 50; // Minimum price after discount
+
+    // Validate discount value
+    if (isNaN(discountVal) || discountVal <= 0) {
+      return res.status(400).json({ success: false, message: 'Discount value must be greater than 0' });
+    }
+
+    if (discountType === 'percentage' && (discountVal < 1 || discountVal > 99)) {
+      return res.status(400).json({ success: false, message: 'Discount percentage must be between 1% and 99%' });
+    }
+
+    // For fixed discount, ensure it's at least 1 rupee
+    if (discountType === 'fixed' && discountVal < 1) {
+      return res.status(400).json({ success: false, message: 'Fixed discount must be at least ₹1' });
+    }
+
+    // Validate priority (1-10 integer)
+    const p = parseInt(priority, 10);
+    if (!Number.isInteger(p) || p < 1 || p > 10) {
+      return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
     }
 
     // Validate dates
@@ -113,29 +181,45 @@ exports.updateProductOffer = async (req, res) => {
       return res.status(400).json({ success: false, message: 'End date must be after start date' });
     }
 
-    // Validate priority (1-10 integer)
-    const p = parseInt(priority, 10);
-    if (!Number.isInteger(p) || p < 1 || p > 10) {
-      return res.status(400).json({ success: false, message: 'Priority must be an integer between 1 and 10' });
+    // Process applicable products
+    const processedProducts = Array.isArray(applicableProducts) ? applicableProducts : [applicableProducts];
+    
+    // Get product prices to validate minimum price after discount
+    const products = await Product.find({ _id: { $in: processedProducts } });
+    
+    // Check if any product would go below minimum price after discount
+    for (const product of products) {
+      const price = product.salePrice;
+      let discountedPrice = price;
+      
+      if (discountType === 'percentage') {
+        const discountAmount = Math.min((price * discountVal) / 100, maxDisc);
+        discountedPrice = price - discountAmount;
+      } else {
+        discountedPrice = price - discountVal;
+      }
+      
+      if (discountedPrice < minPrice) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Discount would make ${product.productName} price (₹${price}) go below minimum price of ₹${minPrice}. Maximum allowed discount: ₹${price - minPrice}` 
+        });
+      }
     }
 
     // Update offer
     offer.name = name;
     offer.description = description;
     offer.discountType = discountType;
-    offer.discountValue = parseFloat(discountValue);
-    // Only persist maxDiscount for percentage type; otherwise set to 0 for consistency
-    offer.maxDiscount = discountType === 'percentage' ? parseFloat(maxDiscount) : 0;
-    // Handle applicable categories (string or array)
-    if (applicableCategories) {
-      const processed = Array.isArray(applicableCategories) ? applicableCategories : [applicableCategories];
-      offer.applicableCategories = processed;
-    }
+    offer.discountValue = discountVal;
+    offer.maxDiscount = maxDisc;
     offer.startDate = start;
     offer.endDate = end;
     offer.isActive = isActive === 'on' || isActive === true;
     offer.priority = p;
+    offer.minPrice = minPrice;
     offer.updatedAt = new Date();
+    offer.applicableProducts = processedProducts;
 
     await offer.save();
     res.status(200).json({ success: true, message: 'Product offer updated successfully' });
@@ -195,8 +279,27 @@ exports.addCategoryOffer = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!name || !description || !discountType || !discountValue || !maxDiscount || !startDate || !endDate || !applicableCategories) {
+    if (!name || !description || !discountType || !discountValue || !startDate || !endDate || !applicableCategories) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    // Convert values to numbers
+    const discountVal = parseFloat(discountValue);
+    const maxDisc = discountType === 'percentage' ? parseFloat(maxDiscount) : 0;
+    const minPrice = 50; // Minimum price after discount
+
+    // Validate discount value
+    if (isNaN(discountVal) || discountVal <= 0) {
+      return res.status(400).json({ success: false, message: 'Discount value must be greater than 0' });
+    }
+
+    if (discountType === 'percentage' && (discountVal < 1 || discountVal > 99)) {
+      return res.status(400).json({ success: false, message: 'Discount percentage must be between 1% and 99%' });
+    }
+
+    // For fixed discount, ensure it's at least 1 rupee
+    if (discountType === 'fixed' && discountVal < 1) {
+      return res.status(400).json({ success: false, message: 'Fixed discount must be at least ₹1' });
     }
 
     // Validate priority (1-10 integer)
@@ -215,19 +318,43 @@ exports.addCategoryOffer = async (req, res) => {
 
     // Process applicable categories
     const processedCategories = Array.isArray(applicableCategories) ? applicableCategories : [applicableCategories];
+    
+    // Get products in these categories to validate minimum price after discount
+    const products = await Product.find({ category: { $in: processedCategories } });
+    
+    // Check if any product would go below minimum price after discount
+    for (const product of products) {
+      const price = product.salePrice;
+      let discountedPrice = price;
+      
+      if (discountType === 'percentage') {
+        const discountAmount = Math.min((price * discountVal) / 100, maxDisc);
+        discountedPrice = price - discountAmount;
+      } else {
+        discountedPrice = price - discountVal;
+      }
+      
+      if (discountedPrice < minPrice) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Discount would make ${product.productName} price (₹${price}) go below minimum price of ₹${minPrice}. Maximum allowed discount: ₹${price - minPrice}` 
+        });
+      }
+    }
 
     // Create new category offer
     const newCategoryOffer = new CategoryOffer({
       name,
       description,
       discountType,
-      discountValue: parseFloat(discountValue),
-      maxDiscount: parseFloat(maxDiscount),
+      discountValue: discountVal,
+      maxDiscount: maxDisc,
       startDate: start,
       endDate: end,
       isActive: isActive === 'on' || isActive === true,
       applicableCategories: processedCategories,
-      priority: parseInt(priority) || 1,
+      priority: p,
+      minPrice: minPrice,
       createdAt: new Date(),
       updatedAt: new Date()
     });
