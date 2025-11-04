@@ -462,7 +462,7 @@
                 <% products.forEach(product => { %>
                     <div class="product" data-name="<%= product.productName.toLowerCase() %>" data-price="<%= product.salePrice %>" data-date="<%= product.createdAt %>" data-category="<%= product.category ? product.category._id : '' %>">
                         <a href="/product/<%= product._id %>" class="product-link">
-                            <img src="/Uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>">
+                            <img src="/uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>">
                             <p><%= product.productName %></p>
                             <div class="price">
                                 <span class="original-price">₹<%= product.regularPrice %></span>
