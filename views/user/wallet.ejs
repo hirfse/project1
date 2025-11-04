@@ -160,6 +160,50 @@
             margin-bottom: 20px;
             border: 1px solid #f5c6cb;
         }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+            padding: 20px 0;
+        }
+
+        .pagination a,
+        .pagination span {
+            padding: 10px 15px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .pagination a:hover {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .pagination .active {
+            background-color: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .pagination .disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -218,6 +262,66 @@
                             </div>
                         </div>
                     <% }) %>
+
+                    <!-- Pagination Controls -->
+                    <% if (pagination.totalPages > 1) { %>
+                        <div class="pagination">
+                            <!-- Previous Button -->
+                            <% if (pagination.hasPrevPage) { %>
+                                <a href="/wallet?page=<%= pagination.prevPage %>">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </a>
+                            <% } else { %>
+                                <span class="disabled">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </span>
+                            <% } %>
+
+                            <!-- Page Numbers -->
+                            <% 
+                                let startPage = Math.max(1, pagination.currentPage - 2);
+                                let endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
+                                
+                                if (startPage > 1) { %>
+                                    <a href="/wallet?page=1">1</a>
+                                    <% if (startPage > 2) { %>
+                                        <span>...</span>
+                                    <% } %>
+                                <% }
+                                
+                                for (let i = startPage; i <= endPage; i++) { %>
+                                    <% if (i === pagination.currentPage) { %>
+                                        <span class="active"><%= i %></span>
+                                    <% } else { %>
+                                        <a href="/wallet?page=<%= i %>"><%= i %></a>
+                                    <% } %>
+                                <% }
+                                
+                                if (endPage < pagination.totalPages) { %>
+                                    <% if (endPage < pagination.totalPages - 1) { %>
+                                        <span>...</span>
+                                    <% } %>
+                                    <a href="/wallet?page=<%= pagination.totalPages %>"><%= pagination.totalPages %></a>
+                                <% } %>
+
+                            <!-- Next Button -->
+                            <% if (pagination.hasNextPage) { %>
+                                <a href="/wallet?page=<%= pagination.nextPage %>">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </a>
+                            <% } else { %>
+                                <span class="disabled">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </span>
+                            <% } %>
+                        </div>
+
+                        <div class="pagination-info">
+                            Showing <%= (pagination.currentPage - 1) * 10 + 1 %> - 
+                            <%= Math.min(pagination.currentPage * 10, pagination.totalTransactions) %> 
+                            of <%= pagination.totalTransactions %> transactions
+                        </div>
+                    <% } %>
                 <% } else { %>
                     <div class="no-transactions">
                         <i class="fas fa-wallet"></i>

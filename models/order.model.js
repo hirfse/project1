@@ -53,6 +53,10 @@ const orderSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    razorpayPaymentId: {
+        type: String,
+        default: null
+    },
     subtotal: {
         type: Number,
         required: true

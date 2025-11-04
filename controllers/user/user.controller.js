@@ -2933,31 +2933,57 @@ exports.cancelOrder = async (req, res) => {
             }
         }
 
-        // Process wallet refund if payment was made via Razorpay
+        // Process refund if payment was made
         let refundMessage = 'Order canceled successfully';
         console.log(`Order cancellation - Payment Method: ${order.paymentMethod}, Order Total: ₹${order.total}`);
 
-        if (order.paymentMethod === 'card' || order.paymentMethod === 'razorpay') {
-            try {
-                const refundAmount = order.total;
-                await processWalletRefund(userId, refundAmount, `Refund for canceled order #${order.orderID}`);
-                refundMessage = `Order canceled successfully. ₹${refundAmount} has been refunded to your wallet.`;
-                console.log(`Wallet refund processed: ₹${refundAmount} for canceled order ${order.orderID}`);
-            } catch (refundError) {
-                console.error('Error processing wallet refund for canceled order:', refundError);
-                refundMessage = 'Order canceled successfully. Refund processing failed, please contact support.';
+        try {
+            if (order.paymentMethod === 'razorpay' && order.razorpayPaymentId) {
+                // First try Razorpay refund
+                const refundResult = await processRazorpayRefund(order, order.total);
+                if (refundResult.success) {
+                    refundMessage = `Order canceled successfully. ₹${order.total.toFixed(2)} has been refunded to your original payment method. Refund ID: ${refundResult.refundId}`;
+                } else {
+                    // Fall back to wallet refund if Razorpay refund fails
+                    await processWalletRefund(
+                        userId, 
+                        order.total, 
+                        `Refund for canceled order #${order.orderId || order._id} (Razorpay refund failed)`
+                    );
+                    refundMessage = `Order canceled successfully. ₹${order.total.toFixed(2)} has been refunded to your wallet.`;
+                }
+            } else if (order.paymentMethod === 'wallet' || order.paymentMethod === 'cod' || order.paymentMethod === 'razorpay') {
+                // For wallet payments, COD, or if Razorpay payment ID is missing, refund to wallet
+                await processWalletRefund(
+                    userId,
+                    order.total,
+                    `Refund for canceled order #${order.orderId || order._id}`
+                );
+                refundMessage = `Order canceled successfully. ₹${order.total.toFixed(2)} has been refunded to your wallet.`;
             }
+        } catch (error) {
+            console.error('Error processing refund:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to process refund',
+                error: error.message
+            });
         }
 
+        // Update order status
         order.status = 'Canceled';
         order.cancelReason = cancelReason || 'No reason provided';
         order.updatedAt = new Date();
         await order.save();
-
-        res.status(200).json({ success: true, message: refundMessage });
+        
+        return res.status(200).json({ success: true, message: refundMessage });
     } catch (error) {
         console.error('Error canceling order:', error);
-        res.status(500).json({ success: false, message: 'Failed to cancel order' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to cancel order', 
+            error: error.message 
+        });
     }
 };
 
@@ -2977,16 +3003,14 @@ exports.cancelOrderItem = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
-        if (order.status !== 'Pending' && order.status !== 'Confirmed') {
-            return res.status(400).json({ success: false, message: 'Order items cannot be canceled' });
-        }
-
         const itemIndex = order.items.findIndex(item => item._id.toString() === itemId);
         if (itemIndex === -1) {
             return res.status(404).json({ success: false, message: 'Item not found in order' });
         }
 
         const item = order.items[itemIndex];
+        
+        // Restore product stock
         const product = await Product.findById(item.productId);
         if (product) {
             product.quantity += item.quantity;
@@ -2994,7 +3018,51 @@ exports.cancelOrderItem = async (req, res) => {
             await product.save();
         }
 
-        // Add cancellation reason to the item
+        // Calculate refund amount for this item (same as return logic)
+        const itemRefundAmount = item.price * item.quantity;
+
+        // Update order totals
+        order.subtotal -= itemRefundAmount;
+        order.tax = order.subtotal * 0.05;
+        order.total = order.subtotal + order.tax + order.shipping - (order.discount || 0);
+
+        // Process refund if payment was made
+        let refundMessage = 'Order item canceled successfully';
+
+        try {
+            if (order.paymentMethod === 'razorpay' && order.razorpayPaymentId) {
+                // First try Razorpay refund
+                const refundResult = await processRazorpayRefund(order, itemRefundAmount);
+                if (refundResult.success) {
+                    refundMessage = `Order item canceled successfully. ₹${itemRefundAmount.toFixed(2)} has been refunded to your original payment method. Refund ID: ${refundResult.refundId}`;
+                } else {
+                    // Fall back to wallet refund if Razorpay refund fails
+                    await processWalletRefund(
+                        userId, 
+                        itemRefundAmount, 
+                        `Refund for canceled item from order #${order.orderId || order._id} (Razorpay refund failed)`
+                    );
+                    refundMessage = `Order item canceled successfully. ₹${itemRefundAmount.toFixed(2)} has been refunded to your wallet.`;
+                }
+            } else if (order.paymentMethod === 'wallet' || order.paymentMethod === 'cod' || order.paymentMethod === 'razorpay') {
+                // For wallet payments, COD, or if Razorpay payment ID is missing, refund to wallet
+                await processWalletRefund(
+                    userId,
+                    itemRefundAmount,
+                    `Refund for canceled item from order #${order.orderId || order._id}`
+                );
+                refundMessage = `Order item canceled successfully. ₹${itemRefundAmount.toFixed(2)} has been refunded to your wallet.`;
+            }
+        } catch (error) {
+            console.error('Error processing refund:', error);
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to process refund',
+                error: error.message
+            });
+        }
+
+        // Update item status
         item.status = 'Canceled';
         item.cancelReason = cancelReason || 'No reason provided';
         order.items[itemIndex] = item;
@@ -3003,39 +3071,19 @@ exports.cancelOrderItem = async (req, res) => {
         const allCanceled = order.items.every(i => i.status === 'Canceled');
         if (allCanceled) {
             order.status = 'Canceled';
-            order.cancelReason = cancelReason || 'All items canceled';
-        }
-
-        // Calculate refund amount for this item
-        const itemRefundAmount = item.price * item.quantity;
-
-        // Update order totals
-        order.subtotal -= itemRefundAmount;
-        order.tax = order.subtotal * 0.05;
-        order.total = order.subtotal + order.tax + order.shipping - order.discount;
-
-        // Process wallet refund if payment was made via Razorpay
-        let refundMessage = 'Order item canceled successfully';
-        console.log(`Item cancellation - Payment Method: ${order.paymentMethod}, Item Refund: ₹${itemRefundAmount}`);
-
-        if (order.paymentMethod === 'card' || order.paymentMethod === 'razorpay') {
-            try {
-                await processWalletRefund(userId, itemRefundAmount, `Refund for canceled item from order #${order.orderID}`);
-                refundMessage = `Order item canceled successfully. ₹${itemRefundAmount} has been refunded to your wallet.`;
-                console.log(`Wallet refund processed: ₹${itemRefundAmount} for canceled item from order ${order.orderID}`);
-            } catch (refundError) {
-                console.error('Error processing wallet refund for canceled item:', refundError);
-                refundMessage = 'Order item canceled successfully. Refund processing failed, please contact support.';
-            }
         }
 
         order.updatedAt = new Date();
         await order.save();
-
-        res.status(200).json({ success: true, message: refundMessage });
+        
+        return res.status(200).json({ success: true, message: refundMessage });
     } catch (error) {
         console.error('Error canceling order item:', error);
-        res.status(500).json({ success: false, message: 'Failed to cancel order item' });
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to cancel order item',
+            error: error.message 
+        });
     }
 };
 
@@ -3493,7 +3541,14 @@ exports.verifyPayment = async (req, res) => {
       }
 
       // Process the order (similar to existing placeOrder logic)
-      const result = await processOrderAfterPayment(userId, cartItems, selectedAddress, 'razorpay', req.session.appliedOffer);
+      const result = await processOrderAfterPayment(
+        userId, 
+        cartItems, 
+        selectedAddress, 
+        'razorpay', 
+        req.session.appliedOffer,
+        { razorpayPaymentId: razorpay_payment_id }
+      );
 
       if (result.success) {
         // Clear session data
@@ -3570,7 +3625,7 @@ exports.paymentFailure = async (req, res) => {
 };
 
 // Helper function to process order after successful payment
-async function processOrderAfterPayment(userId, cartItems, selectedAddress, paymentMethod, appliedOffer) {
+async function processOrderAfterPayment(userId, cartItems, selectedAddress, paymentMethod, appliedOffer, paymentDetails = {}) {
   try {
     // Get address details
     const addressDoc = await Address.findOne({ userId });
@@ -3658,6 +3713,7 @@ async function processOrderAfterPayment(userId, cartItems, selectedAddress, paym
         landMark: selectedAddr.landMark
       },
       paymentMethod,
+      razorpayPaymentId: paymentMethod === 'razorpay' ? paymentDetails.razorpayPaymentId : null,
       subtotal,
       tax,
       shipping,
@@ -4161,6 +4217,10 @@ exports.getWallet = async (req, res) => {
         const userId = req.session.userId;
         const categories = await Category.find({ isListed: true });
 
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10; // Transactions per page
+
         let wallet = await Wallet.findOne({ userId });
         if (!wallet) {
             wallet = new Wallet({ userId, balance: 0, transactions: [] });
@@ -4168,10 +4228,31 @@ exports.getWallet = async (req, res) => {
         }
 
         // Sort transactions by date (newest first)
-        wallet.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        const sortedTransactions = wallet.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Calculate pagination
+        const totalTransactions = sortedTransactions.length;
+        const totalPages = Math.ceil(totalTransactions / limit);
+        const startIndex = (page - 1) * limit;
+        const endIndex = startIndex + limit;
+
+        // Get paginated transactions
+        const paginatedTransactions = sortedTransactions.slice(startIndex, endIndex);
 
         res.render('user/wallet', {
-            wallet,
+            wallet: {
+                balance: wallet.balance,
+                transactions: paginatedTransactions
+            },
+            pagination: {
+                currentPage: page,
+                totalPages: totalPages,
+                totalTransactions: totalTransactions,
+                hasNextPage: page < totalPages,
+                hasPrevPage: page > 1,
+                nextPage: page + 1,
+                prevPage: page - 1
+            },
             userName: req.session.userName || null,
             categories,
             error: null
@@ -4180,12 +4261,52 @@ exports.getWallet = async (req, res) => {
         console.error('Error fetching wallet:', error);
         res.render('user/wallet', {
             wallet: { balance: 0, transactions: [] },
+            pagination: {
+                currentPage: 1,
+                totalPages: 0,
+                totalTransactions: 0,
+                hasNextPage: false,
+                hasPrevPage: false
+            },
             userName: req.session.userName || null,
             categories: await Category.find({ isListed: true }),
             error: 'Failed to load wallet information'
         });
     }
 };
+
+// Helper function to process Razorpay refund
+async function processRazorpayRefund(order, amount) {
+    try {
+        if (!order.razorpayPaymentId) {
+            console.error('No Razorpay payment ID found for order:', order._id);
+            return { success: false, message: 'No payment reference found for refund' };
+        }
+
+        // Convert amount to paise (Razorpay's smallest currency unit)
+        const amountInPaise = Math.round(amount * 100);
+        
+        // Create refund using Razorpay API
+        const refund = await global.razorpayInstance.payments.refund(
+            order.razorpayPaymentId,
+            { amount: amountInPaise }
+        );
+
+        console.log('Razorpay refund successful:', refund);
+        return { 
+            success: true, 
+            message: 'Refund processed successfully',
+            refundId: refund.id
+        };
+    } catch (error) {
+        console.error('Error processing Razorpay refund:', error);
+        return { 
+            success: false, 
+            message: error.description || 'Failed to process Razorpay refund',
+            error: error.error
+        };
+    }
+}
 
 // Helper function to process wallet refund
 exports.processWalletRefund = async function(userId, amount, description) {

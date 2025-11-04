@@ -726,252 +726,125 @@ exports.upload = multer({
 }).array('images', 4); // 'images' is the field name, max 4 files
 
 exports.editProduct = async (req, res) => {
+  console.log("Edit product request received");
+  
   try {
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.files);
+    
     const productId = req.params.id;
-    
-    // Ensure we're getting JSON
-    res.setHeader('Content-Type', 'application/json');
-    
-    // Parse the existingImages from the form data
-    const { 
-      productName, 
-      description, 
-      regularPrice, 
-      salePrice, 
-      quantity, 
-      category, 
-      subCategory, 
-      status, 
-      existingImages: existingImagesStr // This will be a JSON string from the form
-    } = req.body;
-    
-    // Parse existingImages if it exists
-    let existingImages = [];
-    try {
-      existingImages = existingImagesStr ? JSON.parse(existingImagesStr) : [];
-    } catch (e) {
-      console.error('Error parsing existing images:', e);
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid existing images data',
-        error: e.message 
-      });
-    }
+    const { productName, description, category, subCategory, regularPrice, salePrice, quantity, deleteImages } = req.body;
 
     // Validation
     if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid product ID',
-        error: 'INVALID_PRODUCT_ID'
-      });
+      return res.status(400).json({ error: 'Invalid product ID' });
     }
 
-    // Find the product to update
     const product = await Product.findById(productId);
     if (!product) {
-      return res.status(404).json({ 
-        success: false,
-        message: 'Product not found',
-        error: 'PRODUCT_NOT_FOUND'
-      });
+      return res.status(404).json({ error: 'Product not found' });
     }
 
-    // Handle existing images - if no new images are uploaded, keep the existing ones
-    let images = [];
-    try {
-      // We've already parsed existingImages above, now use it
-      images = existingImages && existingImages.length > 0 ? existingImages : [...product.productImage];
-    } catch (e) {
-      console.error('Error parsing existing images:', e);
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid existing images data',
-        error: 'INVALID_IMAGE_DATA'
-      });
+    if (!productName || !productName.trim()) {
+      console.log('Validation failed: Product name is required');
+      return res.status(400).json({ error: 'Product name is required' });
+    }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: 'Description is required' });
+    }
+    if (!category || !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ error: 'Valid category is required' });
+    }
+    if (!regularPrice || isNaN(regularPrice) || regularPrice < 0) {
+      return res.status(400).json({ error: 'Valid regular price is required' });
+    }
+    if (!salePrice || isNaN(salePrice) || salePrice < 0) {
+      return res.status(400).json({ error: 'Valid sale price is required' });
+    }
+    if (!quantity || isNaN(quantity) || !Number.isInteger(Number(quantity)) || quantity < 0) {
+      return res.status(400).json({ error: 'Valid non-negative whole number for quantity is required' });
     }
 
-    // Handle new file uploads if any
+    // Check if product name is being changed to an existing name
+    if (productName !== product.productName) {
+      const productExists = await Product.findOne({ productName, _id: { $ne: productId } });
+      if (productExists) {
+        return res.status(400).json({ error: 'Product with this name already exists' });
+      }
+    }
+
+    const categoryDoc = await Category.findById(category);
+    if (!categoryDoc) {
+      return res.status(400).json({ error: 'Invalid category' });
+    }
+
+    let subCategoryId = null;
+    if (subCategory && mongoose.Types.ObjectId.isValid(subCategory)) {
+      const subcatDoc = await Subcategory.findById(subCategory);
+      if (!subcatDoc) {
+        return res.status(400).json({ error: 'Invalid subcategory' });
+      }
+      if (String(subcatDoc.category) !== String(categoryDoc._id)) {
+        return res.status(400).json({ error: 'Subcategory does not belong to selected category' });
+      }
+      subCategoryId = subcatDoc._id;
+    }
+
+    // Handle image removal - deleteImages can be a string or array
+    let imagesToDelete = [];
+    if (deleteImages) {
+      imagesToDelete = Array.isArray(deleteImages) ? deleteImages : [deleteImages];
+    }
+
+    // Start with existing images, removing the ones marked for deletion
+    let images = product.productImage.filter(img => !imagesToDelete.includes(img));
+
+    // Add new uploaded images
     if (req.files && req.files.length > 0) {
-      // Add new files to the images array
-      req.files.forEach(file => {
-        images.push(file.filename);
-      });
-      
-      // Limit to 4 images total
+      const newImages = req.files.map(file => file.filename);
+      images = [...images, ...newImages];
+    }
+
+    // Limit to 4 images total
+    if (images.length > 4) {
       images = images.slice(0, 4);
     }
 
-    // Validate required fields
-    if (!productName || !productName.trim()) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Product name is required',
-        error: 'PRODUCT_NAME_REQUIRED'
-      });
-    }
-    if (!description || !description.trim()) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Description is required',
-        error: 'DESCRIPTION_REQUIRED'
-      });
-    }
-    if (!category || !mongoose.Types.ObjectId.isValid(category)) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Valid category is required',
-        error: 'INVALID_CATEGORY'
-      });
-    }
-    if (!regularPrice || isNaN(regularPrice) || regularPrice < 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Valid regular price is required',
-        error: 'INVALID_REGULAR_PRICE'
-      });
-    }
-    if (!salePrice || isNaN(salePrice) || salePrice < 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Valid sale price is required',
-        error: 'INVALID_SALE_PRICE'
-      });
-    }
-    if (!quantity || isNaN(quantity) || !Number.isInteger(Number(quantity)) || quantity < 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Valid non-negative whole number for quantity is required',
-        error: 'INVALID_QUANTITY'
-      });
-    }
-    if (!['Available', 'Out of Stock'].includes(status)) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid status',
-        error: 'INVALID_STATUS'
-      });
+    // Ensure at least 3 images
+    if (images.length < 3) {
+      return res.status(400).json({ error: 'At least 3 images are required. Please upload more images or uncheck some deletions.' });
     }
 
-    // Clean up old images that are no longer needed
-    if (product.productImage && product.productImage.length > 0) {
-      const imagesToDelete = product.productImage.filter(img => !images.includes(img));
-      
-      // Delete the actual files
-      imagesToDelete.forEach(img => {
-        const imagePath = path.join(uploadDir, img);
-        if (fs.existsSync(imagePath)) {
-          try {
-            fs.unlinkSync(imagePath);
-          } catch (err) {
-            console.error(`Error deleting image ${img}:`, err);
-          }
+    // Delete the actual image files that were marked for deletion
+    const uploadPath = path.join(__dirname, '../../public/uploads/product-images/');
+    imagesToDelete.forEach(img => {
+      const imagePath = path.join(uploadPath, img);
+      if (fs.existsSync(imagePath)) {
+        try {
+          fs.unlinkSync(imagePath);
+          console.log(`Deleted image: ${img}`);
+        } catch (err) {
+          console.error(`Error deleting image ${img}:`, err);
         }
-      });
-    }
+      }
+    });
 
     // Update product fields
     product.productName = productName;
     product.description = description;
+    product.category = categoryDoc._id;
+    product.subCategory = subCategoryId;
     product.regularPrice = parseFloat(regularPrice);
     product.salePrice = parseFloat(salePrice);
     product.quantity = parseInt(quantity);
-    product.category = category;
-    
-    // Handle subcategory
-    if (subCategory && mongoose.Types.ObjectId.isValid(subCategory)) {
-      try {
-        const subcatDoc = await Subcategory.findById(subCategory);
-        if (!subcatDoc) {
-          return res.status(400).json({ 
-            success: false,
-            message: 'Invalid subcategory',
-            error: 'INVALID_SUBCATEGORY'
-          });
-        }
-        if (String(subcatDoc.category) !== String(category)) {
-          return res.status(400).json({ 
-            success: false,
-            message: 'Subcategory does not belong to selected category',
-            error: 'SUBCATEGORY_MISMATCH'
-          });
-        }
-        product.subCategory = subCategory;
-      } catch (error) {
-        console.error('Error validating subcategory:', error);
-        return res.status(500).json({
-          success: false,
-          message: 'Error validating subcategory',
-          error: 'SUBCATEGORY_VALIDATION_ERROR'
-        });
-      }
-    } else {
-      product.subCategory = null;
-    }
-    
-    product.status = status;
     product.productImage = images;
-    product.updatedAt = new Date();
+    product.status = parseInt(quantity) > 0 ? 'Available' : 'Out of Stock';
 
-    // Save the updated product
-    try {
-      await product.save();
-      
-      // Return success response with updated product data
-      return res.status(200).json({ 
-        success: true, 
-        message: 'Product updated successfully',
-        data: {
-          id: product._id,
-          name: product.productName,
-          images: product.productImage,
-          regularPrice: product.regularPrice,
-          salePrice: product.salePrice,
-          quantity: product.quantity,
-          status: product.status
-        }
-      });
-      
-    } catch (saveError) {
-      console.error('Error saving product:', saveError);
-      throw saveError; // This will be caught by the outer catch block
-    }
-    
+    await product.save();
+    res.status(200).json({ message: 'Product updated successfully' });
   } catch (error) {
     console.error('Error updating product:', error);
-    
-    // Clean up any uploaded files if there was an error
-    if (req.files && req.files.length > 0) {
-      req.files.forEach(file => {
-        if (file && file.filename) {
-          const filePath = path.join(uploadDir, file.filename);
-          if (fs.existsSync(filePath)) {
-            try {
-              fs.unlinkSync(filePath);
-            } catch (err) {
-              console.error(`Error cleaning up file ${file.filename}:`, err);
-            }
-          }
-        }
-      });
-    }
-    
-    // Check if this is a validation error
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Validation error',
-        error: 'VALIDATION_ERROR',
-        details: error.message
-      });
-    }
-    
-    // For other types of errors
-    return res.status(500).json({ 
-      success: false, 
-      message: 'An error occurred while updating the product',
-      error: error.message || 'INTERNAL_SERVER_ERROR'
-    });
+    res.status(500).json({ error: 'Product update failed' });
   }
 };
 

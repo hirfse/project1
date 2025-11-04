@@ -67,7 +67,7 @@ router.delete('/delete-subcategory/:id', adminController.deleteSubcategory);
 
 router.get('/products', adminController.getProductList);
 router.post('/add-products', upload.any(), adminController.addProducts);
-router.post('/edit-product/:id', upload.array('images', 4), adminController.editProduct);
+router.post('/edit-product/:id', upload.any(), adminController.editProduct);
 router.post('/toggle-block-product/:id', adminController.toggleBlockProduct);
 
 
