@@ -1,6 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const adminController = require('../controllers/admin/admin.controller');
+// const adminController = require('../controllers/admin/admin.controller');
+const {getAdminLogin, handleAdminLogin, getSalesData, getAdminHome, handleLogout } = require('../controllers/admin/adminAuth.controller');
+const {getAdminUserManagement, blockUser, unblockUser, toggleBlockUser} = require('../controllers/admin/user.controller');
+const {getProductList, addProducts, editProduct, toggleBlockProduct} = require('../controllers/admin/product.controller');
+const {getCategoryManagementPage, categoryInfo, addCategory, getListCategory, getUnlistCategory, getEditCategory, editCategory, deleteCategory , listSubcategories, addSubcategory, editSubcategory, toggleSubcategory, deleteSubcategory} = require('../controllers/admin/category.controller');
+const {getOrderManagement, getOrderDetail, changeItemStatus, verifyItemReturnRequest, changeOrderStatus, verifyReturnRequest} = require('../controllers/admin/order.controller');
+const {getInventoryManagement, updateStock, bulkUpdateStock} = require('../controllers/admin/inventory.controller');
+
+
 const { checkAdminSession, preventBackAfterLogout } = require('../middlewares/auth.middleware'); 
 const multer = require("multer");
 const path = require("path");
@@ -29,64 +37,64 @@ const upload = multer({
 });
 
 //   Public Routes (No login required)
-router.get('/adminLogin', adminController.getAdminLogin);
-router.post('/adminLogin',adminController.handleAdminLogin);
+router.get('/adminLogin', getAdminLogin);
+router.post('/adminLogin',handleAdminLogin);
 
 //   Middleware applied to all routes below
 router.use(checkAdminSession);
 router.use(preventBackAfterLogout); 
 
 // Sales Data API
-router.get('/api/sales-data', adminController.getSalesData);
+router.get('/api/sales-data', getSalesData);
 
 //   Admin Home & User Management
-router.get('/adminHome', adminController.getAdminHome);
-router.get('/userManagement', adminController.getAdminUserManagement);
-router.get('/blockUser/:id', adminController.blockUser);
-router.get('/unblockUser/:id', adminController.unblockUser);
-router.get('/toggleBlock/:id', adminController.toggleBlockUser);
+router.get('/adminHome', getAdminHome);
+router.get('/userManagement', getAdminUserManagement);
+router.get('/blockUser/:id', blockUser);
+router.get('/unblockUser/:id', unblockUser);
+router.get('/toggleBlock/:id', toggleBlockUser);
 
 //   Category Management
-router.get('/categoryManagement', adminController.getCategoryManagementPage);
-router.get("/category", adminController.categoryInfo);
-router.post("/addCategory", adminController.addCategory);
-router.get("/listCategory", adminController.getListCategory);
-router.get("/unlistCategory", adminController.getUnlistCategory);
-router.get("/editCategory", adminController.getEditCategory);
-router.post("/editCategory/:id", adminController.editCategory);
-router.post("/delete-category/:id", adminController.deleteCategory);
+router.get('/categoryManagement', getCategoryManagementPage);
+router.get("/category", categoryInfo);
+router.post("/addCategory", addCategory);
+router.get("/listCategory", getListCategory);
+router.get("/unlistCategory", getUnlistCategory);
+router.get("/editCategory", getEditCategory);
+router.post("/editCategory/:id", editCategory);
+router.post("/delete-category/:id", deleteCategory);
 
 //   Subcategory Management
-router.get('/subcategories', adminController.listSubcategories); // optional ?category=
-router.post('/addSubcategory', adminController.addSubcategory);
-router.post('/editSubcategory/:id', adminController.editSubcategory);
-router.patch('/toggle-subcategory/:id', adminController.toggleSubcategory);
-router.delete('/delete-subcategory/:id', adminController.deleteSubcategory);
+router.get('/subcategories', listSubcategories); // optional ?category=
+router.post('/addSubcategory', addSubcategory);
+router.post('/editSubcategory/:id', editSubcategory);
+router.patch('/toggle-subcategory/:id', toggleSubcategory);
+router.delete('/delete-subcategory/:id', deleteSubcategory);
 
 //   Product Management
 
-router.get('/products', adminController.getProductList);
-router.post('/add-products', upload.any(), adminController.addProducts);
-router.post('/edit-product/:id', upload.any(), adminController.editProduct);
-router.post('/toggle-block-product/:id', adminController.toggleBlockProduct);
+router.get('/products', getProductList);
+router.post('/add-products', upload.any(), addProducts);
+router.post('/edit-product/:id', upload.any(), editProduct);
+router.post('/toggle-block-product/:id', toggleBlockProduct);
 
 
 //   Order Management
-router.get('/orders', adminController.getOrderManagement);
-router.get('/orders/:id', adminController.getOrderDetail);
-router.post('/orders/:id/items/:itemId/status', adminController.changeItemStatus);
-router.post('/orders/:id/items/:itemId/verify-return', adminController.verifyItemReturnRequest);
-router.post('/orders/:id/status', adminController.changeOrderStatus);
-router.post('/orders/:id/verify-return', adminController.verifyReturnRequest);
+router.get('/orders', getOrderManagement);
+router.get('/orders/:id', getOrderDetail);
+router.post('/orders/:id/items/:itemId/status', changeItemStatus);
+router.post('/orders/:id/items/:itemId/verify-return', verifyItemReturnRequest);
+router.post('/orders/:id/status', changeOrderStatus);
+router.post('/orders/:id/verify-return', verifyReturnRequest);
 
 //   Inventory Management
-router.get('/inventory', adminController.getInventoryManagement);
-router.post('/inventory/update-stock/:productId', adminController.updateStock);
-router.post('/inventory/bulk-update', adminController.bulkUpdateStock);
+router.get('/inventory', getInventoryManagement);
+router.post('/inventory/update-stock/:productId', updateStock);
+router.post('/inventory/bulk-update', bulkUpdateStock);
 
 // Custom Product Management
 
-router.get('/custom-products',adminController.getCustomProductList);
+// router.get('/custom-products',adminController.getCustomProductList);
 
 // Coupon Management Routes (renamed from offers)
 const couponController = require('../controllers/admin/coupon.controller');
@@ -130,11 +138,9 @@ router.get('/sales-report-data', salesReportController.getSalesDataAPI);
 router.get('/sales-report-pdf', salesReportController.downloadSalesReportPDF);
 router.get('/sales-report-excel', salesReportController.downloadSalesReportExcel);
 
-//sample route
 
-router.get('/sample',adminController.sampleView)
 
 //   Admin Logout
-router.post('/adminLogout',preventBackAfterLogout ,adminController.handleLogout);
+router.post('/adminLogout',preventBackAfterLogout ,handleLogout);
 
 module.exports = router;
