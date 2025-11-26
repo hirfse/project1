@@ -20,10 +20,6 @@ const userSchema = new mongoose.Schema({
     },
     password:{
         type:String,
-    },
-
-    password: { 
-        type: String 
     }, // Optional for Google users
     googleId: { 
         type: String, unique: true 

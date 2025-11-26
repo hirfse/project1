@@ -5,7 +5,9 @@
 
 const HTTP_STATUS = require('../constants/httpStatus');
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
+    // Mark _next as used to satisfy ESLint without changing behavior
+    void _next;
     console.error('Error:', err);
     
     // Default error status and message

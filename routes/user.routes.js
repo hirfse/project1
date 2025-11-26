@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const passport = require('passport');
-const Razorpay = require('razorpay');
 const userController = require('../controllers/user/user.controller');
 const authController = require('../controllers/user/auth.controller');
 const profileController = require('../controllers/user/profile.controller');
@@ -178,7 +177,7 @@ router.get('/referral-code', userController.getReferralCode);
 
 
 // Test route - add this to your routes
-router.get('/test-error', (req, res, next) => {
+router.get('/test-error', () => {
     // This will be caught by our error handler
     throw new Error('This is a test error');
 });

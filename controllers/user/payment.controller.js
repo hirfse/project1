@@ -1,11 +1,9 @@
-const HTTP_STATUS = require('../../constants/httpStatus');
 const Order = require('../../models/order.model');
 const Product = require('../../models/product.model');
 const Address = require('../../models/address.model');
 const Cart = require('../../models/cart.model');
-const User = require('../../models/user.model');
 const Coupon = require('../../models/coupon.model');
-const crypto = require('crypto');
+const { applyReferralRewards } = require('./order.controller');
 
 
 const generateOrderID = () => {
@@ -64,7 +62,7 @@ exports.verifyPayment = async (req, res) => {
     if (expectedSignature === razorpay_signature) {
       // Payment is verified, now place the order
       const userId = req.session.userId;
-      const { selectedAddress, paymentMethod } = req.session.checkoutData || {};
+      const { selectedAddress } = req.session.checkoutData || {};
 
       if (!selectedAddress) {
         return res.status(400).json({

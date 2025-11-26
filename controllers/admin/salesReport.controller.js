@@ -1,7 +1,4 @@
 const Order = require('../../models/order.model');
-const Product = require('../../models/product.model');
-const Category = require('../../models/category.model');
-const User = require('../../models/user.model');
 const PDFDocument = require('pdfkit');
 const ExcelJS = require('exceljs');
 
@@ -178,11 +175,12 @@ function getDateRange(reportType, startDate, endDate) {
             end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
             break;
             
-        case 'weekly':
+        case 'weekly': {
             const dayOfWeek = now.getDay();
             start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
             end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 7);
             break;
+        }
             
         case 'monthly':
             start = new Date(now.getFullYear(), now.getMonth(), 1);

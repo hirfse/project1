@@ -373,7 +373,7 @@ exports.updateCategoryOffer = async (req, res) => {
     const { id } = req.params;
     const {
       name, description, discountType, discountValue, maxDiscount,
-      startDate, endDate, isActive, priority, applicableCategories
+      startDate, endDate, isActive, priority
     } = req.body;
 
     const offer = await CategoryOffer.findById(id);

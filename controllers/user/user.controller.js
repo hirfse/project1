@@ -1,16 +1,9 @@
 // user.controller.js
-const HTTP_STATUS = require('../../constants/httpStatus');
-const MESSAGES = require('../../constants/messages');
 const User = require('../../models/user.model');
 const Product = require('../../models/product.model');
-const Review = require('../../models/review.model');
-const bcrypt = require('bcrypt');
 const Category = require('../../models/category.model');
-const Subcategory = require('../../models/subcategory.model');
-const Order = require('../../models/order.model');
-const OfferService = require('../../services/offerService');
 const mongoose = require('mongoose');
-const ReferralOffer = require('../../models/referralOffer.model');
+const Wallet = require('../../models/wallet.model');
 
 
 ///////to genertate order id
@@ -35,9 +28,6 @@ const ReferralOffer = require('../../models/referralOffer.model');
 
 const Cart = require('../../models/cart.model');
 const Wishlist = require('../../models/wishlist.model'); // Assuming a wishlist model exists
-const Offer = require('../../models/offer.model');
-const Coupon = require('../../models/coupon.model');
-const AdminCouponController = require('../admin/coupon.controller');
 const MAX_QUANTITY_PER_PRODUCT = 10; // Define maximum quantity per product
 
 // Add to Cart
@@ -794,214 +784,6 @@ exports.getContactPage = (req, res) => {
 // Apply offer during checkout
 
 
-// Get available offers for user
-async function getAvailableOffers(userId, cartItems) {
-    try {
-        const now = new Date();
-        console.log('Getting available offers for user:', userId, 'at time:', now);
-
-        // Find all active offers that are not expired and not blocked
-        const offers = await Offer.find({
-            isActive: true,
-            isBlocked: false,
-            startDate: { $lte: now },
-            endDate: { $gte: now }
-        }).populate('applicableProducts applicableCategories').lean();
-
-        console.log('Found offers from database:', offers.length);
-        offers.forEach(offer => {
-            console.log(`Offer ${offer.code}: start=${offer.startDate}, end=${offer.endDate}, active=${offer.isActive}, blocked=${offer.isBlocked}`);
-        });
-
-        const availableOffers = [];
-
-        for (const offer of offers) {
-            // Check if user has already used this offer
-            const userUsage = offer.usedBy.find(usage =>
-                usage.userId && usage.userId.toString() === userId.toString()
-            );
-
-            if (userUsage) {
-                continue; // Skip if user already used this offer
-            }
-
-            // Check if offer usage limit is reached
-            if (offer.usedBy.length >= offer.usageLimit) {
-                continue; // Skip if usage limit reached
-            }
-
-            // Check if user has eligible items for this offer
-            let hasEligibleItems = false;
-            let eligibleTotal = 0;
-
-            for (const item of cartItems) {
-                const product = item.productId;
-                let isEligible = false;
-
-                if (offer.applicableType === 'all') {
-                    isEligible = true;
-                } else if (offer.applicableType === 'products') {
-                    isEligible = offer.applicableProducts.some(p =>
-                        p._id.toString() === product._id.toString()
-                    );
-                } else if (offer.applicableType === 'categories') {
-                    isEligible = offer.applicableCategories.some(c =>
-                        c._id.toString() === product.category.toString()
-                    );
-                }
-
-                if (isEligible) {
-                    hasEligibleItems = true;
-                    eligibleTotal += item.quantity * product.salePrice;
-                }
-            }
-
-            if (hasEligibleItems) {
-                // Calculate potential discount
-                let potentialDiscount = 0;
-                if (offer.discountType === 'percentage') {
-                    potentialDiscount = (eligibleTotal * offer.discountNumber) / 100;
-                } else {
-                    potentialDiscount = offer.discountNumber;
-                }
-
-                // Apply maximum discount limit
-                potentialDiscount = Math.min(potentialDiscount, offer.maxDiscount, eligibleTotal);
-
-                // Check if minimum purchase requirement is met
-                const meetsMinimum = eligibleTotal >= offer.minPurchase;
-
-                availableOffers.push({
-                    code: offer.code,
-                    discountType: offer.discountType,
-                    discountNumber: offer.discountNumber,
-                    maxDiscount: offer.maxDiscount,
-                    minPurchase: offer.minPurchase,
-                    endDate: offer.endDate,
-                    eligibleTotal: eligibleTotal,
-                    potentialDiscount: potentialDiscount,
-                    meetsMinimum: meetsMinimum,
-                    applicableType: offer.applicableType,
-                    usageRemaining: offer.usageLimit - offer.usedBy.length
-                });
-            }
-        }
-
-        return availableOffers;
-    } catch (error) {
-        console.error('Error getting available offers:', error);
-        return [];
-    }
-}
-
-// Apply referral rewards for the referee's first eligible order
-async function applyReferralRewards(order) {
-    try {
-        if (!order || !order.userId) return;
-        const user = await User.findById(order.userId);
-        if (!user || !user.referredBy) return; // No referral associated
-
-        // Ensure there is an active referral offer
-        const now = new Date();
-        const offer = await ReferralOffer.findOne({
-            isActive: true,
-            isBlocked: false,
-            startDate: { $lte: now },
-            endDate: { $gte: now }
-        });
-        if (!offer) return;
-
-        // Check min purchase amount
-        const orderTotal = order.total || 0;
-        if (orderTotal < (offer.minPurchaseAmount || 0)) return;
-
-        // Ensure this is the first eligible order for the referee
-        const priorOrders = await Order.countDocuments({ userId: order.userId, _id: { $ne: order._id } });
-        if (priorOrders > 0) return;
-
-        // Check referrer limit
-        const referrer = await User.findById(user.referredBy);
-        if (!referrer) return;
-        if (typeof offer.maxReferralsPerUser === 'number' && offer.maxReferralsPerUser >= 0) {
-            if ((referrer.referralCount || 0) >= offer.maxReferralsPerUser) return;
-        }
-
-        // Helper to compute reward amount/points
-        const computeReward = (type, value, maxCap, base) => {
-            if (type === 'percentage') {
-                const amt = (base * value) / 100;
-                return Math.min(amt, maxCap || amt);
-            } else if (type === 'amount') {
-                return value;
-            } else if (type === 'points') {
-                return Math.max(0, Math.floor(value));
-            }
-            return 0;
-        };
-
-        // Calculate rewards
-        const referrerType = offer.referrerRewardType;
-        const referrerValue = offer.referrerRewardValue;
-        const referrerMax = offer.referrerRewardType === 'percentage' ? offer.referrerMaxReward : undefined;
-        const refereeType = offer.refereeRewardType;
-        const refereeValue = offer.refereeRewardValue;
-        const refereeMax = offer.refereeRewardType === 'percentage' ? offer.refereeMaxReward : undefined;
-
-        const referrerReward = computeReward(referrerType, referrerValue, referrerMax, orderTotal);
-        const refereeReward = computeReward(refereeType, refereeValue, refereeMax, orderTotal);
-
-        // Credit referrer
-        if (referrerType === 'points') {
-            referrer.points = (referrer.points || 0) + referrerReward;
-        } else {
-            let refWallet = await Wallet.findOne({ userId: referrer._id });
-            if (!refWallet) refWallet = new Wallet({ userId: referrer._id, balance: 0, transactions: [] });
-            refWallet.balance += referrerReward;
-            refWallet.transactions.push({
-                type: 'credit',
-                amount: referrerReward,
-                description: `Referral reward (referrer) for order ${order.orderID}`,
-                orderId: order._id
-            });
-            await refWallet.save();
-        }
-
-        // Credit referee
-        if (refereeType === 'points') {
-            user.points = (user.points || 0) + refereeReward;
-        } else {
-            let refWallet2 = await Wallet.findOne({ userId: user._id });
-            if (!refWallet2) refWallet2 = new Wallet({ userId: user._id, balance: 0, transactions: [] });
-            refWallet2.balance += refereeReward;
-            refWallet2.transactions.push({
-                type: 'credit',
-                amount: refereeReward,
-                description: `Referral reward (referee) for order ${order.orderID}`,
-                orderId: order._id
-            });
-            await refWallet2.save();
-        }
-
-        // Update counts and tracking
-        referrer.referralCount = (referrer.referralCount || 0) + 1;
-        await referrer.save();
-        await user.save();
-
-        offer.totalReferrals = (offer.totalReferrals || 0) + 1;
-        const paid = (referrerType === 'points' ? 0 : referrerReward) + (refereeType === 'points' ? 0 : refereeReward);
-        offer.totalRewardsPaid = (offer.totalRewardsPaid || 0) + paid;
-        offer.updatedAt = new Date();
-        await offer.save();
-
-    } catch (err) {
-        console.error('applyReferralRewards error:', err);
-    }
-}
-
-// Helper to generate OTP
-function generateOTP() {
-    return Math.floor(1000 + Math.random() * 9000);
-}
 
 exports.handleLogout = (req,res) =>{
   req.session.destroy((err) => {
@@ -1106,38 +888,6 @@ exports.getWallet = async (req, res) => {
     }
 };
 
-// Helper function to process Razorpay refund
-async function processRazorpayRefund(order, amount) {
-    try {
-        if (!order.razorpayPaymentId) {
-            console.error('No Razorpay payment ID found for order:', order._id);
-            return { success: false, message: 'No payment reference found for refund' };
-        }
-
-        // Convert amount to paise (Razorpay's smallest currency unit)
-        const amountInPaise = Math.round(amount * 100);
-        
-        // Create refund using Razorpay API
-        const refund = await global.razorpayInstance.payments.refund(
-            order.razorpayPaymentId,
-            { amount: amountInPaise }
-        );
-
-        console.log('Razorpay refund successful:', refund);
-        return { 
-            success: true, 
-            message: 'Refund processed successfully',
-            refundId: refund.id
-        };
-    } catch (error) {
-        console.error('Error processing Razorpay refund:', error);
-        return { 
-            success: false, 
-            message: error.description || 'Failed to process Razorpay refund',
-            error: error.error
-        };
-    }
-}
 
 // Helper function to process wallet refund
 

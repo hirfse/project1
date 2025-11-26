@@ -1,4 +1,3 @@
-const HTTP_STATUS = require('../../constants/httpStatus');
 const Wallet = require('../../models/wallet.model');
 const Category = require('../../models/category.model');
 

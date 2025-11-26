@@ -1,4 +1,5 @@
 const Order = require('../../models/order.model');
+const Wallet = require('../../models/wallet.model');
 
 // List Orders with search, sort, filter, pagination
 exports.getOrderManagement = async (req, res) => {
@@ -168,7 +169,6 @@ exports.verifyItemReturnRequest = async (req, res) => {
       order.updatedAt = new Date();
 
       // Process wallet refund
-      const Wallet = require('../../models/wallet.model');
       let wallet = await Wallet.findOne({ userId: order.userId._id });
 
       if (!wallet) {

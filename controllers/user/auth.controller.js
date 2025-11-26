@@ -2,7 +2,8 @@ const HTTP_STATUS = require('../../constants/httpStatus');
 const MESSAGES = require('../../constants/messages');
 const User = require('../../models/user.model');
 const bcrypt = require('bcrypt');
-// const nodemailer = require('nodemailer');
+const Product = require('../../models/product.model');
+const nodemailer = require('nodemailer');
 
 // OTP stores
 // const otpStore = new Map();
@@ -36,9 +37,8 @@ exports.referralLanding = async (req, res) => {
     }
   } catch (e) {
     console.error('Error handling referral landing:', e);
-  } finally {
-    return res.redirect(HTTP_STATUS.FOUND, '/signup');
   }
+  return res.redirect(HTTP_STATUS.FOUND, '/signup');
 };
 
 exports.getSignupPage = (req, res) => {
@@ -216,10 +216,7 @@ exports.handleLoginPage = async (req, res) => {
 
  //forgot page contoller
 
-const nodemailer = require('nodemailer')//for sending otp
-const Wallet = require('../../models/wallet.model'); // Add wallet model
 const otpStore = new Map(); // For password reset OTP
-const emailOtpStore = new Map(); // For email verification OTP
 const signupOtpStore = new Map(); // For signup OTP
 
  exports.getForgotPage = (req,res) => {

@@ -1,6 +1,5 @@
 const Product = require("../../models/product.model");
 const Category = require("../../models/category.model");
-const Subcategory = require("../../models/subcategory.model");
 
 
 exports.getInventoryManagement = async (req, res) => {

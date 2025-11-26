@@ -1,3 +1,5 @@
+/* eslint-env browser */
+/* global document, window, history */
 // public/js/preventBack.js
 document.addEventListener('DOMContentLoaded', () => {
     if (window.preventBack) {

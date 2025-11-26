@@ -1,12 +1,9 @@
-const HTTP_STATUS = require('../../constants/httpStatus');
-const MESSAGES = require('../../constants/messages');
 const Product = require('../../models/product.model');
 const Category = require('../../models/category.model');
 const Subcategory = require('../../models/subcategory.model');
 const Review = require('../../models/review.model');
 const OfferService = require('../../services/offerService');
 const Cart = require('../../models/cart.model');
-const Wishlist = require('../../models/wishlist.model');
 const mongoose = require('mongoose');
 
 
@@ -191,7 +188,8 @@ exports.getProductDetails = async (req, res) => {
             cartProductIds,
             cartCount
         });
-    } catch (error) {
+    } catch (_error) {
+        void _error;
         // Render a user-friendly error page
         res.status(500).render('user/productError', { 
             message: 'An unexpected error occurred. Please try again later.', 

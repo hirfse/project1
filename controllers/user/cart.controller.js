@@ -1,5 +1,3 @@
-const HTTP_STATUS = require('../../constants/httpStatus');
-const MESSAGES = require('../../constants/messages');
 const Product = require('../../models/product.model');
 const Cart = require('../../models/cart.model');
 const Wishlist = require('../../models/wishlist.model');

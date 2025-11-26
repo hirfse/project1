@@ -1,5 +1,13 @@
 const User = require('../../models/user.model');
 const Category = require('../../models/category.model');
+const nodemailer = require('nodemailer');
+
+// Local OTP store for email verification
+const emailOtpStore = new Map();
+
+function generateOTP() {
+    return Math.floor(1000 + Math.random() * 9000);
+}
 
 exports.getProfile = async (req, res) => {
     const userId = req.session.userId;

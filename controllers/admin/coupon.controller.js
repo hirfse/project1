@@ -44,7 +44,6 @@ exports.addCoupon = async (req, res) => {
     // Validate dates
     const start = new Date(startDate);
     const end = new Date(endDate);
-    const now = new Date();
 
     if (start >= end) {
       return res.status(400).json({ success: false, message: 'End date must be after start date' });

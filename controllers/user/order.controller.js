@@ -1,6 +1,3 @@
-
-const HTTP_STATUS = require('../../constants/httpStatus');
-const MESSAGES = require('../../constants/messages');
 const Order = require('../../models/order.model');
 const Product = require('../../models/product.model');
 const Address = require('../../models/address.model');
@@ -18,6 +15,7 @@ const Wishlist = require('../../models/wishlist.model');
 const ReferralOffer = require('../../models/referralOffer.model');
 const Wallet = require('../../models/wallet.model');
 const Coupon = require('../../models/coupon.model');
+const { processWalletRefund } = require('./wallet.controller');
 
 // Order ID generator
 const generateOrderID = () => {
@@ -1338,9 +1336,8 @@ exports.removeOffer = async (req, res) => {
         console.error('Error removing offer:', error);
         res.status(500).json({ success: false, message: 'Internal server error' });
     }
-};
+}
 
-// Helper function to validate and apply offer
 async function validateAndApplyOffer(offerCode, userId, cartItems) {
     try {
         // Find the coupon
@@ -1646,6 +1643,9 @@ async function applyReferralRewards(order) {
     }
 }
 
+// Export for external usage
+exports.applyReferralRewards = applyReferralRewards;
+
 async function processRazorpayRefund(order, amount) {
     try {
         if (!order.razorpayPaymentId) {
@@ -1677,50 +1677,3 @@ async function processRazorpayRefund(order, amount) {
         };
     }
 }
-
-exports.processWalletRefund = async function(userId, amount, description) {
-    try {
-        console.log(`Processing wallet refund: User ${userId}, Amount: ₹${amount}, Description: ${description}`);
-
-        // Find or create wallet for user
-        let wallet = await Wallet.findOne({ userId });
-        console.log(`Existing wallet found:`, wallet ? `Balance: ₹${wallet.balance}, Transactions: ${wallet.transactions.length}` : 'No wallet found');
-
-        if (!wallet) {
-            console.log('Creating new wallet for user');
-            wallet = new Wallet({
-                userId: userId,
-                balance: 0,
-                transactions: []
-            });
-        }
-
-        // Store old balance for logging
-        const oldBalance = wallet.balance;
-
-        // Add refund amount to wallet balance
-        wallet.balance += amount;
-
-        // Add transaction record
-        const transaction = {
-            type: 'credit',
-            amount: amount,
-            description: description,
-            date: new Date()
-        };
-
-        wallet.transactions.push(transaction);
-        console.log(`Transaction added:`, transaction);
-        console.log(`Balance updated: ₹${oldBalance} → ₹${wallet.balance}`);
-
-        // Save wallet
-        const savedWallet = await wallet.save();
-        console.log(`Wallet saved successfully. New balance: ₹${savedWallet.balance}, Total transactions: ${savedWallet.transactions.length}`);
-
-        console.log(`Wallet refund successful: ₹${amount} added to user ${userId} wallet`);
-        return { success: true, newBalance: wallet.balance };
-    } catch (error) {
-        console.error('Error processing wallet refund:', error);
-        throw error;
-    }
-};
