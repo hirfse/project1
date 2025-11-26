@@ -1,4 +1,6 @@
-
 <footer class="footer">
     <p>© <%= new Date().getFullYear() %> U-Craft. All rights reserved.</p>
 </footer>
+<% if (!isAdmin) { %>
+<script src="/js/user.js" defer></script>
+<% } %>

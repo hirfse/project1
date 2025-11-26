@@ -1,19 +1,12 @@
 const Coupon = require('../../models/coupon.model');
 const Product = require('../../models/product.model');
 const Category = require('../../models/category.model');
+const couponService = require('../../services/couponService');
 
 // Get coupon management page
 exports.getCouponManagement = async (req, res) => {
   try {
-    const coupons = await Coupon.find({})
-      .populate('applicableProducts', 'productName')
-      .populate('applicableCategories', 'name')
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const categories = await Category.find({ isListed: true }).select('name').lean();
-    const products = await Product.find({ isBlocked: false }).select('productName').lean();
-
+    const { coupons, categories, products } = await couponService.listCouponsPageData();
     res.render('admin/coupon', { coupons, categories, products });
   } catch (error) {
     console.error('Error fetching coupons:', error);
@@ -24,67 +17,9 @@ exports.getCouponManagement = async (req, res) => {
 // Add new coupon
 exports.addCoupon = async (req, res) => {
   try {
-    const {
-      code, discountType, discountNumber, maxDiscount, minPurchase,
-      startDate, endDate, usageLimit, perUserUse, isActive, applicableType,
-      applicableProducts, applicableCategories
-    } = req.body;
-
-    // Validate required fields
-    if (!code || !discountType || !discountNumber || !maxDiscount || !minPurchase || !startDate || !endDate || !usageLimit) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
-    }
-
-    // Check if coupon code already exists
-    const existingCoupon = await Coupon.findOne({ code: code.toUpperCase() });
-    if (existingCoupon) {
-      return res.status(400).json({ success: false, message: 'Coupon code already exists' });
-    }
-
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (start >= end) {
-      return res.status(400).json({ success: false, message: 'End date must be after start date' });
-    }
-
-    // Process applicable products and categories
-    let processedProducts = [];
-    let processedCategories = [];
-
-    if (applicableType === 'products' && applicableProducts) {
-      processedProducts = Array.isArray(applicableProducts) ? applicableProducts : [applicableProducts];
-    }
-
-    if (applicableType === 'categories' && applicableCategories) {
-      processedCategories = Array.isArray(applicableCategories) ? applicableCategories : [applicableCategories];
-    }
-
-    // Create new coupon
-    const newCoupon = new Coupon({
-      code: code.toUpperCase(),
-      discountType,
-      discountNumber: parseFloat(discountNumber),
-      maxDiscount: parseFloat(maxDiscount),
-      minPurchase: parseFloat(minPurchase),
-      startDate: start,
-      endDate: end,
-      usageLimit: parseInt(usageLimit),
-      perUserUse: perUserUse !== undefined && perUserUse !== '' ? parseInt(perUserUse) : 0,
-      isActive: isActive === 'on' || isActive === true,
-      isBlocked: false,
-      applicableType: applicableType || 'all',
-      applicableProducts: processedProducts,
-      applicableCategories: processedCategories,
-      usedBy: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    await newCoupon.save();
-    res.status(200).json({ success: true, message: 'Coupon added successfully' });
-
+    const result = await couponService.addCoupon(req.body);
+    if (!result.success) return res.status(400).json(result);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error adding coupon:', error);
     res.status(500).json({ success: false, message: 'Failed to add coupon' });
@@ -95,16 +30,9 @@ exports.addCoupon = async (req, res) => {
 exports.getCouponDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const coupon = await Coupon.findById(id)
-      .populate('applicableProducts', 'productName')
-      .populate('applicableCategories', 'name')
-      .lean();
-
-    if (!coupon) {
-      return res.status(404).json({ success: false, message: 'Coupon not found' });
-    }
-
-    res.status(200).json({ success: true, coupon });
+    const result = await couponService.getCouponDetails(id);
+    if (!result.success) return res.status(404).json(result);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error fetching coupon details:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch coupon details' });
@@ -115,52 +43,12 @@ exports.getCouponDetails = async (req, res) => {
 exports.updateCoupon = async (req, res) => {
   try {
     const { id } = req.params;
-    const { code, discountType, discountNumber, maxDiscount, minPurchase, startDate, endDate, usageLimit, perUserUse, isActive } = req.body;
-
-    // Find the coupon
-    const coupon = await Coupon.findById(id);
-    if (!coupon) {
-      return res.status(404).json({ success: false, message: 'Coupon not found' });
+    const result = await couponService.updateCoupon(id, req.body);
+    if (!result.success) {
+      const code = result.message === 'Coupon not found' ? 404 : 400;
+      return res.status(code).json(result);
     }
-
-    // Validate required fields
-    if (!code || !discountType || !discountNumber || !maxDiscount || !minPurchase || !startDate || !endDate || !usageLimit) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
-    }
-
-    // Check if coupon code already exists (excluding current coupon)
-    const existingCoupon = await Coupon.findOne({ 
-      code: code.toUpperCase(),
-      _id: { $ne: id }
-    });
-    if (existingCoupon) {
-      return res.status(400).json({ success: false, message: 'Coupon code already exists' });
-    }
-
-    // Validate dates
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (start >= end) {
-      return res.status(400).json({ success: false, message: 'End date must be after start date' });
-    }
-
-    // Update coupon
-    coupon.code = code.toUpperCase();
-    coupon.discountType = discountType;
-    coupon.discountNumber = parseFloat(discountNumber);
-    coupon.maxDiscount = parseFloat(maxDiscount);
-    coupon.minPurchase = parseFloat(minPurchase);
-    coupon.startDate = start;
-    coupon.endDate = end;
-    coupon.usageLimit = parseInt(usageLimit);
-    coupon.perUserUse = perUserUse !== undefined && perUserUse !== '' ? parseInt(perUserUse) : 0;
-    coupon.isActive = isActive === 'on' || isActive === true;
-    coupon.updatedAt = new Date();
-
-    await coupon.save();
-    res.status(200).json({ success: true, message: 'Coupon updated successfully' });
-
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error updating coupon:', error);
     res.status(500).json({ success: false, message: 'Failed to update coupon' });
@@ -171,15 +59,9 @@ exports.updateCoupon = async (req, res) => {
 exports.deleteCoupon = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const coupon = await Coupon.findById(id);
-    if (!coupon) {
-      return res.status(404).json({ success: false, message: 'Coupon not found' });
-    }
-
-    await Coupon.findByIdAndDelete(id);
-    res.status(200).json({ success: true, message: 'Coupon deleted successfully' });
-
+    const result = await couponService.deleteCoupon(id);
+    if (!result.success) return res.status(404).json(result);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error deleting coupon:', error);
     res.status(500).json({ success: false, message: 'Failed to delete coupon' });
@@ -190,19 +72,9 @@ exports.deleteCoupon = async (req, res) => {
 exports.toggleCouponStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    const coupon = await Coupon.findById(id);
-    if (!coupon) {
-      return res.status(404).json({ success: false, message: 'Coupon not found' });
-    }
-
-    coupon.isBlocked = !coupon.isBlocked;
-    coupon.updatedAt = new Date();
-    await coupon.save();
-
-    const status = coupon.isBlocked ? 'blocked' : 'unblocked';
-    res.status(200).json({ success: true, message: `Coupon ${status} successfully` });
-
+    const result = await couponService.toggleCouponStatus(id);
+    if (!result.success) return res.status(404).json(result);
+    res.status(200).json(result);
   } catch (error) {
     console.error('Error toggling coupon status:', error);
     res.status(500).json({ success: false, message: 'Failed to toggle coupon status' });

@@ -4,6 +4,8 @@ const User = require('../../models/user.model');
 const bcrypt = require('bcrypt');
 const Product = require('../../models/product.model');
 const nodemailer = require('nodemailer');
+const authService = require('../../services/authService');
+const userService = require('../../services/userService');
 
 // OTP stores
 // const otpStore = new Map();
@@ -67,9 +69,7 @@ exports.handleSignupPage = async (req, res) => {
                 error: MESSAGES.AUTH.SIGNUP_EMAIL_EXISTS 
             });
         }
-        const otp = Math.floor(1000 + Math.random() * 9000);
-        signupOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
-
+        const { otp } = await authService.generateSignupOTP(email);
         console.log(`Generated OTP for ${email}: ${otp}`);
 
         res.render('user/verifySignupOTP', {
@@ -85,63 +85,27 @@ exports.handleSignupPage = async (req, res) => {
     }
 };
 
-exports.verifySignupOTP = (req, res) => {
+exports.verifySignupOTP = async (req, res) => {
     const { email, otp, fullName, phone, password } = req.body;
 
-    if (!signupOtpStore.has(email)) {
-        return res.render('user/verifySignupOTP', { error: 'OTP expired or invalid', email, fullName, phone, password });
+    const verification = authService.verifySignupOTP(email, otp);
+    if (!verification.valid) {
+        const msg = verification.reason === 'expired' ? 'OTP expired. Please try again.' : 'Invalid OTP. Please try again.';
+        return res.render('user/verifySignupOTP', { error: msg, email, fullName, phone, password });
     }
 
-    const storedOTPData = signupOtpStore.get(email);
-    if (Date.now() > storedOTPData.expiresAt) {
-        signupOtpStore.delete(email);
-        return res.render('user/verifySignupOTP', { error: 'OTP expired. Please try again.', email, fullName, phone, password });
+    try {
+        const newUser = await authService.createUserWithReferral({ fullName, email, phone, password, referralCode: req.session?.referralCode });
+        req.session.userId = newUser._id.toString();
+        req.session.userEmail = newUser.email;
+        req.session.userRole = newUser.role;
+        req.session.userName = newUser.fullName;
+        if (req.session) delete req.session.referralCode;
+        res.render('user/login', { error: 'Signup successful. Please log in.' });
+    } catch (error) {
+        console.error('Error saving user:', error);
+        res.render('user/verifySignupOTP', { error: 'Something went wrong. Please try again.', email, fullName, phone, password });
     }
-
-    if (storedOTPData.otp.toString() !== otp.toString()) {
-        return res.render('user/verifySignupOTP', { error: 'Invalid OTP. Please try again.', email, fullName, phone, password });
-    }
-
-    signupOtpStore.delete(email);
-
-    bcrypt.hash(password, 10, async (err, hashedPassword) => {
-        if (err) {
-            console.error('Error hashing password:', err);
-            return res.render('user/verifySignupOTP', { error: 'Something went wrong. Please try again.', email, fullName, phone, password });
-        }
-
-        try {
-            // Determine referredBy from session referralCode, if any (prevent self-referral)
-            let referredById = null;
-            if (req.session && req.session.referralCode) {
-                const referrer = await User.findOne({ referralCode: req.session.referralCode }).lean();
-                if (referrer && referrer.email.toLowerCase() !== email.toLowerCase()) {
-                    referredById = referrer._id;
-                }
-            }
-            const newUser = new User({
-                fullName,
-                email,
-                phone,
-                password: hashedPassword,
-                role: 'user',
-                status: 'active',
-                referredBy: referredById
-            });
-            await newUser.save();
-
-            req.session.userId = newUser._id.toString();
-            req.session.userEmail = newUser.email;
-            req.session.userRole = newUser.role;
-            req.session.userName = newUser.fullName;
-            if (req.session) delete req.session.referralCode;
-
-            res.render('user/login', { error: 'Signup successful. Please log in.' });
-        } catch (error) {
-            console.error('Error saving user:', error);
-            res.render('user/verifySignupOTP', { error: 'Something went wrong. Please try again.', email, fullName, phone, password });
-        }
-    });
 };
 
 exports.getLoginPage = (req, res) => {
@@ -152,44 +116,16 @@ exports.getLoginPage = (req, res) => {
 exports.handleLoginPage = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log('Email:', email);
-        console.log('Password:', password);
-        
-        const user = await User.findOne({ email });
-        console.log('User:', user);
-
-        if (!user) {
-            return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { 
-                error: MESSAGES.AUTH.INVALID_CREDENTIALS 
-            });
+        const result = await authService.authenticate(email, password);
+        if (!result.success) {
+            const code = result.code;
+            if (code === 'ACCOUNT_BLOCKED') return res.status(HTTP_STATUS.FORBIDDEN).render('user/login', { error: MESSAGES.AUTH.ACCOUNT_BLOCKED });
+            if (code === 'USE_GOOGLE_AUTH') return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { error: MESSAGES.AUTH.USE_GOOGLE_AUTH });
+            return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { error: MESSAGES.AUTH.INVALID_CREDENTIALS });
         }
 
-        if (user.isBlocked) {
-            return res.status(HTTP_STATUS.FORBIDDEN).render('user/login', { 
-                error: MESSAGES.AUTH.ACCOUNT_BLOCKED 
-            });
-        }
-
-        if (!user.password) {
-            return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { 
-                error: MESSAGES.AUTH.USE_GOOGLE_AUTH 
-            });
-        }
-
-        console.log('User Password:', user.password);
-
-        const passwordCheck = await bcrypt.compare(password, user.password);
-
-        if (!passwordCheck) {
-            return res.status(HTTP_STATUS.UNAUTHORIZED).render('user/login', { 
-                error: 'Invalid credentials' 
-            });
-        }
-
-        // Clear any existing admin session data
+        const user = result.user;
         req.session.role = undefined;
-
-        // Set user session data
         req.session.userId = user._id.toString();
         req.session.userEmail = user.email;
         req.session.userRole = user.role;
@@ -374,18 +310,10 @@ exports.handleResetPassword = async (req, res) => {
   }
 
   try {
-      const user = await User.findOne({ email });
-      if (!user) {
+      const result = await authService.updatePassword(email, password);
+      if (!result.success) {
           return res.render('user/resetPassword', { email, msg: 'User not found' });
       }
-
-      
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-     
-      user.password = hashedPassword;
-      await user.save();
-
       res.redirect('/login');
   } catch (error) {
       console.error('Error resetting password:', error);
@@ -402,7 +330,7 @@ exports.handleResetPassword = async (req, res) => {
 
  exports.getHomePage = async (req, res) => {
   try {
-      const products = await Product.find().limit(4);
+      const { products } = await userService.getHomePageData();
       res.render('user/home', { 
           products, 
           userName: req.session.userName || null 

@@ -2,120 +2,31 @@ const Product = require('../../models/product.model');
 const Category = require('../../models/category.model');
 const Subcategory = require('../../models/subcategory.model');
 const Review = require('../../models/review.model');
-const OfferService = require('../../services/offerService');
 const Cart = require('../../models/cart.model');
 const mongoose = require('mongoose');
+const productService = require('../../services/productService');
 
 
 exports.getProductListing = async (req, res) => {
     try {
         const { page = 1, category, subCategory, sort, search, minPrice, maxPrice } = req.query;
-        const itemsPerPage = 8;
-
-        // Build query for filtering products
-        const query = { isBlocked: false };
-
-        // Category filter
-        if (category && category.trim() !== '') {
-            query.category = category;
-        }
-
-        // Subcategory filter
-        if (subCategory && subCategory.trim() !== '') {
-            query.subCategory = subCategory.trim();
-        }
-
-        // Search filter
-        if (search && search.trim() !== '') {
-            query.productName = { $regex: search.trim(), $options: 'i' };
-        }
-
-        // Price range filter
-        if (minPrice || maxPrice) {
-            query.salePrice = {};
-            if (minPrice && !isNaN(parseFloat(minPrice))) {
-                query.salePrice.$gte = parseFloat(minPrice);
-            }
-            if (maxPrice && !isNaN(parseFloat(maxPrice))) {
-                query.salePrice.$lte = parseFloat(maxPrice);
-            }
-        }
-
-        // Find all listed categories
-        const listedCategories = await Category.find({ isListed: true }).select('_id');
-        const listedCategoryIds = listedCategories.map(cat => cat._id);
-
-        // Only show products whose category is listed
-        query.category = query.category
-            ? query.category
-            : { $in: listedCategoryIds };
-
-        // Build sort option
-        let sortOption = {};
-        if (sort === 'price_asc') {
-            sortOption.salePrice = 1;
-        } else if (sort === 'price_desc') {
-            sortOption.salePrice = -1;
-        } else if (sort === 'name_asc') {
-            sortOption.productName = 1;
-        } else if (sort === 'name_desc') {
-            sortOption.productName = -1;
-        } else if (sort === 'ratings') {
-            sortOption.averageRating = -1;
-        } else if (sort === 'newest') {
-            sortOption.createdAt = -1;
-        } else if (sort === 'oldest') {
-            sortOption.createdAt = 1;
-        } else if (sort === 'featured') {
-            sortOption.isFeatured = -1;
-        } else {
-            // Default sorting
-            sortOption.createdAt = -1;
-        }
-
-        const totalProducts = await Product.countDocuments(query);
-        const totalPages = Math.ceil(totalProducts / itemsPerPage);
-
-        const products = await Product.find(query)
-            .collation({ locale: 'en', strength: 2 })
-            .populate('category')
-            .sort(sortOption)
-            .skip((page - 1) * itemsPerPage)
-            .limit(itemsPerPage);
-
-        // Filter out products whose category is not listed (in case of inconsistent data)
-        const filteredProducts = products.filter(
-            p => p.category && p.category.isListed
-        );
-
-        // Apply offers to products
-        const userId = req.session.userId;
-        const productsWithOffers = await OfferService.applyOffersToProducts(filteredProducts);
-        const cart = await Cart.findOne({ userId });
-        const cartProductIds = cart ? cart.items.map(i => i.productId.toString()) : [];
-        const cartCount = cart ? cart.items.reduce((sum, it) => sum + (it.quantity || 0), 0) : 0;
-        const categories = await Category.find();
-        let subcategories = [];
-        if (category) {
-            subcategories = await Subcategory.find({ category, isActive: true }).sort({ name: 1 });
-        }
-
+        const data = await productService.getProductListingData(req.query, req.session);
         res.render('user/productList', {
-            products: productsWithOffers,
+            products: data.productsWithOffers,
             userName: req.session.userName || null,
             error: req.query.error || null,
             currentPage: parseInt(page),
-            totalPages,
-            categories,
+            totalPages: data.totalPages,
+            categories: data.categories,
             selectedCategory: category || '',
             selectedSubCategory: subCategory || '',
             sort: sort || '',
             searchQuery: search || '',
             minPrice: minPrice || '',
             maxPrice: maxPrice || '',
-            subcategories,
-            cartProductIds,
-            cartCount
+            subcategories: data.subcategories,
+            cartProductIds: data.cartProductIds,
+            cartCount: data.cartCount
         });
     } catch (error) {
         console.error('Error fetching product listing:', error.message);
@@ -128,72 +39,33 @@ exports.getProductListing = async (req, res) => {
 exports.getProductDetails = async (req, res) => {
     try {
         const productId = req.params.id;
-        
         if (!mongoose.Types.ObjectId.isValid(productId)) {
-            // Render a user-friendly error page
-            return res.status(400).render('user/productError', { 
-                message: 'Invalid product ID', 
-                userName: req.session.userName || null 
-            });
-        }
-        
-        const product = await Product.findById(productId)
-        .populate({ path: 'reviews', strictPopulate: false })
-        .populate('category');
-        
-        // If product or its category is not found, show error
-        if (!product || !product.category) {
-            return res.status(404).render('user/productError', { 
-                message: 'Product not found', 
-                userName: req.session.userName || null 
-            });
-        }
-
-        // If product or its category is blocked or unlisted, show "not available" error
-        if (
-            product.isBlocked ||
-            product.category.isBlocked ||
-            !product.category.isListed
-        ) {
-            return res.status(403).render('user/productError', {
-                message: 'This product is not available now.',
+            return res.status(400).render('user/productError', {
+                message: 'Invalid product ID',
                 userName: req.session.userName || null
             });
         }
-        
-        product.reviews = product.reviews || [];
-        const relatedProducts = await Product.find({
-            category: product.category._id,
-            _id: { $ne: productId },
-            isBlocked: false
-        }).populate('category').limit(4);
-
-        // Filter related products to only those whose category is listed
-        const filteredRelated = relatedProducts.filter(
-            p => p.category && p.category.isListed
-        );
-
-        // Apply offers to main product and related products
-        const productWithOffer = await OfferService.calculateDiscountedPrice(product);
-        const relatedProductsWithOffers = await OfferService.applyOffersToProducts(filteredRelated);
-
-        const cart = await Cart.findOne({ userId: req.session.userId });
-        const cartProductIds = cart ? cart.items.map(i => i.productId.toString()) : [];
-        const cartCount = cart ? cart.items.reduce((sum, it) => sum + (it.quantity || 0), 0) : 0;
-
+        const data = await productService.getProductDetailsData(productId, req.session);
+        if (!data.ok) {
+            if (data.reason === 'NOT_FOUND') {
+                return res.status(404).render('user/productError', { message: 'Product not found', userName: req.session.userName || null });
+            }
+            return res.status(403).render('user/productError', { message: 'This product is not available now.', userName: req.session.userName || null });
+        }
+        const productWithOffer = data.productWithOffer;
+        const product = data.product;
         res.render('user/productDetails', {
             product: { ...product.toObject(), ...productWithOffer },
-            relatedProducts: relatedProductsWithOffers,
+            relatedProducts: data.relatedProductsWithOffers,
             userName: req.session.userName || null,
-            cartProductIds,
-            cartCount
+            cartProductIds: data.cartProductIds,
+            cartCount: data.cartCount
         });
     } catch (_error) {
         void _error;
-        // Render a user-friendly error page
-        res.status(500).render('user/productError', { 
-            message: 'An unexpected error occurred. Please try again later.', 
-            userName: req.session.userName || null 
+        res.status(500).render('user/productError', {
+            message: 'An unexpected error occurred. Please try again later.',
+            userName: req.session.userName || null
         });
     }
 };

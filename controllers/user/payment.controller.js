@@ -3,7 +3,7 @@ const Product = require('../../models/product.model');
 const Address = require('../../models/address.model');
 const Cart = require('../../models/cart.model');
 const Coupon = require('../../models/coupon.model');
-const { applyReferralRewards } = require('./order.controller');
+const { applyReferralRewards } = require('../../services/referralService');
 
 
 const generateOrderID = () => {

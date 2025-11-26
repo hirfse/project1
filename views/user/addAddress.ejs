@@ -457,66 +457,6 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            $('#addAddressForm').on('submit', function (e) {
-                e.preventDefault();
-
-                // Validation
-                const fullName = $('#fullName').val().trim();
-                const phone = $('#phone').val().trim();
-                const houseName = $('#houseName').val().trim();
-                const city = $('#city').val().trim();
-                const state = $('#state').val().trim();
-                const pincode = $('#pincode').val().trim();
-
-                if (fullName.length < 3) {
-                    toastr.error('Full Name must be at least 3 characters.');
-                    return;
-                }
-                if (!/^\d{10}$/.test(phone)) {
-                    toastr.error('Phone must be exactly 10 digits.');
-                    return;
-                }
-                if (houseName.length < 3) {
-                    toastr.error('House Name must be at least 3 characters.');
-                    return;
-                }
-                if (city.length < 3) {
-                    toastr.error('City must be at least 3 characters.');
-                    return;
-                }
-                if (state.length < 3) {
-                    toastr.error('State must be at least 3 characters.');
-                    return;
-                }
-                if (!/^\d+$/.test(pincode)) {
-                    toastr.error('Pincode must be numeric.');
-                    return;
-                }
-
-                const formData = $(this).serialize();
-
-                $.ajax({
-                    url: '/addresses/add',
-                    method: 'POST',
-                    data: formData,
-                    success: function (response) {
-                        if (response.success) {
-                            toastr.success(response.message);
-                            setTimeout(() => {
-                                window.location.href = '/addresses';
-                            }, 2000);
-                        } else {
-                            toastr.error(response.message);
-                        }
-                    },
-                    error: function (err) {
-                        toastr.error('An error occurred. Please try again.');
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="/js/user.js" defer></script>
 </body>
 </html>

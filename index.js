@@ -73,6 +73,18 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 
+// Expose session role/info to all templates for conditional script loading
+app.use((req, res, next) => {
+    res.locals.role = req.session && req.session.role ? req.session.role : null;
+    res.locals.userRole = req.session && req.session.userRole ? req.session.userRole : null;
+    res.locals.isAdmin = req.session && req.session.role === 'admin';
+    res.locals.isUser = req.session && req.session.userRole === 'user';
+    if (!res.locals.userName && req.session) res.locals.userName = req.session.userName;
+    if (!res.locals.userEmail && req.session) res.locals.userEmail = req.session.userEmail;
+    next();
+});
+
+
 app.use('/admin', adminRouter);
 app.use('/', userRouter);
 
