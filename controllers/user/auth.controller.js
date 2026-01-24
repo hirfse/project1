@@ -322,26 +322,30 @@ exports.handleResetPassword = async (req, res) => {
 };
 
 
- exports.getHomePage = (req,res) => {
-    console.log('Authenticated User:', req.user); // debuggin
-    res.render('user/home', { user: req.user });
- }
+
  
 
  exports.getHomePage = async (req, res) => {
   try {
       const { products } = await userService.getHomePageData();
+      const user = await User.findById(req.session.userId)
       res.render('user/home', { 
           products, 
-          userName: req.session.userName || null 
+          user: {
+            userName: user.fullName,
+            userProfile : user.profileImage || "/images/project_icons/profile.png"
+          } 
       });
-      console.log(req.session.userName)
+ 
   } catch (error) {
       console.error(error);
       res.render('user/home', { 
           products: [], 
           error: 'Failed to fetch products.', 
-          userName: req.session.userName || null
+          user: {
+            userName: null,
+            userProfile : null
+          } 
       });
   }
 };

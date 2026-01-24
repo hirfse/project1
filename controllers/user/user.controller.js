@@ -894,3 +894,21 @@ exports.getWallet = async (req, res) => {
 
 // Export the module
 module.exports = exports;
+
+//sample controler
+exports.getSample = async(req,res) => {
+  try{
+    const cart = await Cart.findOne({userId: req.session.userId})
+    const cartCount = cart ? cart.items.length : 0;
+    console.log(cartCount)
+    res.render('sample', {
+      cartCount
+    })
+  }catch(err){
+    console.log(err)
+    res.status(500).json({
+      success: false,
+      message: 'Failed to load sample page'
+    })
+  }
+}

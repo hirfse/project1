@@ -63,7 +63,3 @@
 // // 
 
 
-
-// exports.sampleView = async (req,res) =>{
-//   res.render('sample')
-// }

@@ -1,18 +1,100 @@
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<header class="header">
-    <p class="logo">U-Craft .</p>
-    <nav class="nav">
-        <ul class="nav-list">
-            <li><a href="">Home</a></li>
-            <li><a href="">Shop</a></li>
-            <li><a href="">Custom</a></li>
-            <li><a href="">About</a></li>
-            <li><a href="">Contact</a></li>
-        </ul>
-    </nav>
-    <div class="auth-buttons">
-        <a href="/login"><button id="login-btn" type="button">Log in</button></a>
-        <a href="/signup"><button id="signup-btn" type="button">Sign up</button></a>
-        
+<header>
+    <div class="mainhead">
+        <a href="/" class="logo">U-Craft .</a>
+
+        <div class="buttons">
+
+            <input type="text" id="searchValue" placeholder="Enter Product Name...!">
+
+            <a href="/cart" style="position:relative; display:inline-flex; align-items:center;">
+                <i class="fas fa-shopping-cart"></i>
+                <span id="cart-badge"
+                    style="position:absolute; top:-6px; right:-10px; background:#dc3545; color:#fff; border-radius:10px; font-size:12px; padding:0 6px; line-height:18px; min-width:18px; text-align:center;">
+                    <%= typeof cartCount !=='undefined' ? cartCount : 0 %>
+                </span>
+            </a>
+
+            <% if (user && user.userName) { %>
+                <!-- Profile container for hover modal -->
+                <div class="profile-container">
+                    <img src="/uploads/profile/<%= user.userProfile %>" alt="profile" class="profileImg">
+
+                    <!-- Modal shown on hover -->
+                    <div class="modal">
+                        <div class="modal-content">
+                            <p>Welcome, <strong>
+                                    <%= user.userName.toUpperCase() %>
+                                </strong>!</p>
+                            <ul>
+                                <a href="/profile">
+                                    <li>Profile</li>
+                                </a>
+                                <a href="/wishlist">
+                                    <li>Wish List</li>
+                                </a>
+                                <a href="/cart">
+                                    <li>Cart</li>
+                                </a>
+                                <a href="/wallet">
+                                    <li>Wallet</li>
+                                </a>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout button -->
+                <form action="/logout" method="POST" style="display:inline;">
+                    <button type="submit">Logout</button>
+                </form>
+                <% } else { %>
+                    <!-- Login/Sign Up buttons -->
+                    <form action="/login" method="POST" style="display:inline;">
+                        <button type="submit">Login</button>
+                    </form>
+                    <form action="/signup" method="POST" style="display:inline;">
+                        <button type="submit">Sign Up</button>
+                    </form>
+                    <% } %>
+        </div>
+    </div>
+
+    <div class="subhead">
+        <nav>
+            <ul>
+                <li class="<%= currentPage === 'home' ? 'active-nav' : '' %>">
+                    <a href="/home">Home</a>
+                </li>
+                <li class="<%= currentPage === 'productListing' ? 'active-nav' : '' %>">
+                    <a href="/productListing">Shop</a>
+                </li>
+                <li class="<%= currentPage === 'customListing' ? 'active-nav' : '' %>">
+                    <a href="/customListing">Custom</a>
+                </li>
+                <li class="<%= currentPage === 'about' ? 'active-nav' : '' %>">
+                    <a href="/about">About</a>
+                </li>
+                <li class="<%= currentPage === 'contact' ? 'active-nav' : '' %>">
+                    <a href="/contact">Contact</a>
+                </li>
+            </ul>
+        </nav>
     </div>
 </header>
+
+<script>
+    const searchInput = document.getElementById('searchValue');
+
+    searchInput.addEventListener('keydown', async (event) => {
+        if (event.key === 'Enter') {
+            const query = searchInput.value.trim();
+            if (query) {
+                // REDIRECT to product list page
+                window.location.href = `/productListing?search=${encodeURIComponent(query)}`;
+            }
+        }
+    });
+</script>

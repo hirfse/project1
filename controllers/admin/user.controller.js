@@ -110,3 +110,4 @@ exports.toggleBlockUser = async (req, res) => {
       res.status(500).send('Error updating user status');
   }
 };
+

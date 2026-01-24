@@ -11,6 +11,12 @@ const orderController = require('../controllers/user/order.controller');
 const paymentController = require('../controllers/user/payment.controller');
 const walletController = require('../controllers/user/wallet.controller');
 
+const cartMiddleware = require('../middlewares/cart.middleware');
+
+// applies to ALL routes in this router
+router.use(cartMiddleware);
+
+
 const { checkUserSession, preventBackAfterLogout, checkUserStatus  } = require('../middlewares/auth.middleware'); 
 const multer = require('multer');
 const path = require('path');
@@ -181,6 +187,13 @@ router.get('/test-error', () => {
     // This will be caught by our error handler
     throw new Error('This is a test error');
 });
+
+//testing
+
+router.get('/sampleView', userController.getSample);
+
+
+
 
 //   Logout Route
 
