@@ -28,187 +28,7 @@
             background-size: contain;
         }
 
-        header {
-            background-color: rgba(255, 255, 255, 0);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .mainhead {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .logo {
-            text-decoration: none;
-            color: #000;
-            font-weight: 700;
-            font-size: 1.5rem;
-            font-family: 'Playfair', serif;
-            letter-spacing: 1px;
-            transition: all 0.3s ease;
-        }
-
-        .logo:hover {
-            transform: scale(1.05);
-        }
-
-        .subhead {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0 20px;
-        }
-
-        .subhead nav ul {
-            display: flex;
-            list-style: none;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .subhead li {
-            margin: 0 15px;
-            padding: 15px 5px;
-            position: relative;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .subhead li::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: 0;
-            left: 0;
-            background-color: #000;
-            transition: all 0.3s ease;
-        }
-
-        .subhead li:hover::after {
-            width: 100%;
-        }
-
-        .subhead a {
-            text-decoration: none;
-            color: #000;
-        }
-
-        .active-nav {
-            font-weight: 600;
-        }
-
-        .active-nav::after {
-            content: '';
-            position: absolute;
-            width: 100% !important;
-            height: 2px;
-            bottom: 0;
-            left: 0;
-            background-color: #000;
-        }
-
-        /* Buttons and Search Bar */
-        .buttons {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .buttons img {
-            height: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .buttons img:hover {
-            transform: scale(1.15);
-        }
-
-        .buttons .searchBar {
-            width: 18rem;
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
-            padding: 10px 15px;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .buttons .searchBar:focus {
-            outline: none;
-            border-color: #000;
-            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-        }
-
-        .buttons button {
-            padding: 10px 18px;
-            border-radius: 8px;
-            cursor: pointer;
-            background-color: #000;
-            color: white;
-            border: none;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .buttons button:hover {
-            background-color: #4a4a4a;
-            transform: translateY(-2px);
-        }
-
-        /* Profile Hover Modal */
-        .profile-container {
-            position: relative;
-            display: inline-block;
-        }
-
-        .profile-container .modal {
-            display: none;
-            position: absolute;
-            top: 30px;
-            right: 0;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            width: 300px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            z-index: 1000;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
-        }
-
-        .profile-container:hover .modal {
-            display: block;
-            opacity: 1;
-        }
-
-        .modal-content li {
-            list-style: none;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-            transition: all 0.3s ease;
-        }
-
-        .modal-content li:last-child {
-            border-bottom: none;
-        }
-
-        .modal-content li:hover {
-            background-color: #f8f8f8;
-            padding-left: 5px;
-        }
-
-        .modal-content a {
-            text-decoration: none;
-            color: #000;
-            display: block;
-        }
+        /* Header styles moved to /css/header.css */
 
         #banner {
             padding: 50px;
@@ -444,24 +264,7 @@
             width: 200px;
         }
 
-        .buttons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .buttons input {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        .buttons button {
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
+        /* Media queries moved to separate file if generic, but keeping footer/layout specific for now */
         @media (max-width: 768px) {
 
             #banner1,
@@ -481,87 +284,85 @@
             #customProductSection {
                 flex-direction: column;
             }
-
-            .mainhead {
-                flex-direction: column;
-                gap: 10px;
-            }
         }
     </style>
 </head>
 
 <body>
 
-    <%- include('../partials/header', {currentPage: 'home'}) %>
+    <%- include('../partials/header', {currentPage: 'home' }) %>
 
-    <main>
-        <div id="banner">
-            <div id="banner1">
-                <p>"Unleash your creativity—turn your unique designs into amazing products!"</p>
-                <img src="/images/project_icons/banner1.png" alt="">
-            </div>
-            <div id="banner2">
-                <img src="/images/project_icons/banner2.png" alt="">
-                <p>"Your Offer, Your Time!” ?Lock exclusive deals and claim them even after they're gone!<br>
-                    - Coming Soon... !
-                </p>
-            </div>
-        </div>
-
-        <div id="shop">
-            <div id="shopText">
-                <div class="textline"></div>
-                <p>Your one-stop shop everything you need,<br>
-                    just a click away!
-                </p>
-                <div class="text2line"></div>
+        <main>
+            <div id="banner">
+                <div id="banner1">
+                    <p>"Unleash your creativity—turn your unique designs into amazing products!"</p>
+                    <img src="/images/project_icons/banner1.png" alt="">
+                </div>
+                <div id="banner2">
+                    <img src="/images/project_icons/banner2.png" alt="">
+                    <p>"Your Offer, Your Time!” ?Lock exclusive deals and claim them even after they're gone!<br>
+                        - Coming Soon... !
+                    </p>
+                </div>
             </div>
 
-            <div class="categoryIcon">
-                <ul>
-                    <li><img src="/images/project_icons/unisex.png" alt="">UNISEX</li>
-                    <li><img src="/images/project_icons/women.png" alt="">WOMEN'S</li>
-                    <li><img src="/images/project_icons/men.png" alt="">MEN"S</li>
-                    <li><img src="/images/project_icons/formals.png" alt="">FORMAL'S</li>
-                    <li><img src="/images/project_icons/casulas.png" alt="">CASUAL'S</li>
-                </ul>
-            </div>
-            <div class="trendingText">
-                <div class="point"></div>
-                <p>TRENDING</p>
-            </div>
-            <div id="shopProductSection">
+            <div id="shop">
+                <div id="shopText">
+                    <div class="textline"></div>
+                    <p>Your one-stop shop everything you need,<br>
+                        just a click away!
+                    </p>
+                    <div class="text2line"></div>
+                </div>
 
-                <% products.forEach(product=> { %>
-                    <div class="product">
-                        <div class="product-image">
-                            <img src="/uploads/product-images/<%= Array.isArray(product.productImage) && product.productImage.length > 0 
+                <div class="categoryIcon">
+                    <ul>
+                        <li><img src="/images/project_icons/unisex.png" alt="">UNISEX</li>
+                        <li><img src="/images/project_icons/women.png" alt="">WOMEN'S</li>
+                        <li><img src="/images/project_icons/men.png" alt="">MEN"S</li>
+                        <li><img src="/images/project_icons/formals.png" alt="">FORMAL'S</li>
+                        <li><img src="/images/project_icons/casulas.png" alt="">CASUAL'S</li>
+                    </ul>
+                </div>
+                <div class="trendingText">
+                    <div class="point"></div>
+                    <p>TRENDING</p>
+                </div>
+                <div id="shopProductSection">
+
+                    <% products.forEach(product=> { %>
+                        <div class="product">
+                            <div class="product-image">
+                                <img src="/uploads/product-images/<%= Array.isArray(product.productImage) && product.productImage.length > 0 
         ? product.productImage[0] 
         : 'default.jpg' %>" alt="<%= product.productName %>" />
-                        </div>
-                        <a href="/product/<%= product._id %>" style="text-decoration: none; color: black;">
-                        <div class="product-details">
-                            <p>
-                                <%= product.productName %>
-                            </p>
+                            </div>
+                            <a href="/product/<%= product._id %>" style="text-decoration: none; color: black;">
+                                <div class="product-details">
+                                    <p>
+                                        <%= product.productName %>
+                                    </p>
 
-                            <p class="price">
-                                <% if (product.salePrice < product.regularPrice) { %>
-                                    <span class="original-price">Rs. <%= product.regularPrice.toLocaleString() %></span>
-                                    <span class="discount-price">Rs. <%= product.salePrice.toLocaleString() %></span>
-                                    <% } else { %>
-                                        <span class="discount-price">Rs. <%= product.regularPrice.toLocaleString() %>
+                                    <p class="price">
+                                        <% if (product.salePrice < product.regularPrice) { %>
+                                            <span class="original-price">Rs. <%= product.regularPrice.toLocaleString()
+                                                    %></span>
+                                            <span class="discount-price">Rs. <%= product.salePrice.toLocaleString() %>
+                                                    </span>
+                                            <% } else { %>
+                                                <span class="discount-price">Rs. <%=
+                                                        product.regularPrice.toLocaleString() %>
                                                 </span>
-                                        <% } %>
-                            </p>
+                                                <% } %>
+                                    </p>
+                                </div>
+                            </a>
                         </div>
-                        </a>
-                    </div>
-                    <% }) %>
+                        <% }) %>
 
 
-                        <!-- Product 1 -->
-                        <!-- <div class="product">
+                            <!-- Product 1 -->
+                            <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product1.png" alt="Regular Fit Short-sleeved jersey shirt">
                     </div>
@@ -574,8 +375,8 @@
                     </div>
                 </div> -->
 
-                        <!-- Product 2 -->
-                        <!-- <div class="product">
+                            <!-- Product 2 -->
+                            <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product2.png" alt="ZW COLLECTION OPENWORK BLOUSE">
                     </div>
@@ -588,8 +389,8 @@
                     </div>
                 </div> -->
 
-                        <!-- Product 3 -->
-                        <!-- <div class="product">
+                            <!-- Product 3 -->
+                            <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product3.png" alt="Regular Fit Linen shirt">
                     </div>
@@ -602,8 +403,8 @@
                     </div>
                 </div> -->
 
-                        <!-- Product 4 -->
-                        <!-- <div class="product">
+                            <!-- Product 4 -->
+                            <!-- <div class="product">
                     <div class="product-image">
                         <img src="/images/products/product4.png" alt="ZW COLLECTION CULOTTES">
                     </div>
@@ -615,123 +416,124 @@
                         </p>
                     </div>
                 </div> -->
-            </div>
-
-            <div class="shopButton">
-                <a href="/productListing" style="text-decoration: none;"><button type="submit">Explore Fashion
-                        ></button></a>
-            </div>
-        </div>
-
-        <div id="custom">
-            <div id="shopText">
-                <div class="textline"></div>
-                <p>Your Way, Your Style .<br>
-                    Upload your image and customize the product effortlessly. Personalization made simple, right on your
-                    website - U-Craft.
-                </p>
-                <div class="text2line"></div>
-            </div>
-
-            <div id="customProductSection">
-                <!-- Product 1 -->
-                <div class="customProduct">
-                    <div class="pointText">
-                        <div class="point"></div>
-                        <p>T-SHIRT</p>
-                    </div>
-                    <div class="product-image">
-                        <img src="/images/custom_products/custom_tshirt_men_01.png" alt="Custom T-Shirt">
-                    </div>
-                    <div class="product-details">
-                        <p class="price">
-                            <span class="original-price">Rs. 1,299.00</span>
-                            <span class="discount-price">Rs. 999.00</span>
-                        </p>
-                    </div>
                 </div>
 
-                <!-- Product 2 -->
-                <div class="customProductMain">
-                    <div class="pointText">
-                        <div class="point"></div>
-                        <p>HOODIE'S</p>
-                    </div>
-                    <div class="product-image">
-                        <div class="model-container">
-                            <img src="/images/custom_products/custom_hoodie_pair.png" alt="Custom Hoodie">
-                            <model-viewer id="modelViewer" class="model"
-                                src="/models/Fashion_Duo_0401103937_texture.glb" alt="3D Model" auto-rotate
-                                camera-controls>
-                            </model-viewer>
+                <div class="shopButton">
+                    <a href="/productListing" style="text-decoration: none;"><button type="submit">Explore Fashion
+                            ></button></a>
+                </div>
+            </div>
+
+            <div id="custom">
+                <div id="shopText">
+                    <div class="textline"></div>
+                    <p>Your Way, Your Style .<br>
+                        Upload your image and customize the product effortlessly. Personalization made simple, right on
+                        your
+                        website - U-Craft.
+                    </p>
+                    <div class="text2line"></div>
+                </div>
+
+                <div id="customProductSection">
+                    <!-- Product 1 -->
+                    <div class="customProduct">
+                        <div class="pointText">
+                            <div class="point"></div>
+                            <p>T-SHIRT</p>
+                        </div>
+                        <div class="product-image">
+                            <img src="/images/custom_products/custom_tshirt_men_01.png" alt="Custom T-Shirt">
+                        </div>
+                        <div class="product-details">
+                            <p class="price">
+                                <span class="original-price">Rs. 1,299.00</span>
+                                <span class="discount-price">Rs. 999.00</span>
+                            </p>
                         </div>
                     </div>
-                    <div class="product-details">
-                        <p class="price">
-                            <span class="original-price">Rs. 2,999.00</span>
-                            <span class="discount-price">Rs. 2,399.00</span>
-                        </p>
+
+                    <!-- Product 2 -->
+                    <div class="customProductMain">
+                        <div class="pointText">
+                            <div class="point"></div>
+                            <p>HOODIE'S</p>
+                        </div>
+                        <div class="product-image">
+                            <div class="model-container">
+                                <img src="/images/custom_products/custom_hoodie_pair.png" alt="Custom Hoodie">
+                                <model-viewer id="modelViewer" class="model"
+                                    src="/models/Fashion_Duo_0401103937_texture.glb" alt="3D Model" auto-rotate
+                                    camera-controls>
+                                </model-viewer>
+                            </div>
+                        </div>
+                        <div class="product-details">
+                            <p class="price">
+                                <span class="original-price">Rs. 2,999.00</span>
+                                <span class="discount-price">Rs. 2,399.00</span>
+                            </p>
+                        </div>
+                    </div>
+
+
+                    <!-- Product 3 -->
+                    <div class="customProduct">
+                        <div class="pointText">
+                            <div class="point"></div>
+                            <p>SLEEVELESS</p>
+                        </div>
+                        <div class="product-image">
+                            <img src="/images/custom_products/custom_sleevless_men.png" alt="Custom Sleeveless">
+                        </div>
+                        <div class="product-details">
+                            <p class="price">
+                                <span class="original-price">Rs. 1,599.00</span>
+                                <span class="discount-price">Rs. 1,199.00</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
-
-
-                <!-- Product 3 -->
-                <div class="customProduct">
-                    <div class="pointText">
-                        <div class="point"></div>
-                        <p>SLEEVELESS</p>
-                    </div>
-                    <div class="product-image">
-                        <img src="/images/custom_products/custom_sleevless_men.png" alt="Custom Sleeveless">
-                    </div>
-                    <div class="product-details">
-                        <p class="price">
-                            <span class="original-price">Rs. 1,599.00</span>
-                            <span class="discount-price">Rs. 1,199.00</span>
-                        </p>
-                    </div>
+                <div class="customShopButton">
+                    <button type="submit">Get Into Custom World ></button>
                 </div>
             </div>
-            <div class="customShopButton">
-                <button type="submit">Get Into Custom World ></button>
+
+
+
+        </main>
+
+        <footer>
+            <div id="exclusive">
+                <p>Exclusive</p>
+                <p>Subscribe</p>
+                <input type="text" placeholder="Enter Your E-mail" />
             </div>
-        </div>
+            <div id="support">
+                <p>Support</p>
+                <ul>
+                    <li>Help Center</li>
+                    <li>Contact Us</li>
+                </ul>
+            </div>
+            <div id="account">
+                <p>Account</p>
+                <ul>
+                    <li>Login</li>
+                    <li>Register</li>
+                </ul>
+            </div>
+            <div id="quickLinks">
+                <p>Quick Links</p>
+                <ul>
+                    <li>Shop</li>
+                    <li>Custom</li>
+                    <li>FAQ</li>
+                </ul>
+            </div>
+        </footer>
 
-
-
-    </main>
-
-    <footer>
-        <div id="exclusive">
-            <p>Exclusive</p>
-            <p>Subscribe</p>
-            <input type="text" placeholder="Enter Your E-mail" />
-        </div>
-        <div id="support">
-            <p>Support</p>
-            <ul>
-                <li>Help Center</li>
-                <li>Contact Us</li>
-            </ul>
-        </div>
-        <div id="account">
-            <p>Account</p>
-            <ul>
-                <li>Login</li>
-                <li>Register</li>
-            </ul>
-        </div>
-        <div id="quickLinks">
-            <p>Quick Links</p>
-            <ul>
-                <li>Shop</li>
-                <li>Custom</li>
-                <li>FAQ</li>
-            </ul>
-        </div>
-    </footer>
-
-    <script src="/js/user.js" defer></script>
+        <script src="/js/user.js" defer></script>
 </body>
 
 </html>

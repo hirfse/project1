@@ -14,38 +14,38 @@ const userService = require('../../services/userService');
 
 
 exports.getLandingPage = async (req, res) => {
-  try {
-    const products = await Product.find().limit(4);
-    res.render('user/landingPage', { error: null, products, userName: null });
-  } catch (error) {
-    console.error(error);
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/landingPage', { 
-      error: MESSAGES.PRODUCT.NOT_FOUND, 
-      products: [], 
-      userName: null 
-    });
-  }
+    try {
+        const products = await Product.find().limit(4);
+        res.render('user/landingPage', { error: null, products, userName: null });
+    } catch (error) {
+        console.error(error);
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/landingPage', {
+            error: MESSAGES.PRODUCT.NOT_FOUND,
+            products: [],
+            userName: null
+        });
+    }
 };
 
 // Referral landing: store referral code in session and redirect to signup
 exports.referralLanding = async (req, res) => {
-  try {
-    const { code } = req.params;
-    if (code) {
-      const refUser = await User.findOne({ referralCode: code }).lean();
-      if (refUser) {
-        req.session.referralCode = code;
-      }
+    try {
+        const { code } = req.params;
+        if (code) {
+            const refUser = await User.findOne({ referralCode: code }).lean();
+            if (refUser) {
+                req.session.referralCode = code;
+            }
+        }
+    } catch (e) {
+        console.error('Error handling referral landing:', e);
     }
-  } catch (e) {
-    console.error('Error handling referral landing:', e);
-  }
-  return res.redirect(HTTP_STATUS.FOUND, '/signup');
+    return res.redirect(HTTP_STATUS.FOUND, '/signup');
 };
 
 exports.getSignupPage = (req, res) => {
-    res.status(HTTP_STATUS.OK).render('user/signup', { 
-        error: null 
+    res.status(HTTP_STATUS.OK).render('user/signup', {
+        error: null
     });
 };
 
@@ -53,20 +53,27 @@ exports.handleSignupPage = async (req, res) => {
     try {
         const { fullName, email, password, confirmPassword, phone } = req.body;
         if (!fullName || !email || !password || !confirmPassword) {
-            return res.status(HTTP_STATUS.BAD_REQUEST).render('user/signup', { 
-                error: MESSAGES.AUTH.SIGNUP_REQUIRED_FIELDS 
+            return res.status(HTTP_STATUS.BAD_REQUEST).render('user/signup', {
+                error: MESSAGES.AUTH.SIGNUP_REQUIRED_FIELDS
             });
         }
         if (password !== confirmPassword) {
-            return res.status(HTTP_STATUS.BAD_REQUEST).render('user/signup', { 
-                error: MESSAGES.VALIDATION.PASSWORD_MISMATCH 
+            return res.status(HTTP_STATUS.BAD_REQUEST).render('user/signup', {
+                error: MESSAGES.VALIDATION.PASSWORD_MISMATCH
             });
         }
-        
+
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(password)) {
+            return res.status(HTTP_STATUS.BAD_REQUEST).render('user/signup', {
+                error: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.'
+            });
+        }
+
         const existingUser = await User.findOne({ email });
         if (existingUser) {
-            return res.status(HTTP_STATUS.CONFLICT).render('user/signup', { 
-                error: MESSAGES.AUTH.SIGNUP_EMAIL_EXISTS 
+            return res.status(HTTP_STATUS.CONFLICT).render('user/signup', {
+                error: MESSAGES.AUTH.SIGNUP_EMAIL_EXISTS
             });
         }
         const { otp } = await authService.generateSignupOTP(email);
@@ -135,74 +142,74 @@ exports.handleLoginPage = async (req, res) => {
         req.session.save((err) => {
             if (err) {
                 console.error('Session save error:', err);
-                return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/login', { 
-                    error: 'Login failed. Please try again.' 
+                return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/login', {
+                    error: 'Login failed. Please try again.'
                 });
             }
             res.redirect(HTTP_STATUS.FOUND, '/home');
         });
     } catch (error) {
         console.error(error);
-        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/login', { 
-            error: 'Error occurred. Please try again.' 
+        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/login', {
+            error: 'Error occurred. Please try again.'
         });
     }
 };
 
 
- //forgot page contoller
+//forgot page contoller
 
 const otpStore = new Map(); // For password reset OTP
 const signupOtpStore = new Map(); // For signup OTP
 
- exports.getForgotPage = (req,res) => {
-    res.render('user/forgotPassword',{error:null})
- }
+exports.getForgotPage = (req, res) => {
+    res.render('user/forgotPassword', { error: null })
+}
 
-exports.handleForgotPage = async (req,res) => {
-    try{
-        const {email} = req.body
-        const userEmail = await User.findOne({email})
-        if(!userEmail){
-            return res.render('user/forgotPassword',{error:'Email not found'})
+exports.handleForgotPage = async (req, res) => {
+    try {
+        const { email } = req.body
+        const userEmail = await User.findOne({ email })
+        if (!userEmail) {
+            return res.render('user/forgotPassword', { error: 'Email not found' })
         }
-       // generate OTP
+        // generate OTP
 
-       const otp = Math.floor(1000+Math.random()*9000);
-       otpStore.set(email,{ otp, expiresAt: Date.now()+30000})
+        const otp = Math.floor(1000 + Math.random() * 9000);
+        otpStore.set(email, { otp, expiresAt: Date.now() + 30000 })
 
-       //configure nodemailer
-       const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false, // Use TLS
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
-      
-       transporter.verify((error) => {
-        if (error) {
-          console.error('Email transporter configuration error:', error);
-        } else {
-          console.log('Email transporter is ready');
-        }
-      });
+        //configure nodemailer
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.gmail.com',
+            port: 587,
+            secure: false, // Use TLS
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        transporter.verify((error) => {
+            if (error) {
+                console.error('Email transporter configuration error:', error);
+            } else {
+                console.log('Email transporter is ready');
+            }
+        });
 
         //SEND OTP 
         const mailOptions = {
-            to:email,
-            subject:'U-Craft password Reset OTP',
+            to: email,
+            subject: 'U-Craft password Reset OTP',
             html: `<p> Hi ${email} , <br> OTP for password reset is : <strong> ${otp}</strong></p>`
         }
         console.log(otp)
         await transporter.sendMail(mailOptions)
-        console.log('OTP sent to :',email)
+        console.log('OTP sent to :', email)
 
         res.redirect(`/verifyOTP?email=${email}`)
-    }catch(error){
-        res.render('user/forgotPassword',{error:`Something Went Wrong ${error.message}`})
+    } catch (error) {
+        res.render('user/forgotPassword', { error: `Something Went Wrong ${error.message}` })
     }
 
 }
@@ -210,142 +217,150 @@ exports.handleForgotPage = async (req,res) => {
 //verifyOTP controller
 
 exports.getVerifyOTPPage = (req, res) => {
-  const { email } = req.query;
-  console.log('Email in getVerifyOTPPage:', email);
-  if (!email) {
-      return res.redirect('/forgotPassword'); 
-  }
-  res.render('user/verifyOTP', { error: null, email });
+    const { email } = req.query;
+    console.log('Email in getVerifyOTPPage:', email);
+    if (!email) {
+        return res.redirect('/forgotPassword');
+    }
+    res.render('user/verifyOTP', { error: null, email });
 };
 
 exports.verifyOTP = (req, res) => {
-  const { email, otp } = req.body;
-  console.log('Email:', email); // debuggin
-  console.log('OTP:', otp); // debuggin
+    const { email, otp } = req.body;
+    console.log('Email:', email); // debuggin
+    console.log('OTP:', otp); // debuggin
 
-  if (!otpStore.has(email)) {
-      return res.render('user/verifyOTP', { error: 'OTP expired or invalid', email });
-  }
+    if (!otpStore.has(email)) {
+        return res.render('user/verifyOTP', { error: 'OTP expired or invalid', email });
+    }
 
-  const storedOTPData = otpStore.get(email);
-  if (Date.now() > storedOTPData.expiresAt) {
-      otpStore.delete(email);
-      return res.render('user/verifyOTP', { error: 'OTP expired. Please try again.', email });
-  }
+    const storedOTPData = otpStore.get(email);
+    if (Date.now() > storedOTPData.expiresAt) {
+        otpStore.delete(email);
+        return res.render('user/verifyOTP', { error: 'OTP expired. Please try again.', email });
+    }
 
-  if (storedOTPData.otp.toString() !== otp.toString()) {
-      return res.render('user/verifyOTP', { error: 'Invalid OTP. Please try again.', email });
-  }
+    if (storedOTPData.otp.toString() !== otp.toString()) {
+        return res.render('user/verifyOTP', { error: 'Invalid OTP. Please try again.', email });
+    }
 
-  console.log('Redirecting to resetPassword with email:', email); // debuggin
-  return res.redirect(`/resetPassword?email=${encodeURIComponent(email)}`);
+    console.log('Redirecting to resetPassword with email:', email); // debuggin
+    return res.redirect(`/resetPassword?email=${encodeURIComponent(email)}`);
 };
 
 //resend Otp 
 
 exports.resendOTP = async (req, res) => {
-  try {
-     
-      const email = req.body.email || req.query.email;
+    try {
 
-      if (!email) {
-          console.error("Error: Email is missing in request.");
-          return res.status(400).json({ success: false, message: "Email is required" });
-      }
+        const email = req.body.email || req.query.email;
 
-      
-      const otp = Math.floor(1000 + Math.random() * 9000);
-      otpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
+        if (!email) {
+            console.error("Error: Email is missing in request.");
+            return res.status(400).json({ success: false, message: "Email is required" });
+        }
 
-      console.log("Generated OTP:", otp, "for email:", email);
 
-      
-      const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS
-          }
-      });
+        const otp = Math.floor(1000 + Math.random() * 9000);
+        otpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
 
-      
-      await transporter.sendMail({
-          to: email,
-          subject: "U-Craft OTP Verification",
-          html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
-      });
+        console.log("Generated OTP:", otp, "for email:", email);
 
-      console.log("OTP sent successfully to:", email);
-      res.json({ success: true, message: "OTP resent successfully" });
 
-  } catch (error) {
-      console.error("Error resending OTP:", error);
-      res.status(500).json({ success: false, message: "Failed to send OTP" });
-  }
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+
+        await transporter.sendMail({
+            to: email,
+            subject: "U-Craft OTP Verification",
+            html: `<p>Your OTP is: <strong>${otp}</strong></p>`,
+        });
+
+        console.log("OTP sent successfully to:", email);
+        res.json({ success: true, message: "OTP resent successfully" });
+
+    } catch (error) {
+        console.error("Error resending OTP:", error);
+        res.status(500).json({ success: false, message: "Failed to send OTP" });
+    }
 };
 
 
 
 exports.getResetPassword = (req, res) => {
-  const { email } = req.query;
-  console.log('Email in getResetPassword:', email); // debuggin
+    const { email } = req.query;
+    console.log('Email in getResetPassword:', email); // debuggin
 
-  if (!email) {
-      return res.redirect('/forgotPassword'); 
-  }
+    if (!email) {
+        return res.redirect('/forgotPassword');
+    }
 
-  res.render('user/resetPassword', { email, msg: null });
+    res.render('user/resetPassword', { email, msg: null });
 };
 
 
 exports.handleResetPassword = async (req, res) => {
-  const { email, password, confirmPassword } = req.body;
+    const { email, password, confirmPassword } = req.body;
 
-  if (!email || !password || !confirmPassword) {
-      return res.render('user/resetPassword', { email, msg: 'All fields are required' });
-  }
+    if (!email || !password || !confirmPassword) {
+        return res.render('user/resetPassword', { email, msg: 'All fields are required' });
+    }
 
-  if (password !== confirmPassword) {
-      return res.render('user/resetPassword', { email, msg: 'Passwords do not match' });
-  }
+    if (password !== confirmPassword) {
+        return res.render('user/resetPassword', { email, msg: 'Passwords do not match' });
+    }
 
-  try {
-      const result = await authService.updatePassword(email, password);
-      if (!result.success) {
-          return res.render('user/resetPassword', { email, msg: 'User not found' });
-      }
-      res.redirect('/login');
-  } catch (error) {
-      console.error('Error resetting password:', error);
-      res.render('user/resetPassword', { email, msg: 'An error occurred. Please try again.' });
-  }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+        return res.render('user/resetPassword', {
+            email,
+            msg: 'Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.'
+        });
+    }
+
+    try {
+        const result = await authService.updatePassword(email, password);
+        if (!result.success) {
+            return res.render('user/resetPassword', { email, msg: 'User not found' });
+        }
+        res.redirect('/login');
+    } catch (error) {
+        console.error('Error resetting password:', error);
+        res.render('user/resetPassword', { email, msg: 'An error occurred. Please try again.' });
+    }
 };
 
 
 
- 
 
- exports.getHomePage = async (req, res) => {
-  try {
-      const { products } = await userService.getHomePageData();
-      const user = await User.findById(req.session.userId)
-      res.render('user/home', { 
-          products, 
-          user: {
-            userName: user.fullName,
-            userProfile : user.profileImage || "/images/project_icons/profile.png"
-          } 
-      });
- 
-  } catch (error) {
-      console.error(error);
-      res.render('user/home', { 
-          products: [], 
-          error: 'Failed to fetch products.', 
-          user: {
-            userName: null,
-            userProfile : null
-          } 
-      });
-  }
+
+exports.getHomePage = async (req, res) => {
+    try {
+        const { products } = await userService.getHomePageData();
+        const user = await User.findById(req.session.userId)
+        res.render('user/home', {
+            products,
+            user: {
+                userName: user.fullName,
+                userProfile: user.profileImage || "/images/project_icons/profile.png"
+            }
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.render('user/home', {
+            products: [],
+            error: 'Failed to fetch products.',
+            user: {
+                userName: null,
+                userProfile: null
+            }
+        });
+    }
 };

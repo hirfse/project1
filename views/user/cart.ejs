@@ -1,28 +1,29 @@
-
-
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Your Cart – U-Craft</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900&display=swap"
+        rel="stylesheet">
 
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <!-- Styles (unchanged except for badge span) -->
-        <style>
+    <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Poppins', sans-serif;
         }
+
         body {
             background-image: url('/images/background/gray-wood-texture.jpg');
             background-size: contain;
@@ -30,56 +31,9 @@
             display: flex;
             flex-direction: column;
         }
-        .mainhead {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px;
-            align-items: center;
-        }
-        .subhead {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .subhead a {
-            text-decoration: none;
-            color: black;
-        }
-        .subhead li {
-            margin: 20px 10px;
-        }
-        nav ul {
-            display: flex;
-            list-style: none;
-        }
-        .buttons {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .buttons .searchBar {
-            width: 15rem;
-            background-color: transparent;
-            border: 1px solid;
-        }
-        .buttons img {
-            height: 25px;
-            cursor: pointer;
-        }
-        .buttons img:hover {
-            filter: contrast(0);
-        }
-        .buttons button {
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            border: 1px solid #ccc;
-        }
-        .buttons button:hover {
-            background-color: rgb(64, 63, 63);
-            color: aliceblue;
-        }
-        
+
+        /* Header styles moved to /css/header.css */
+
         /* Main content container */
         .container {
             width: 90%;
@@ -90,7 +44,7 @@
             flex-direction: column;
             flex-grow: 1;
         }
-        
+
         /* Cart styling */
         .cart-section {
             background-color: #fff;
@@ -98,23 +52,23 @@
             border-radius: 8px;
             padding: 25px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         }
-        
+
         .cart-section h1 {
             font-family: 'Playfair', serif;
             font-size: 28px;
             margin-bottom: 20px;
             color: #333;
         }
-        
+
         .cart-table {
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
             margin-bottom: 30px;
         }
-        
+
         .cart-table th {
             text-align: left;
             padding: 12px 15px;
@@ -123,18 +77,18 @@
             font-weight: 600;
             border-bottom: 1px solid #eee;
         }
-        
+
         .cart-table td {
             padding: 15px;
             border-bottom: 1px solid #f0f0f0;
             color: #333;
             vertical-align: middle;
         }
-        
+
         .cart-table tr:last-child td {
             border-bottom: none;
         }
-        
+
         .cart-table button {
             background-color: #000;
             color: #fff;
@@ -144,18 +98,18 @@
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        
+
         .cart-table button:hover {
             background-color: #333;
         }
-        
+
         .empty-cart {
             padding: 40px 0;
             text-align: center;
             color: #777;
             font-size: 18px;
         }
-        
+
         .continue-shopping {
             display: inline-block;
             background-color: #000;
@@ -167,11 +121,11 @@
             margin-top: 15px;
             transition: background-color 0.2s ease;
         }
-        
+
         .continue-shopping:hover {
             background-color: #333;
         }
-        
+
         .cart-summary {
             background-color: #f9f9f9;
             border-radius: 8px;
@@ -181,12 +135,12 @@
             justify-content: space-between;
             align-items: center;
         }
-        
+
         .cart-total {
             font-size: 18px;
             font-weight: 600;
         }
-        
+
         .checkout-btn {
             background-color: #000;
             color: #fff;
@@ -197,11 +151,11 @@
             font-weight: 500;
             transition: background-color 0.2s ease;
         }
-        
+
         .checkout-btn:hover {
             background-color: #333;
         }
-        
+
         .error-message {
             color: #d9534f;
             padding: 10px;
@@ -210,12 +164,12 @@
             background-color: rgba(217, 83, 79, 0.1);
             border: 1px solid rgba(217, 83, 79, 0.2);
         }
-        
+
         /* Breadcrumb styling */
         #breadcrumbs {
             margin: 15px 0;
         }
-        
+
         #breadcrumbs ol {
             list-style: none;
             display: flex;
@@ -224,17 +178,17 @@
             color: #888;
             padding: 0;
         }
-        
+
         #breadcrumbs a {
             color: #888;
             text-decoration: none;
             transition: color 0.2s ease;
         }
-        
+
         #breadcrumbs a:hover {
             color: #333;
         }
-        
+
         footer {
             background-color: black;
             color: white;
@@ -245,20 +199,25 @@
             width: 100%;
             margin-top: auto;
         }
+
         footer div {
             margin: 10px;
             min-width: 150px;
         }
+
         footer div p {
             font-weight: bold;
             margin-bottom: 10px;
         }
+
         footer ul {
             list-style: none;
         }
+
         footer li {
             margin: 8px 0;
         }
+
         footer input[type="text"] {
             padding: 10px;
             margin-top: 10px;
@@ -266,16 +225,18 @@
             border: none;
             width: 200px;
         }
-        
+
         @media (max-width: 768px) {
             .container {
                 width: 95%;
                 padding: 10px;
             }
+
             .cart-table {
                 display: block;
                 overflow-x: auto;
             }
+
             .cart-summary {
                 flex-direction: column;
                 gap: 15px;
@@ -286,129 +247,145 @@
 </head>
 
 <body>
-<header>
-    <div class="mainhead">
-        <div class="logo">
-            <a href="/"><img src="/images/logo.png" alt="U-Craft Logo" style="height:60px"></a>
-        </div>
-        <nav class="subhead">
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/productListing">Shop</a></li>
-                <li><a href="/customListing">Custom</a></li>
-                <li><a href="/about">About</a></li>
-                <li><a href="/contact">Contact</a></li>
-            </ul>
-        </nav>
-        <div class="buttons">
-            <input type="text" class="searchBar" placeholder="Search...">
-            <a href="/wishlist"><img src="/images/icons/heart.svg" alt="Wishlist"></a>
+    <%- include('../partials/header', {currentPage: 'cart' }) %>
 
-            <!-- badge span added for live count -->
-            <a href="/cart">
-                <img src="/images/icons/shopping-bag.svg" alt="Cart">
-                <span id="cart-badge"><%= typeof cartCount !== 'undefined' ? cartCount : (cart ? cart.items.length : 0) %></span>
-            </a>
+        <div class="container">
+            <nav id="breadcrumbs"></nav>
 
-            <a href="/profile"><img src="/images/icons/user.svg" alt="Profile"></a>
-        </div>
-    </div>
-</header>
+            <div class="cart-section">
+                <h1>Your Cart</h1>
 
-<div class="container">
-    <nav id="breadcrumbs"></nav>
-
-    <div class="cart-section">
-        <h1>Your Cart</h1>
-
-        <% if (error) { %>
-            <div class="error-message"><%= error %></div>
-        <% } %>
-
-        <% if (!cart || cart.items.length === 0) { %>
-            <div class="empty-cart">
-                <p>Your cart is empty.</p>
-                <a href="/productListing" class="continue-shopping">Continue Shopping</a>
-            </div>
-        <% } else { %>
-            <table class="cart-table">
-                <thead>
-                <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                <% let cartTotal = 0; %>
-                <% cart.items.forEach(item => {
-                       const itemTotal = item.quantity * item.productId.salePrice;
-                       cartTotal += itemTotal;
-                %>
-                    <tr id="cart-item-<%= item.productId._id %>">
-                        <td>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="/uploads/product-images/<%= item.productId.productImage && item.productId.productImage[0] ? item.productId.productImage[0] : '' %>" alt="<%= item.productId.productName %>" style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
-                                <span><%= item.productId.productName %></span>
-                            </div>
-                            <div class="stock-status" id="stock-status-<%= item.productId._id %>">
-                                <% if (item.productId.quantity === 0) { %>
-                                    <small style="color:red">⚠️ Out of Stock</small>
-                                <% } else if (item.productId.quantity < item.quantity) { %>
-                                    <small style="color:orange">⚠️ Only <%= item.productId.quantity %> left</small>
-                                <% } else if (item.productId.quantity < 10) { %>
-                                    <small style="color:orange">Low Stock: <%= item.productId.quantity %> left</small>
-                                <% } else { %>
-                                    <small style="color:green">✓ In Stock</small>
-                                <% } %>
-                            </div>
-                        </td>
-                        <td>
-                            <input type="number" name="quantity"
-                                   id="qty-<%= item.productId._id %>"
-                                   value="<%= item.quantity %>"
-                                   min="1"
-                                   max="<%= Math.min(item.productId.quantity, 10) %>"
-                                   <%= item.productId.quantity === 0 ? 'disabled' : '' %>
-                                   style="width:60px;padding:5px">
-                        </td>
-                        <td>₹<%= item.productId.salePrice.toFixed(2) %></td>
-                        <td id="item-total-<%= item.productId._id %>">₹<%= itemTotal.toFixed(2) %></td>
-                        <td>
-                            <button type="button" class="remove-btn" data-id="<%= item.productId._id %>">Remove</button>
-                        </td>
-                    </tr>
-                <% }) %>
-                </tbody>
-            </table>
-
-            <div class="cart-summary">
-                <div class="cart-total">Total: ₹<span id="grand-total"><%= cartTotal.toFixed(2) %></span></div>
-                <div>
-                    <a href="/productListing" class="continue-shopping">Continue Shopping</a>
-                    <% if (typeof hasStockIssue !== 'undefined' && hasStockIssue) { %>
-                        <button class="checkout-btn" disabled title="Resolve stock issues in your cart to proceed">Proceed to Checkout</button>
-                    <% } else { %>
-                        <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+                <% if (error) { %>
+                    <div class="error-message">
+                        <%= error %>
+                    </div>
                     <% } %>
-                </div>
-            </div>
-        <% } %>
-    </div>
-</div>
 
-<footer>
-    <div><p>Shop</p><ul><li>All Products</li><li>New Arrivals</li><li>Best Sellers</li><li>Special Offers</li></ul></div>
-    <div><p>Information</p><ul><li>About Us</li><li>Contact Us</li><li>Return Policy</li><li>Terms & Conditions</li></ul></div>
-    <div><p>Customer Service</p><ul><li>FAQ</li><li>Shipping Info</li><li>Track Order</li><li>Privacy Policy</li></ul></div>
-    <div>
-        <p>Newsletter</p>
-        <div>Subscribe for updates</div>
-        <input type="text" placeholder="Enter your email">
-    </div>
-</footer>
-<script src="/js/user.js" defer></script>
+                        <% if (!cart || cart.items.length===0) { %>
+                            <div class="empty-cart">
+                                <p>Your cart is empty.</p>
+                                <a href="/productListing" class="continue-shopping">Continue Shopping</a>
+                            </div>
+                            <% } else { %>
+                                <table class="cart-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Total</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% let cartTotal=0; %>
+                                            <% cart.items.forEach(item=> {
+                                                const itemTotal = item.quantity * item.productId.salePrice;
+                                                cartTotal += itemTotal;
+                                                %>
+                                                <tr id="cart-item-<%= item.productId._id %>">
+                                                    <td>
+                                                        <div style="display:flex; align-items:center; gap:10px;">
+                                                            <img src="/uploads/product-images/<%= item.productId.productImage && item.productId.productImage[0] ? item.productId.productImage[0] : '' %>"
+                                                                alt="<%= item.productId.productName %>"
+                                                                style="width:60px; height:60px; object-fit:cover; border-radius:4px;">
+                                                            <span>
+                                                                <%= item.productId.productName %>
+                                                            </span>
+                                                        </div>
+                                                        <div class="stock-status"
+                                                            id="stock-status-<%= item.productId._id %>">
+                                                            <% if (item.productId.quantity===0) { %>
+                                                                <small style="color:red">⚠️ Out of Stock</small>
+                                                                <% } else if (item.productId.quantity < item.quantity) {
+                                                                    %>
+                                                                    <small style="color:orange">⚠️ Only <%=
+                                                                            item.productId.quantity %> left</small>
+                                                                    <% } else if (item.productId.quantity < 10) { %>
+                                                                        <small style="color:orange">Low Stock: <%=
+                                                                                item.productId.quantity %> left</small>
+                                                                        <% } else { %>
+                                                                            <small style="color:green">✓ In
+                                                                                Stock</small>
+                                                                            <% } %>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <input type="number" name="quantity"
+                                                            id="qty-<%= item.productId._id %>"
+                                                            value="<%= item.quantity %>" min="1"
+                                                            max="<%= Math.min(item.productId.quantity, 10) %>"
+                                                            <%=item.productId.quantity===0 ? 'disabled' : '' %>
+                                                        style="width:60px;padding:5px">
+                                                    </td>
+                                                    <td>₹<%= item.productId.salePrice.toFixed(2) %>
+                                                    </td>
+                                                    <td id="item-total-<%= item.productId._id %>">₹<%=
+                                                            itemTotal.toFixed(2) %>
+                                                    </td>
+                                                    <td>
+                                                        <button type="button" class="remove-btn"
+                                                            data-id="<%= item.productId._id %>">Remove</button>
+                                                    </td>
+                                                </tr>
+                                                <% }) %>
+                                    </tbody>
+                                </table>
+
+                                <div class="cart-summary">
+                                    <div class="cart-total">Total: ₹<span id="grand-total">
+                                            <%= cartTotal.toFixed(2) %>
+                                        </span></div>
+                                    <div>
+                                        <a href="/productListing" class="continue-shopping">Continue Shopping</a>
+                                        <% if (typeof hasStockIssue !=='undefined' && hasStockIssue) { %>
+                                            <button class="checkout-btn" disabled
+                                                title="Resolve stock issues in your cart to proceed">Proceed to
+                                                Checkout</button>
+                                            <% } else { %>
+                                                <a href="/checkout" class="checkout-btn">Proceed to Checkout</a>
+                                                <% } %>
+                                    </div>
+                                </div>
+                                <% } %>
+            </div>
+        </div>
+
+        <footer>
+            <div>
+                <p>Shop</p>
+                <ul>
+                    <li>All Products</li>
+                    <li>New Arrivals</li>
+                    <li>Best Sellers</li>
+                    <li>Special Offers</li>
+                </ul>
+            </div>
+            <div>
+                <p>Information</p>
+                <ul>
+                    <li>About Us</li>
+                    <li>Contact Us</li>
+                    <li>Return Policy</li>
+                    <li>Terms & Conditions</li>
+                </ul>
+            </div>
+            <div>
+                <p>Customer Service</p>
+                <ul>
+                    <li>FAQ</li>
+                    <li>Shipping Info</li>
+                    <li>Track Order</li>
+                    <li>Privacy Policy</li>
+                </ul>
+            </div>
+            <div>
+                <p>Newsletter</p>
+                <div>Subscribe for updates</div>
+                <input type="text" placeholder="Enter your email">
+            </div>
+        </footer>
+        <script src="/js/user.js" defer></script>
 </body>
+
 </html>

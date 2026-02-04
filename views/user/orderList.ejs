@@ -1,13 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" >
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>My Orders - U-Craft</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap"
+    rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
     body {
       background-image: url('/images/background/gray-wood-texture.jpg');
       background-size: contain;
@@ -15,115 +24,132 @@
       display: flex;
       flex-direction: column;
     }
-            .mainhead {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px;
-            align-items: center;
-        }
-        .subhead {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .buttons .searchBar{
-            width: 15rem;
-            background-color: transparent;
-            border: 1px solid ;
-        }
 
-                nav ul {
-            display: flex;
-            list-style: none;
-        }
-
-        .subhead a{
-            text-decoration: none; 
-            color: black;
-        }
-        .subhead li {
-            margin: 20px 10px;
-        }
-
-        .buttons img{
-            height: 25px;
-            cursor: pointer;
-        }
-
-        .buttons img:hover{
-            filter:contrast(0)
-        }
-
-        .buttons button:hover{
-            background-color: rgb(64, 63, 63);
-            color:aliceblue
-        }
-
-        .modal {
-            display: none; 
-            position: absolute; 
-            top: 50px; 
-            right: 10px; 
-            z-index: 1000; 
-        }
-
-        .modal-content {
-            background-color: #ffffff;
-            padding: 15px;
-            border: 1px solid #888;
-            border-radius: 8px;
-            width: 300px; /* Adjust width as needed */
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-            text-align: center;
-        }
-
-        .modal-content li{
-            list-style-type: none;
-            padding: 2px;
-            color: black;
-        }
-
-        .modal-content a{
-            text-decoration: none;
-        }
-
-        .close {
-            color: black;
-            float: right;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-
-        .close:hover,
-        .close:focus {
-        color: black;
-        text-decoration: none;
-        cursor: pointer;
-        }
-    .buttons {
+    .mainhead {
       display: flex;
-      gap: 10px;
+      justify-content: space-between;
+      margin: 10px;
       align-items: center;
     }
+
+    .subhead {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     .buttons .searchBar {
       width: 15rem;
       background-color: transparent;
       border: 1px solid;
     }
-    .buttons img { height: 25px; cursor: pointer; }
-    .buttons img:hover { filter: contrast(0); }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+    }
+
+    .subhead a {
+      text-decoration: none;
+      color: black;
+    }
+
+    .subhead li {
+      margin: 20px 10px;
+    }
+
+    .buttons img {
+      height: 25px;
+      cursor: pointer;
+    }
+
+    .buttons img:hover {
+      filter: contrast(0)
+    }
+
+    .buttons button:hover {
+      background-color: rgb(64, 63, 63);
+      color: aliceblue
+    }
+
+    .modal {
+      display: none;
+      position: absolute;
+      top: 50px;
+      right: 10px;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background-color: #ffffff;
+      padding: 15px;
+      border: 1px solid #888;
+      border-radius: 8px;
+      width: 300px;
+      /* Adjust width as needed */
+      box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+      text-align: center;
+    }
+
+    .modal-content li {
+      list-style-type: none;
+      padding: 2px;
+      color: black;
+    }
+
+    .modal-content a {
+      text-decoration: none;
+    }
+
+    .close {
+      color: black;
+      float: right;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+
+    .close:hover,
+    .close:focus {
+      color: black;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .buttons .searchBar {
+      width: 15rem;
+      background-color: transparent;
+      border: 1px solid;
+    }
+
+    .buttons img {
+      height: 25px;
+      cursor: pointer;
+    }
+
+    .buttons img:hover {
+      filter: contrast(0);
+    }
+
     .buttons button {
       padding: 8px 15px;
       border-radius: 4px;
       cursor: pointer;
       border: 1px solid #ccc;
     }
+
     .buttons button:hover {
       background-color: rgb(64, 63, 63);
       color: aliceblue;
     }
+
     .container {
       width: 90%;
       max-width: 1200px;
@@ -134,6 +160,7 @@
       flex-wrap: wrap;
       flex-grow: 1;
     }
+
     .sidebar {
       width: 100%;
       max-width: 250px;
@@ -141,17 +168,28 @@
       border: 1px solid #eee;
       border-radius: 8px;
       padding: 25px 15px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
       height: fit-content;
       position: sticky;
       top: 20px;
     }
-    .sidebar ul { list-style: none; display: flex; flex-direction: column; width: 100%; }
+
+    .sidebar ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
     .sidebar li {
       padding: 12px 10px;
       border-bottom: 1px solid #f0f0f0;
     }
-    .sidebar li:last-child { border-bottom: none; }
+
+    .sidebar li:last-child {
+      border-bottom: none;
+    }
+
     .sidebar a {
       text-decoration: none;
       color: #555;
@@ -159,13 +197,23 @@
       display: block;
       transition: all 0.2s ease;
     }
-    .sidebar a:hover { color: #000; transform: translateX(5px); }
-    .main-content { flex: 1; min-width: 300px; }
+
+    .sidebar a:hover {
+      color: #000;
+      transform: translateX(5px);
+    }
+
+    .main-content {
+      flex: 1;
+      min-width: 300px;
+    }
+
     h1 {
       font-family: 'Playfair', serif;
       font-size: 28px;
       margin-bottom: 20px;
     }
+
     .styled-table {
       background-color: #fff;
       border: 1px solid #ccc;
@@ -175,21 +223,26 @@
       width: 100%;
       border-collapse: collapse;
     }
-    .styled-table th, .styled-table td {
+
+    .styled-table th,
+    .styled-table td {
       padding: 12px;
       border-bottom: 1px solid #eee;
       text-align: left;
     }
+
     .styled-table th {
       background: #f9f9f9;
       font-weight: 500;
     }
+
     form input {
       padding: 8px;
       margin-right: 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+
     form button {
       padding: 8px 12px;
       background: #000;
@@ -198,8 +251,13 @@
       border-radius: 4px;
       cursor: pointer;
     }
-    form button:hover { background: #333; }
-    .actions button, .actions a {
+
+    form button:hover {
+      background: #333;
+    }
+
+    .actions button,
+    .actions a {
       margin-right: 8px;
       padding: 6px 10px;
       border: none;
@@ -208,12 +266,20 @@
       font-size: 14px;
       text-decoration: none;
     }
-    .actions button:hover { background: #ddd; }
+
+    .actions button:hover {
+      background: #ddd;
+    }
+
     .actions a {
       background: #000;
       color: #fff;
     }
-    .actions a:hover { background: #333; }
+
+    .actions a:hover {
+      background: #333;
+    }
+
     .pagination a {
       padding: 6px 12px;
       margin: 0 3px;
@@ -222,50 +288,72 @@
       text-decoration: none;
       color: #333;
     }
-    .pagination a:hover { background: #ccc; }
+
+    .pagination a:hover {
+      background: #ccc;
+    }
   </style>
 </head>
+
 <body>
-    <header>
-        <div class="mainhead">
-            <p>U-Craft .</p>
-            <div class="buttons">
-                <input type="text" class="searchBar" placeholder="Search product...">
-                <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()"  class="profileImg">
-                <form action="/logout" method="POST" style="display:inline;">
-                    <button type="submit">Logout</button>
-                </form>
-            </div>
-            <div id="profileViewModal" class="modal">
-                <div class="modal-content" onmouseleave="closeViewModal()">
-                    
-                    <% if (userName) { %>
-                        <p>Welcome, <strong><%= userName.toUpperCase() %></strong>!</p>
-                    <% } else { %>
-                        <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
-                    <% } %>
-                    <ul>
-                        <a href="/profile"><li>Profile</li></a>
-                        <a href="/wishlist"><li>Wish List</li></a>
-                        <a href="/cart"><li>Cart</li></a>
-                        <a href="/wallet"><li>Wallet</li></a>
-                    </ul>
-                </div>
-            </div>
-            
-        </div>
-        <div class="subhead">
-            <nav>
+  <header>
+    <div class="mainhead">
+      <p>U-Craft .</p>
+      <div class="buttons">
+        <input type="text" class="searchBar" placeholder="Search product...">
+        <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()" class="profileImg">
+        <form action="/logout" method="POST" style="display:inline;">
+          <button type="submit">Logout</button>
+        </form>
+      </div>
+      <div id="profileViewModal" class="modal">
+        <div class="modal-content" onmouseleave="closeViewModal()">
+
+          <% if (userName) { %>
+            <p>Welcome, <strong>
+                <%= userName.toUpperCase() %>
+              </strong>!</p>
+            <% } else { %>
+              <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
+              <% } %>
                 <ul>
-                    <li>Home</li>
-                    <a href="/productListing"><li>Shop</li></a>
-                    <a href="/customListing"><li>Custom</li></a>
-                    <a href="/about"><li>About</li></a>
-                    <a href="/contact"><li>Contact</li></a>
+                  <a href="/profile">
+                    <li>Profile</li>
+                  </a>
+                  <a href="/wishlist">
+                    <li>Wish List</li>
+                  </a>
+                  <a href="/cart">
+                    <li>Cart</li>
+                  </a>
+                  <a href="/wallet">
+                    <li>Wallet</li>
+                  </a>
                 </ul>
-            </nav> 
         </div>
-    </header>
+      </div>
+
+    </div>
+    <div class="subhead">
+      <nav>
+        <ul>
+          <li>Home</li>
+          <a href="/productListing">
+            <li>Shop</li>
+          </a>
+          <a href="/customListing">
+            <li>Custom</li>
+          </a>
+          <a href="/about">
+            <li>About</li>
+          </a>
+          <a href="/contact">
+            <li>Contact</li>
+          </a>
+        </ul>
+      </nav>
+    </div>
+  </header>
   <nav id="breadcrumbs" style="margin: 18px 0 0 30px;"></nav>
   <div class="container">
     <aside class="sidebar">
@@ -273,67 +361,79 @@
         <li><a href="/profile">Personal Information</a></li>
         <li><a href="/orders">Your Orders</a></li>
         <li><a href="/addresses">Saved Addresses</a></li>
-        <li><a href="#settings">Account Settings</a></li>
+        <li><a href="/settings">Account Settings</a></li>
       </ul>
     </aside>
     <main class="main-content">
       <h1>My Orders</h1>
       <% if (error) { %>
-        <p style="color: red;"><%= error %></p>
-      <% } %>
-      <form method="GET" action="/orders">
-        <input type="text" name="search" value="<%= searchQuery %>" placeholder="Search by Order ID">
-        <button type="submit">Search</button>
-      </form>
-      <table class="styled-table">
-        <thead>
-          <tr>
-            <th>Order ID</th>
-            <th>Order Date</th>
-            <th>Status</th>
-            <th>Total</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% orders.forEach(order => { %>
-            <tr>
-              <td><%= order.orderID %></td>
-              <td><%= new Date(order.orderDate).toLocaleDateString() %></td>
-              <td><%= order.status %></td>
-              <td>₹<%= order.total.toFixed(2) %></td>
-              <td class="actions">
-                <a href="/orders/<%= order._id %>">View</a>
-                <% if (order.status === 'Pending' || order.status === 'Confirmed') { %>
-                  <button onclick="cancelOrder('<%= order._id %>')">Cancel</button>
-                <% } %>
-                <% if (order.status === 'Delivered') { %>
-                  <button onclick="returnOrder('<%= order._id %>')">Return</button>
-                <% } %>
-                <%if (order.status !== "Canceled" && order.status !== "Returned") { %>
-                  <a href="/orders/invoice/<%= order._id %>">Invoice</a>
-                <% } %>
-                
-              </td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-      <div class="pagination">
-        <% if (currentPage > 1) { %>
-          <a href="/orders?page=<%= currentPage - 1 %>&search=<%= searchQuery %>">Prev</a>
+        <p style="color: red;">
+          <%= error %>
+        </p>
         <% } %>
-        <% for (let i = 1; i <= totalPages; i++) { %>
-          <a href="/orders?page=<%= i %>&search=<%= searchQuery %>"><%= i %></a>
-        <% } %>
-        <% if (currentPage < totalPages) { %>
-          <a href="/orders?page=<%= currentPage + 1 %>&search=<%= searchQuery %>">Next</a>
-        <% } %>
-      </div>
+          <form method="GET" action="/orders">
+            <input type="text" name="search" value="<%= searchQuery %>" placeholder="Search by Order ID">
+            <button type="submit">Search</button>
+          </form>
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Order Date</th>
+                <th>Status</th>
+                <th>Total</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% orders.forEach(order=> { %>
+                <tr>
+                  <td>
+                    <%= order.orderID %>
+                  </td>
+                  <td>
+                    <%= new Date(order.orderDate).toLocaleDateString() %>
+                  </td>
+                  <td>
+                    <%= order.status %>
+                  </td>
+                  <td>₹<%= order.total.toFixed(2) %>
+                  </td>
+                  <td class="actions">
+                    <a href="/orders/<%= order._id %>">View</a>
+                    <% if (order.status==='Pending' || order.status==='Confirmed' ) { %>
+                      <button onclick="cancelOrder('<%= order._id %>')">Cancel</button>
+                      <% } %>
+                        <% if (order.status==='Delivered' ) { %>
+                          <button onclick="returnOrder('<%= order._id %>')">Return</button>
+                          <% } %>
+                            <%if (order.status !=="Canceled" && order.status !=="Returned" ) { %>
+                              <a href="/orders/invoice/<%= order._id %>">Invoice</a>
+                              <% } %>
+
+                  </td>
+                </tr>
+                <% }) %>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <% if (currentPage> 1) { %>
+              <a href="/orders?page=<%= currentPage - 1 %>&search=<%= searchQuery %>">Prev</a>
+              <% } %>
+                <% for (let i=1; i <=totalPages; i++) { %>
+                  <a href="/orders?page=<%= i %>&search=<%= searchQuery %>">
+                    <%= i %>
+                  </a>
+                  <% } %>
+                    <% if (currentPage < totalPages) { %>
+                      <a href="/orders?page=<%= currentPage + 1 %>&search=<%= searchQuery %>">Next</a>
+                      <% } %>
+          </div>
     </main>
   </div>
   <!-- Sweet Alert CDN -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="/js/user.js" defer></script>
 </body>
+
 </html>

@@ -10,6 +10,7 @@ const wishlistController = require('../controllers/user/wishlist.controller');
 const orderController = require('../controllers/user/order.controller');
 const paymentController = require('../controllers/user/payment.controller');
 const walletController = require('../controllers/user/wallet.controller');
+const settingsController = require('../controllers/user/settings.controller');
 
 const cartMiddleware = require('../middlewares/cart.middleware');
 
@@ -17,10 +18,10 @@ const cartMiddleware = require('../middlewares/cart.middleware');
 router.use(cartMiddleware);
 
 
-const { checkUserSession, preventBackAfterLogout, checkUserStatus  } = require('../middlewares/auth.middleware'); 
+const { checkUserSession, preventBackAfterLogout, checkUserStatus } = require('../middlewares/auth.middleware');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs'); 
+const fs = require('fs');
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -89,27 +90,31 @@ router.get(
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req, res) => {
     console.log('Google Authentication Successful:', req.user);
-    
+
     //   Add this part to save session
     req.session.userId = req.user._id;
     req.session.userEmail = req.user.email;
     req.session.userName = req.user.fullName;
-    
+
     res.redirect('/home');
   }
 );
 
 
 //   Protected Routes (Require Login)
-router.use(checkUserStatus); 
+router.use(checkUserStatus);
 router.use(checkUserSession);
-router.use(preventBackAfterLogout); 
+router.use(preventBackAfterLogout);
 
 router.get('/home', authController.getHomePage);
 
 ///profile 
-router.get('/profile',profileController.getProfile)
-router.get('/profile/edit',profileController.getEditProfile);
+router.get('/profile', profileController.getProfile)
+
+// Settings
+router.get('/settings', settingsController.getSettingsPage);
+router.post('/settings/change-password', settingsController.changePassword);
+router.get('/profile/edit', profileController.getEditProfile);
 router.post('/edit-profile/:id', upload.single('profileImage'), profileController.editProfile);
 router.get('/verify-email-otp', profileController.getVerifyEmailOTP);
 router.post('/verify-email-otp', profileController.verifyEmailOTP);
@@ -125,8 +130,8 @@ router.post('/resend-email-otp', profileController.resendEmailOTP);
 /////////
 // Address Management Routes
 /////////
-router.get('/addresses',profileController.getAddresses)
-router.get('/addresses/add',profileController.getAddAddress)
+router.get('/addresses', profileController.getAddresses)
+router.get('/addresses/add', profileController.getAddAddress)
 router.post('/addresses/add', profileController.addAddress);
 router.get('/addresses/edit/:id', profileController.getEditAddress);
 router.post('/addresses/edit/:id', profileController.editAddress);
@@ -138,7 +143,7 @@ router.post('/product/:id/addReview', productController.addReview);
 
 // Cart Management Routes
 router.post('/cart/add/:id', cartController.addToCart);
-router.post('/cart/add', userController.addToCartFromListing); 
+router.post('/cart/add', userController.addToCartFromListing);
 router.get('/cart', cartController.getCart);
 router.post('/cart/remove/:id', cartController.removeFromCart);
 router.post('/cart/update-quantity/:id', cartController.setCartQuantity);
@@ -184,8 +189,8 @@ router.get('/referral-code', userController.getReferralCode);
 
 // Test route - add this to your routes
 router.get('/test-error', () => {
-    // This will be caught by our error handler
-    throw new Error('This is a test error');
+  // This will be caught by our error handler
+  throw new Error('This is a test error');
 });
 
 //testing

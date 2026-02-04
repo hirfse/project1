@@ -9,20 +9,21 @@ const PDFDocument = require('pdfkit');
 const Offer = require('../../models/offer.model');
 const AdminCouponController = require('../admin/coupon.controller');
 const MAX_QUANTITY_PER_PRODUCT = 10;
-const Wishlist = require('../../models/wishlist.model'); 
+const Wishlist = require('../../models/wishlist.model');
 
 
 const ReferralOffer = require('../../models/referralOffer.model');
 const Wallet = require('../../models/wallet.model');
 const Coupon = require('../../models/coupon.model');
 const { processWalletRefund } = require('./wallet.controller');
+const orderService = require('../../services/order.service');
 
 // Order ID generator
 const generateOrderID = () => {
-  const prefix = 'ORD';
-  const timestamp = Date.now().toString().slice(-6);
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return `${prefix}-${timestamp}-${random}`;
+    const prefix = 'ORD';
+    const timestamp = Date.now().toString().slice(-6);
+    const random = Math.floor(1000 + Math.random() * 9000);
+    return `${prefix}-${timestamp}-${random}`;
 };
 
 exports.getCheckout = async (req, res) => {
@@ -139,7 +140,7 @@ exports.getCheckout = async (req, res) => {
 
         // Get user details for Razorpay
         const user = await User.findById(userId).select('email phone').lean();
-        
+
         res.render('user/checkout', {
             addresses,
             selectedAddress,
@@ -173,9 +174,9 @@ exports.getCheckout = async (req, res) => {
             shipping: 0,
             discount: 0,
             total: 0,
-            isBuyNow: false, 
-            availableOffers: [], 
-            availableCoupons: [] 
+            isBuyNow: false,
+            availableOffers: [],
+            availableCoupons: []
         });
     }
 };
@@ -208,12 +209,12 @@ exports.selectAddress = async (req, res) => {
 
         // Store selected address in session
         req.session.selectedAddressId = selectedAddress;
-        
+
         // Also store in checkoutData for the payment flow
         req.session.checkoutData = req.session.checkoutData || {};
         req.session.checkoutData.selectedAddress = selectedAddress;
         req.session.checkoutData.paymentMethod = paymentMethod;
-        
+
         // Save the session
         await new Promise((resolve, reject) => {
             req.session.save(err => {
@@ -221,18 +222,18 @@ exports.selectAddress = async (req, res) => {
                 else resolve();
             });
         });
-        
-        res.status(200).json({ 
-            success: true, 
+
+        res.status(200).json({
+            success: true,
             message: 'Address selected successfully',
             address: selectedAddr
         });
     } catch (error) {
         console.error('Error selecting address:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             message: 'Failed to select address',
-            error: error.message 
+            error: error.message
         });
     }
 };
@@ -376,13 +377,13 @@ exports.placeOrder = async (req, res) => {
                 const user = await User.findById(userId).select('email phone').lean();
                 let availableOffers = [];
                 let availableCoupons = [];
-                
+
                 // Only fetch offers and coupons if not in buy-now mode
                 if (!isBuyNow) {
                     availableOffers = await getAvailableOffers(userId, orderItems);
                     availableCoupons = await AdminCouponController.getAvailableCoupons(userId, orderItems);
                 }
-                
+
                 return res.render('user/checkout', {
                     addresses: addressDoc ? addressDoc.address : [],
                     selectedAddress: addressDoc ? addressDoc.address.find(addr => addr._id.toString() === selectedAddress) : null,
@@ -489,9 +490,9 @@ exports.placeOrder = async (req, res) => {
             },
             paymentMethod,
             subtotal,
-            tax,  
+            tax,
             shipping,
-            discount,  
+            discount,
             offerDiscount: offerDiscount,
             appliedOffer: appliedOffer ? {
                 code: appliedOffer.code,
@@ -721,81 +722,11 @@ exports.cancelOrder = async (req, res) => {
         const orderId = req.params.id;
         const userId = req.session.userId;
         const { cancelReason } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(orderId)) {
-            return res.status(400).json({ success: false, message: 'Invalid order ID' });
-        }
-
-        const order = await Order.findOne({ _id: orderId, userId });
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
-        }
-
-        if (order.status !== 'Pending' && order.status !== 'Confirmed') {
-            return res.status(400).json({ success: false, message: 'Order cannot be canceled' });
-        }
-
-        // Restore stock for each item
-        for (const item of order.items) {
-            const product = await Product.findById(item.productId);
-            if (product) {
-                product.quantity += item.quantity;
-                product.status = product.quantity > 0 ? 'Available' : 'Out of Stock';
-                await product.save();
-            }
-        }
-
-        // Process refund if payment was made
-        let refundMessage = 'Order canceled successfully';
-        console.log(`Order cancellation - Payment Method: ${order.paymentMethod}, Order Total: ₹${order.total}`);
-
-        try {
-            if (order.paymentMethod === 'razorpay' && order.razorpayPaymentId) {
-                // First try Razorpay refund
-                const refundResult = await processRazorpayRefund(order, order.total);
-                if (refundResult.success) {
-                    refundMessage = `Order canceled successfully. ₹${order.total.toFixed(2)} has been refunded to your original payment method. Refund ID: ${refundResult.refundId}`;
-                } else {
-                    // Fall back to wallet refund if Razorpay refund fails
-                    await processWalletRefund(
-                        userId, 
-                        order.total, 
-                        `Refund for canceled order #${order.orderId || order._id} (Razorpay refund failed)`
-                    );
-                    refundMessage = `Order canceled successfully. ₹${order.total.toFixed(2)} has been refunded to your wallet.`;
-                }
-            } else if (order.paymentMethod === 'wallet' || order.paymentMethod === 'cod' || order.paymentMethod === 'razorpay') {
-                // For wallet payments, COD, or if Razorpay payment ID is missing, refund to wallet
-                await processWalletRefund(
-                    userId,
-                    order.total,
-                    `Refund for canceled order #${order.orderId || order._id}`
-                );
-                refundMessage = `Order canceled successfully. ₹${order.total.toFixed(2)} has been refunded to your wallet.`;
-            }
-        } catch (error) {
-            console.error('Error processing refund:', error);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to process refund',
-                error: error.message
-            });
-        }
-
-        // Update order status
-        order.status = 'Canceled';
-        order.cancelReason = cancelReason || 'No reason provided';
-        order.updatedAt = new Date();
-        await order.save();
-        
-        return res.status(200).json({ success: true, message: refundMessage });
+        const result = await orderService.cancelOrderService(orderId, userId, cancelReason);
+        res.status(200).json(result);
     } catch (error) {
         console.error('Error canceling order:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to cancel order', 
-            error: error.message 
-        });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -805,97 +736,11 @@ exports.cancelOrderItem = async (req, res) => {
         const { orderId, itemId } = req.params;
         const userId = req.session.userId;
         const { cancelReason } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(orderId) || !mongoose.Types.ObjectId.isValid(itemId)) {
-            return res.status(400).json({ success: false, message: 'Invalid order or item ID' });
-        }
-
-        const order = await Order.findOne({ _id: orderId, userId });
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
-        }
-
-        const itemIndex = order.items.findIndex(item => item._id.toString() === itemId);
-        if (itemIndex === -1) {
-            return res.status(404).json({ success: false, message: 'Item not found in order' });
-        }
-
-        const item = order.items[itemIndex];
-        
-        // Restore product stock
-        const product = await Product.findById(item.productId);
-        if (product) {
-            product.quantity += item.quantity;
-            product.status = product.quantity > 0 ? 'Available' : 'Out of Stock';
-            await product.save();
-        }
-
-        // Calculate refund amount for this item (same as return logic)
-        const itemRefundAmount = item.price * item.quantity;
-
-        // Update order totals
-        order.subtotal -= itemRefundAmount;
-        order.tax = order.subtotal * 0.05;
-        order.total = order.subtotal + order.tax + order.shipping - (order.discount || 0);
-
-        // Process refund if payment was made
-        let refundMessage = 'Order item canceled successfully';
-
-        try {
-            if (order.paymentMethod === 'razorpay' && order.razorpayPaymentId) {
-                // First try Razorpay refund
-                const refundResult = await processRazorpayRefund(order, itemRefundAmount);
-                if (refundResult.success) {
-                    refundMessage = `Order item canceled successfully. ₹${itemRefundAmount.toFixed(2)} has been refunded to your original payment method. Refund ID: ${refundResult.refundId}`;
-                } else {
-                    // Fall back to wallet refund if Razorpay refund fails
-                    await processWalletRefund(
-                        userId, 
-                        itemRefundAmount, 
-                        `Refund for canceled item from order #${order.orderId || order._id} (Razorpay refund failed)`
-                    );
-                    refundMessage = `Order item canceled successfully. ₹${itemRefundAmount.toFixed(2)} has been refunded to your wallet.`;
-                }
-            } else if (order.paymentMethod === 'wallet' || order.paymentMethod === 'cod' || order.paymentMethod === 'razorpay') {
-                // For wallet payments, COD, or if Razorpay payment ID is missing, refund to wallet
-                await processWalletRefund(
-                    userId,
-                    itemRefundAmount,
-                    `Refund for canceled item from order #${order.orderId || order._id}`
-                );
-                refundMessage = `Order item canceled successfully. ₹${itemRefundAmount.toFixed(2)} has been refunded to your wallet.`;
-            }
-        } catch (error) {
-            console.error('Error processing refund:', error);
-            return res.status(500).json({
-                success: false,
-                message: 'Failed to process refund',
-                error: error.message
-            });
-        }
-
-        // Update item status
-        item.status = 'Canceled';
-        item.cancelReason = cancelReason || 'No reason provided';
-        order.items[itemIndex] = item;
-
-        // Check if all items are canceled
-        const allCanceled = order.items.every(i => i.status === 'Canceled');
-        if (allCanceled) {
-            order.status = 'Canceled';
-        }
-
-        order.updatedAt = new Date();
-        await order.save();
-        
-        return res.status(200).json({ success: true, message: refundMessage });
+        const result = await orderService.cancelOrderItemService(orderId, itemId, userId, cancelReason);
+        res.status(200).json(result);
     } catch (error) {
         console.error('Error canceling order item:', error);
-        res.status(500).json({ 
-            success: false, 
-            message: 'Failed to cancel order item',
-            error: error.message 
-        });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -905,79 +750,24 @@ exports.returnOrderItem = async (req, res) => {
         const { orderId, itemId } = req.params;
         const userId = req.session.userId;
         const { returnReason } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(orderId) || !mongoose.Types.ObjectId.isValid(itemId)) {
-            return res.status(400).json({ success: false, message: 'Invalid order or item ID' });
-        }
-
-        if (!returnReason) {
-            return res.status(400).json({ success: false, message: 'Return reason is required' });
-        }
-
-        const order = await Order.findOne({ _id: orderId, userId });
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
-        }
-
-        const itemIndex = order.items.findIndex(item => item._id.toString() === itemId);
-        if (itemIndex === -1) {
-            return res.status(404).json({ success: false, message: 'Item not found in order' });
-        }
-
-        const item = order.items[itemIndex];
-
-        // ✅ FIX: Check item.status instead of order.status
-        if (item.status !== 'Delivered') {
-            return res.status(400).json({ success: false, message: 'Only delivered items can be returned' });
-        }
-
-        item.status = 'Return Requested';
-        item.returnReason = returnReason;
-        order.items[itemIndex] = item;
-        order.updatedAt = new Date();
-        await order.save();
-
-        res.status(200).json({ success: true, message: 'Return request submitted successfully' });
-    }
-    catch (error) {
-        console.error('Error requesting return:', error);
-        res.status(500).json({ success: false, message: 'Failed to submit return request' });
+        const result = await orderService.returnOrderItemService(orderId, itemId, userId, returnReason);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Error in returnOrderItem:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
-// Return Order
 exports.returnOrder = async (req, res) => {
     try {
         const orderId = req.params.id;
         const userId = req.session.userId;
         const { returnReason } = req.body;
-
-        if (!mongoose.Types.ObjectId.isValid(orderId)) {
-            return res.status(400).json({ success: false, message: 'Invalid order ID' });
-        }
-
-        if (!returnReason) {
-            return res.status(400).json({ success: false, message: 'Return reason is required' });
-        }
-
-        const order = await Order.findOne({ _id: orderId, userId });
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found' });
-        }
-
-        if (order.status !== 'Delivered') {
-            return res.status(400).json({ success: false, message: 'Only delivered orders can be returned' });
-        }
-
-        order.status = 'Return Requested';
-        order.returnReason = returnReason;
-        order.updatedAt = new Date();
-        await order.save();
-
-        res.status(200).json({ success: true, message: 'Return request submitted successfully' });
+        const result = await orderService.returnOrderService(orderId, userId, returnReason);
+        res.status(200).json(result);
     } catch (error) {
-        console.error('Error requesting return:', error);
-        res.status(500).json({ success: false, message: 'Failed to submit return request' });
+        console.error('Error in returnOrder:', error);
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -1000,7 +790,7 @@ exports.downloadInvoice = async (req, res) => {
         const user = await User.findById(userId);
 
         // Create PDF document with larger right margin for totals
-        const doc = new PDFDocument({ 
+        const doc = new PDFDocument({
             margin: 50,
             size: 'A4'
         });
@@ -1017,10 +807,10 @@ exports.downloadInvoice = async (req, res) => {
 
         // Add content to PDF
         generateInvoicePDF(doc, order, user);
-        
+
         // Finalize PDF
         doc.end();
-        
+
     } catch (error) {
         console.error('Error generating invoice:', error);
         res.status(500).json({ success: false, message: 'Failed to generate invoice' });
@@ -1036,105 +826,105 @@ function generateInvoicePDF(doc, order, user) {
 
     // Header Section
     doc.fontSize(20)
-       .font('Helvetica-Bold')
-       .text('U-CRAFT', { align: 'center' });
-    
+        .font('Helvetica-Bold')
+        .text('U-CRAFT', { align: 'center' });
+
     doc.fontSize(14)
-       .font('Helvetica')
-       .text('INVOICE', { align: 'center' });
-    
+        .font('Helvetica')
+        .text('INVOICE', { align: 'center' });
+
     // Horizontal line
     doc.moveTo(leftColumn, 100)
-       .lineTo(pageWidth - leftColumn, 100)
-       .lineWidth(1)
-       .stroke();
+        .lineTo(pageWidth - leftColumn, 100)
+        .lineWidth(1)
+        .stroke();
 
     // Invoice Info (right aligned)
     doc.fontSize(10)
-       .text(`Invoice #: ${order.orderID}`, rightColumn, 120, { width: 200, align: 'right' })
-       .text(`Date: ${new Date(order.orderDate).toLocaleDateString()}`, rightColumn, 135, { width: 200, align: 'right' })
-       .moveDown(1);
+        .text(`Invoice #: ${order.orderID}`, rightColumn, 120, { width: 200, align: 'right' })
+        .text(`Date: ${new Date(order.orderDate).toLocaleDateString()}`, rightColumn, 135, { width: 200, align: 'right' })
+        .moveDown(1);
 
     // Customer Information
     doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .text('BILL TO:', leftColumn, 170);
-    
+        .font('Helvetica-Bold')
+        .text('BILL TO:', leftColumn, 170);
+
     doc.font('Helvetica')
-       .text(user.fullName, leftColumn, 190)
-       .text(user.email, leftColumn, 205);
-    
+        .text(user.fullName, leftColumn, 190)
+        .text(user.email, leftColumn, 205);
+
     if (user.phone) {
         doc.text(`Phone: ${user.phone}`, leftColumn, 220);
     }
 
     // Shipping Address
     doc.font('Helvetica-Bold')
-       .text('SHIPPING ADDRESS:', leftColumn, 250);
-    
+        .text('SHIPPING ADDRESS:', leftColumn, 250);
+
     doc.font('Helvetica')
-       .text(order.shippingAddress.fullName, leftColumn, 270)
-       .text(order.shippingAddress.houseName, leftColumn, 285)
-       .text(`${order.shippingAddress.city}, ${order.shippingAddress.state}`, leftColumn, 300)
-       .text(`Pincode: ${order.shippingAddress.pincode}`, leftColumn, 315);
-    
+        .text(order.shippingAddress.fullName, leftColumn, 270)
+        .text(order.shippingAddress.houseName, leftColumn, 285)
+        .text(`${order.shippingAddress.city}, ${order.shippingAddress.state}`, leftColumn, 300)
+        .text(`Pincode: ${order.shippingAddress.pincode}`, leftColumn, 315);
+
     if (order.shippingAddress.landMark) {
         doc.text(`Landmark: ${order.shippingAddress.landMark}`, leftColumn, 330);
     }
 
     // Order Items Table Header
     doc.font('Helvetica-Bold')
-       .fontSize(12)
-       .text('PRODUCT', leftColumn, 380)
-       .text('QTY', 250, 380)
-       .text('PRICE', 320, 380, { width: 90, align: 'right' })
-       .text('TOTAL', 420, 380, { width: 90, align: 'right' })
-    
+        .fontSize(12)
+        .text('PRODUCT', leftColumn, 380)
+        .text('QTY', 250, 380)
+        .text('PRICE', 320, 380, { width: 90, align: 'right' })
+        .text('TOTAL', 420, 380, { width: 90, align: 'right' })
+
     // Table line
     doc.moveTo(leftColumn, 395)
-       .lineTo(pageWidth - leftColumn, 395)
-       .lineWidth(1)
-       .stroke();
+        .lineTo(pageWidth - leftColumn, 395)
+        .lineWidth(1)
+        .stroke();
 
     // Order Items
     let yPosition = 410;
     order.items.forEach(item => {
         const itemTotal = (item.quantity * item.price).toFixed(2);
-        
+
         doc.font('Helvetica')
-           .fontSize(10)
-           .text(item.productName, leftColumn, yPosition, { width: 180 })
-           .text(item.quantity.toString(), 250, yPosition)
-           .text(`₹${item.price.toFixed(2)}`, 320, yPosition, { width: 90, align: 'right' })
-           .text(`₹${itemTotal}`, 420, yPosition, { width: 90, align: 'right' })
-           .text(item.status || 'N/A', 520, yPosition, { align: 'right' });
-        
+            .fontSize(10)
+            .text(item.productName, leftColumn, yPosition, { width: 180 })
+            .text(item.quantity.toString(), 250, yPosition)
+            .text(`₹${item.price.toFixed(2)}`, 320, yPosition, { width: 90, align: 'right' })
+            .text(`₹${itemTotal}`, 420, yPosition, { width: 90, align: 'right' })
+            .text(item.status || 'N/A', 520, yPosition, { align: 'right' });
+
         yPosition += 20;
     });
 
     // Summary Section
     doc.moveTo(leftColumn, yPosition + 20)
-       .lineTo(pageWidth - leftColumn, yPosition + 20)
-       .lineWidth(1)
-       .stroke();
+        .lineTo(pageWidth - leftColumn, yPosition + 20)
+        .lineWidth(1)
+        .stroke();
 
     doc.font('Helvetica-Bold')
-       .fontSize(12)
-       .text('SUBTOTAL:', rightColumn, yPosition + 30, { width: 90, align: 'right' })
-       .text(`₹${order.subtotal.toFixed(2)}`, 420, yPosition + 30, { width: 90, align: 'right' });
+        .fontSize(12)
+        .text('SUBTOTAL:', rightColumn, yPosition + 30, { width: 90, align: 'right' })
+        .text(`₹${order.subtotal.toFixed(2)}`, 420, yPosition + 30, { width: 90, align: 'right' });
 
     doc.text('TAX (5%):', rightColumn, yPosition + 50, { width: 90, align: 'right' })
-       .text(`₹${order.tax.toFixed(2)}`, 420, yPosition + 50, { width: 90, align: 'right' });
+        .text(`₹${order.tax.toFixed(2)}`, 420, yPosition + 50, { width: 90, align: 'right' });
 
     doc.text('SHIPPING:', rightColumn, yPosition + 70, { width: 90, align: 'right' })
-       .text(`₹${order.shipping.toFixed(2)}`, 420, yPosition + 70, { width: 90, align: 'right' });
+        .text(`₹${order.shipping.toFixed(2)}`, 420, yPosition + 70, { width: 90, align: 'right' });
 
     let currentYOffset = 90;
 
     // Product/Category Discount
     if (order.discount && order.discount > 0) {
         doc.text('PRODUCT DISCOUNT:', rightColumn, yPosition + currentYOffset, { width: 90, align: 'right' })
-           .text(`-₹${order.discount.toFixed(2)}`, 420, yPosition + currentYOffset, { width: 90, align: 'right' });
+            .text(`-₹${order.discount.toFixed(2)}`, 420, yPosition + currentYOffset, { width: 90, align: 'right' });
         currentYOffset += 20;
     }
 
@@ -1143,30 +933,30 @@ function generateInvoicePDF(doc, order, user) {
         const offerText = order.appliedOffer && order.appliedOffer.code ?
             `OFFER (${order.appliedOffer.code}):` : 'OFFER DISCOUNT:';
         doc.text(offerText, rightColumn, yPosition + currentYOffset, { width: 90, align: 'right' })
-           .text(`-₹${order.offerDiscount.toFixed(2)}`, 420, yPosition + currentYOffset, { width: 90, align: 'right' });
+            .text(`-₹${order.offerDiscount.toFixed(2)}`, 420, yPosition + currentYOffset, { width: 90, align: 'right' });
         currentYOffset += 20;
     }
 
     doc.moveTo(leftColumn, yPosition + currentYOffset + 20)
-       .lineTo(pageWidth - leftColumn, yPosition + currentYOffset + 20)
-       .lineWidth(1)
-       .stroke();
+        .lineTo(pageWidth - leftColumn, yPosition + currentYOffset + 20)
+        .lineWidth(1)
+        .stroke();
 
     doc.fontSize(14)
-       .text('TOTAL:', rightColumn, yPosition + currentYOffset + 30, { width: 90, align: 'right' })
-       .text(`₹${order.total.toFixed(2)}`, 420, yPosition + currentYOffset + 30, { width: 90, align: 'right', underline: true });
-    
+        .text('TOTAL:', rightColumn, yPosition + currentYOffset + 30, { width: 90, align: 'right' })
+        .text(`₹${order.total.toFixed(2)}`, 420, yPosition + currentYOffset + 30, { width: 90, align: 'right', underline: true });
+
     // Payment Method
     doc.fontSize(12)
-       .font('Helvetica-Bold')
-       .text('PAYMENT METHOD:', leftColumn, yPosition + currentYOffset + 60)
-       .font('Helvetica')
-       .text(order.paymentMethod.toUpperCase(), leftColumn + 120, yPosition + currentYOffset + 60);
-    
+        .font('Helvetica-Bold')
+        .text('PAYMENT METHOD:', leftColumn, yPosition + currentYOffset + 60)
+        .font('Helvetica')
+        .text(order.paymentMethod.toUpperCase(), leftColumn + 120, yPosition + currentYOffset + 60);
+
     // Footer
     doc.fontSize(10)
-       .text('Thank you for shopping with U-Craft!', pageCenter, 750, { align: 'center' })
-       .text('For any inquiries, please contact support@u-craft.com', pageCenter, 765, { align: 'center' });
+        .text('Thank you for shopping with U-Craft!', pageCenter, 750, { align: 'center' })
+        .text('For any inquiries, please contact support@u-craft.com', pageCenter, 765, { align: 'center' });
 }
 
 exports.buyNow = async (req, res) => {
@@ -1254,9 +1044,9 @@ exports.buyNow = async (req, res) => {
         res.redirect('/checkout?buyNow=true');
     } catch (error) {
         console.error('Error in buyNow:', error.message, error.stack);
-        res.status(500).render('user/productError', { 
-            message: 'Failed to process buy now', 
-            userName: req.session.userName || null 
+        res.status(500).render('user/productError', {
+            message: 'Failed to process buy now',
+            userName: req.session.userName || null
         });
     }
 };
@@ -1645,35 +1435,3 @@ async function applyReferralRewards(order) {
 
 // Export for external usage
 exports.applyReferralRewards = applyReferralRewards;
-
-async function processRazorpayRefund(order, amount) {
-    try {
-        if (!order.razorpayPaymentId) {
-            console.error('No Razorpay payment ID found for order:', order._id);
-            return { success: false, message: 'No payment reference found for refund' };
-        }
-
-        // Convert amount to paise (Razorpay's smallest currency unit)
-        const amountInPaise = Math.round(amount * 100);
-        
-        // Create refund using Razorpay API
-        const refund = await global.razorpayInstance.payments.refund(
-            order.razorpayPaymentId,
-            { amount: amountInPaise }
-        );
-
-        console.log('Razorpay refund successful:', refund);
-        return { 
-            success: true, 
-            message: 'Refund processed successfully',
-            refundId: refund.id
-        };
-    } catch (error) {
-        console.error('Error processing Razorpay refund:', error);
-        return { 
-            success: false, 
-            message: error.description || 'Failed to process Razorpay refund',
-            error: error.error
-        };
-    }
-}

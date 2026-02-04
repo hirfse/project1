@@ -1,4 +1,5 @@
 const Product = require('../../models/product.model');
+const User = require('../../models/user.model');
 const Wishlist = require('../../models/wishlist.model');
 const Category = require('../../models/category.model');
 const mongoose = require('mongoose');
@@ -87,10 +88,22 @@ exports.getWishlist = async (req, res) => {
             }
         }
 
+        let userUser = null;
+        if (userId) {
+            const userDoc = await User.findById(userId).lean();
+            if (userDoc) {
+                userUser = {
+                    userName: userDoc.fullName,
+                    userProfile: userDoc.profileImage
+                };
+            }
+        }
+
         if (!validProducts.length) {
             return res.render('user/wishlist', {
                 wishlist: { products: [] },
                 userName: req.session.userName || null,
+                user: userUser,
                 error: 'Your wishlist is empty',
                 categories
             });
@@ -99,6 +112,7 @@ exports.getWishlist = async (req, res) => {
         res.render('user/wishlist', {
             wishlist: { products: validProducts },
             userName: req.session.userName || null,
+            user: userUser,
             error: null,
             categories
         });
@@ -107,6 +121,7 @@ exports.getWishlist = async (req, res) => {
         res.status(500).render('user/wishlist', {
             wishlist: { products: [] },
             userName: req.session.userName || null,
+            user: null,
             error: 'Failed to load wishlist',
             categories: []
         });

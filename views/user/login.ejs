@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>U-Craft Login</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="/css/auth.css">
     <style>
         body {
@@ -20,7 +22,8 @@
             color: white;
         }
 
-        .forgotLink, .signupLink {
+        .forgotLink,
+        .signupLink {
             display: inline-block;
             color: #992828;
             text-decoration: none;
@@ -36,11 +39,12 @@
             float: right;
         }
 
-        .forgotLink:hover, .signupLink:hover {
+        .forgotLink:hover,
+        .signupLink:hover {
             text-decoration: underline;
         }
 
-        .rightBody > p {
+        .rightBody>p {
             width: 90%;
             text-align: center;
             color: white;
@@ -84,52 +88,90 @@
         }
     </style>
 </head>
+
 <body>
     <%- include('../partials/loginHeader') %>
-         
-    <main>
-        <div class="loginContainer">
-            <div class="loginLeft">
-                <img id="loginImage" src="/images/background/linevector.png" alt="Line Vector">
-            </div>
-            <div class="loginRight">
-                <div class="rightHeader">
-                    <img src="/images/background/U-Craft_logo.png" alt="U-Craft Logo" id="loginHeadLogo">
-                    <p>Welcome to U-CRAFT.</p>
+
+        <main>
+            <div class="loginContainer">
+                <div class="loginLeft">
+                    <img id="loginImage" src="/images/background/linevector.png" alt="Line Vector">
                 </div>
-                <div class="rightBody">
-                    <% if (error) { %>
-                        <p class="error-message"><%= error %></p>
-                    <% } %>
-                    <form action="/login" method="post">
-                        <label for="email">Email</label>
-                        <input type="text" id="email" name="email" placeholder="Enter your Email">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="password" placeholder="Enter your password">
-                        
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                            <a href="/forgotPassword" class="forgotLink">Forgot Password?</a>
-                            <a href="/signup" class="signupLink">Sign Up instead</a>
-                        </div>
-                        
-                        <button type="submit">Login</button>
-                    </form>
-                    <p><----------------- OR -----------------></p>
-                    <div class="googleLoginButton">
-                        <a href="/auth/google">
-                            <button type="button">
-                                <img src="/images/project_icons/googleicon.png" alt="Google Icon">
-                                Continue with Google
-                            </button>
-                        </a>
+                <div class="loginRight">
+                    <div class="rightHeader">
+                        <img src="/images/background/U-Craft_logo.png" alt="U-Craft Logo" id="loginHeadLogo">
+                        <p>Welcome to U-CRAFT.</p>
+                    </div>
+                    <div class="rightBody">
+                        <% if (error) { %>
+                            <p class="error-message">
+                                <%= error %>
+                            </p>
+                            <% } %>
+                                <form action="/login" method="post" onsubmit="return validateLogin(event)">
+                                    <label for="email">Email</label>
+                                    <input type="text" id="email" name="email" placeholder="Enter your Email">
+                                    <div id="errorEmail" class="error-message" style="color: red; font-size: 13px;">
+                                    </div>
+                                    <label for="password">Password</label>
+                                    <input type="password" id="password" name="password"
+                                        placeholder="Enter your password">
+                                    <div id="errorPass" class="error-message" style="color: red; font-size: 13px;">
+                                    </div>
+
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                        <a href="/forgotPassword" class="forgotLink">Forgot Password?</a>
+                                        <a href="/signup" class="signupLink">Sign Up instead</a>
+                                    </div>
+
+                                    <button type="submit">Login</button>
+                                </form>
+                                <p><----------------- OR -----------------></p>
+                                <div class="googleLoginButton">
+                                    <a href="/auth/google">
+                                        <button type="button">
+                                            <img src="/images/project_icons/googleicon.png" alt="Google Icon">
+                                            Continue with Google
+                                        </button>
+                                    </a>
+                                </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </main>
+        </main>
+        <script>
+            function validateLogin(event) {
+                document.getElementById('errorEmail').textContent = '';
+                document.getElementById('errorPass').textContent = '';
+
+                const email = document.getElementById('email').value.trim();
+                const password = document.getElementById('password').value;
+                let isValid = true;
+
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                if (!email) {
+                    document.getElementById('errorEmail').textContent = 'Email is required';
+                    isValid = false;
+                } else if (!emailRegex.test(email)) {
+                    // Optional: strictly speaking we can skip format check on login to avoid username enum, 
+                    // but usually helpful for user typos.
+                    document.getElementById('errorEmail').textContent = 'Please enter a valid email';
+                    isValid = false;
+                }
+
+                if (!password) {
+                    document.getElementById('errorPass').textContent = 'Password is required';
+                    isValid = false;
+                }
+
+                if (!isValid) {
+                    event.preventDefault();
+                    return false;
+                }
+                return true;
+            }
+        </script>
 </body>
+
 </html>
-
-
-
-

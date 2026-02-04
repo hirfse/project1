@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Wallet - U-Craft</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
@@ -33,7 +35,7 @@
             border-radius: 10px;
             padding: 20px;
             height: fit-content;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar ul {
@@ -53,7 +55,8 @@
             transition: all 0.3s ease;
         }
 
-        .sidebar a:hover, .sidebar a.active {
+        .sidebar a:hover,
+        .sidebar a.active {
             background-color: #007bff;
             color: white;
         }
@@ -63,7 +66,7 @@
             background: white;
             border-radius: 10px;
             padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .wallet-header {
@@ -109,7 +112,7 @@
         }
 
         .transaction-item:hover {
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .transaction-info {
@@ -206,6 +209,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <aside class="sidebar">
@@ -215,7 +219,7 @@
                 <li><a href="/addresses">Saved Addresses</a></li>
                 <li><a href="/wishlist">Wishlist</a></li>
                 <li><a href="/wallet" class="active">Wallet</a></li>
-                <li><a href="/profile/edit">Account Settings</a></li>
+                <li><a href="/settings">Account Settings</a></li>
             </ul>
         </aside>
 
@@ -225,112 +229,125 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     <%= error %>
                 </div>
-            <% } %>
-
-            <div class="wallet-header">
-                <div class="balance-label">Your Wallet Balance</div>
-                <div class="balance-amount">₹<%= wallet.balance.toFixed(2) %></div>
-                <div class="balance-label">Available for use</div>
-            </div>
-
-            <div class="transactions-section">
-                <h2 class="section-title">
-                    <i class="fas fa-history"></i>
-                    Transaction History
-                </h2>
-
-                <% if (wallet.transactions && wallet.transactions.length > 0) { %>
-                    <% wallet.transactions.forEach(transaction => { %>
-                        <div class="transaction-item">
-                            <div class="transaction-info">
-                                <div class="transaction-description">
-                                    <i class="fas <%= transaction.type === 'credit' ? 'fa-plus-circle credit' : 'fa-minus-circle debit' %>"></i>
-                                    <%= transaction.description %>
-                                </div>
-                                <div class="transaction-date">
-                                    <%= new Date(transaction.date).toLocaleDateString('en-IN', { 
-                                        year: 'numeric', 
-                                        month: 'long', 
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    }) %>
-                                </div>
-                            </div>
-                            <div class="transaction-amount <%= transaction.type %>">
-                                <%= transaction.type === 'credit' ? '+' : '-' %>₹<%= transaction.amount.toFixed(2) %>
-                            </div>
-                        </div>
-                    <% }) %>
-
-                    <!-- Pagination Controls -->
-                    <% if (pagination.totalPages > 1) { %>
-                        <div class="pagination">
-                            <!-- Previous Button -->
-                            <% if (pagination.hasPrevPage) { %>
-                                <a href="/wallet?page=<%= pagination.prevPage %>">
-                                    <i class="fas fa-chevron-left"></i> Previous
-                                </a>
-                            <% } else { %>
-                                <span class="disabled">
-                                    <i class="fas fa-chevron-left"></i> Previous
-                                </span>
-                            <% } %>
-
-                            <!-- Page Numbers -->
-                            <% 
-                                let startPage = Math.max(1, pagination.currentPage - 2);
-                                let endPage = Math.min(pagination.totalPages, pagination.currentPage + 2);
-                                
-                                if (startPage > 1) { %>
-                                    <a href="/wallet?page=1">1</a>
-                                    <% if (startPage > 2) { %>
-                                        <span>...</span>
-                                    <% } %>
-                                <% }
-                                
-                                for (let i = startPage; i <= endPage; i++) { %>
-                                    <% if (i === pagination.currentPage) { %>
-                                        <span class="active"><%= i %></span>
-                                    <% } else { %>
-                                        <a href="/wallet?page=<%= i %>"><%= i %></a>
-                                    <% } %>
-                                <% }
-                                
-                                if (endPage < pagination.totalPages) { %>
-                                    <% if (endPage < pagination.totalPages - 1) { %>
-                                        <span>...</span>
-                                    <% } %>
-                                    <a href="/wallet?page=<%= pagination.totalPages %>"><%= pagination.totalPages %></a>
-                                <% } %>
-
-                            <!-- Next Button -->
-                            <% if (pagination.hasNextPage) { %>
-                                <a href="/wallet?page=<%= pagination.nextPage %>">
-                                    Next <i class="fas fa-chevron-right"></i>
-                                </a>
-                            <% } else { %>
-                                <span class="disabled">
-                                    Next <i class="fas fa-chevron-right"></i>
-                                </span>
-                            <% } %>
-                        </div>
-
-                        <div class="pagination-info">
-                            Showing <%= (pagination.currentPage - 1) * 10 + 1 %> - 
-                            <%= Math.min(pagination.currentPage * 10, pagination.totalTransactions) %> 
-                            of <%= pagination.totalTransactions %> transactions
-                        </div>
-                    <% } %>
-                <% } else { %>
-                    <div class="no-transactions">
-                        <i class="fas fa-wallet"></i>
-                        <h3>No transactions yet</h3>
-                        <p>Your transaction history will appear here when you make purchases or receive refunds.</p>
-                    </div>
                 <% } %>
-            </div>
+
+                    <div class="wallet-header">
+                        <div class="balance-label">Your Wallet Balance</div>
+                        <div class="balance-amount">₹<%= wallet.balance.toFixed(2) %>
+                        </div>
+                        <div class="balance-label">Available for use</div>
+                    </div>
+
+                    <div class="transactions-section">
+                        <h2 class="section-title">
+                            <i class="fas fa-history"></i>
+                            Transaction History
+                        </h2>
+
+                        <% if (wallet.transactions && wallet.transactions.length> 0) { %>
+                            <% wallet.transactions.forEach(transaction=> { %>
+                                <div class="transaction-item">
+                                    <div class="transaction-info">
+                                        <div class="transaction-description">
+                                            <i
+                                                class="fas <%= transaction.type === 'credit' ? 'fa-plus-circle credit' : 'fa-minus-circle debit' %>"></i>
+                                            <%= transaction.description %>
+                                        </div>
+                                        <div class="transaction-date">
+                                            <%= new Date(transaction.date).toLocaleDateString('en-IN', { year: 'numeric'
+                                                , month: 'long' , day: 'numeric' , hour: '2-digit' , minute: '2-digit'
+                                                }) %>
+                                        </div>
+                                    </div>
+                                    <div class="transaction-amount <%= transaction.type %>">
+                                        <%= transaction.type==='credit' ? '+' : '-' %>₹<%= transaction.amount.toFixed(2)
+                                                %>
+                                    </div>
+                                </div>
+                                <% }) %>
+
+                                    <!-- Pagination Controls -->
+                                    <% if (pagination.totalPages> 1) { %>
+                                        <div class="pagination">
+                                            <!-- Previous Button -->
+                                            <% if (pagination.hasPrevPage) { %>
+                                                <a href="/wallet?page=<%= pagination.prevPage %>">
+                                                    <i class="fas fa-chevron-left"></i> Previous
+                                                </a>
+                                                <% } else { %>
+                                                    <span class="disabled">
+                                                        <i class="fas fa-chevron-left"></i> Previous
+                                                    </span>
+                                                    <% } %>
+
+                                                        <!-- Page Numbers -->
+                                                        <% let startPage=Math.max(1, pagination.currentPage - 2); let
+                                                            endPage=Math.min(pagination.totalPages,
+                                                            pagination.currentPage + 2); if (startPage> 1) { %>
+                                                            <a href="/wallet?page=1">1</a>
+                                                            <% if (startPage> 2) { %>
+                                                                <span>...</span>
+                                                                <% } %>
+                                                                    <% } for (let i=startPage; i <=endPage; i++) { %>
+                                                                        <% if (i===pagination.currentPage) { %>
+                                                                            <span class="active">
+                                                                                <%= i %>
+                                                                            </span>
+                                                                            <% } else { %>
+                                                                                <a href="/wallet?page=<%= i %>">
+                                                                                    <%= i %>
+                                                                                </a>
+                                                                                <% } %>
+                                                                                    <% } if (endPage <
+                                                                                        pagination.totalPages) { %>
+                                                                                        <% if (endPage <
+                                                                                            pagination.totalPages - 1) {
+                                                                                            %>
+                                                                                            <span>...</span>
+                                                                                            <% } %>
+                                                                                                <a
+                                                                                                    href="/wallet?page=<%= pagination.totalPages %>">
+                                                                                                    <%= pagination.totalPages
+                                                                                                        %>
+                                                                                                </a>
+                                                                                                <% } %>
+
+                                                                                                    <!-- Next Button -->
+                                                                                                    <% if
+                                                                                                        (pagination.hasNextPage)
+                                                                                                        { %>
+                                                                                                        <a
+                                                                                                            href="/wallet?page=<%= pagination.nextPage %>">
+                                                                                                            Next <i
+                                                                                                                class="fas fa-chevron-right"></i>
+                                                                                                        </a>
+                                                                                                        <% } else { %>
+                                                                                                            <span
+                                                                                                                class="disabled">
+                                                                                                                Next <i
+                                                                                                                    class="fas fa-chevron-right"></i>
+                                                                                                            </span>
+                                                                                                            <% } %>
+                                        </div>
+
+                                        <div class="pagination-info">
+                                            Showing <%= (pagination.currentPage - 1) * 10 + 1 %> -
+                                                <%= Math.min(pagination.currentPage * 10, pagination.totalTransactions)
+                                                    %>
+                                                    of <%= pagination.totalTransactions %> transactions
+                                        </div>
+                                        <% } %>
+                                            <% } else { %>
+                                                <div class="no-transactions">
+                                                    <i class="fas fa-wallet"></i>
+                                                    <h3>No transactions yet</h3>
+                                                    <p>Your transaction history will appear here when you make purchases
+                                                        or receive refunds.</p>
+                                                </div>
+                                                <% } %>
+                    </div>
         </main>
     </div>
 </body>
+
 </html>

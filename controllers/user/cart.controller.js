@@ -1,4 +1,5 @@
 const Product = require('../../models/product.model');
+const User = require('../../models/user.model');
 const Cart = require('../../models/cart.model');
 const Wishlist = require('../../models/wishlist.model');
 const Category = require('../../models/category.model');
@@ -8,20 +9,20 @@ const cartService = require('../../services/cartService');
 const MAX_QUANTITY_PER_PRODUCT = 10;
 
 exports.addToCart = async (req, res) => {
-    try {
-        const productId = req.params.id;
-        const userId = req.session.userId;
-        const { quantity } = req.body;
-        const result = await cartService.addToCart(userId, productId, quantity);
-        if (!result.success) {
-            const status = result.code === 401 ? 401 : (result.code === 404 ? 404 : 400);
-            return res.status(status).json(result);
-        }
-        return res.status(200).json(result);
-    } catch (error) {
-        console.error('Error adding to cart:', error.message, error.stack);
-        res.status(500).json({ success: false, message: 'Failed to add to cart. Please try again.' });
+  try {
+    const productId = req.params.id;
+    const userId = req.session.userId;
+    const { quantity } = req.body;
+    const result = await cartService.addToCart(userId, productId, quantity);
+    if (!result.success) {
+      const status = result.code === 401 ? 401 : (result.code === 404 ? 404 : 400);
+      return res.status(status).json(result);
     }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Error adding to cart:', error.message, error.stack);
+    res.status(500).json({ success: false, message: 'Failed to add to cart. Please try again.' });
+  }
 };
 
 exports.getCart = async (req, res) => {
@@ -29,10 +30,23 @@ exports.getCart = async (req, res) => {
     const userId = req.session.userId;
     const categories = await Category.find({ isListed: true });
     const data = await cartService.getCartData(userId);
+
+    let userUser = null;
+    if (userId) {
+      const userDoc = await User.findById(userId).lean();
+      if (userDoc) {
+        userUser = {
+          userName: userDoc.fullName,
+          userProfile: userDoc.profileImage // can be null
+        };
+      }
+    }
+
     if (!data.items || data.items.length === 0) {
       return res.render('user/cart', {
         cart: { items: [] },
         userName: req.session.userName || null,
+        user: userUser,
         error: 'Your cart is empty',
         categories
       });
@@ -40,6 +54,7 @@ exports.getCart = async (req, res) => {
     res.render('user/cart', {
       cart: { items: data.items },
       userName: req.session.userName || null,
+      user: userUser,
       error: null,
       categories,
       cartCount: data.cartCount,
@@ -50,6 +65,7 @@ exports.getCart = async (req, res) => {
     res.status(500).render('user/cart', {
       cart: { items: [] },
       userName: req.session.userName || null,
+      user: null,
       error: 'Failed to load cart',
       categories: []
     });
@@ -100,17 +116,17 @@ exports.updateBuyNowQuantity = async (req, res) => {
     const MAX_QUANTITY_PER_PRODUCT = 10;
     if (product.quantity < quantity) {
       console.log('Insufficient stock:', { requested: quantity, available: product.quantity });
-      return res.status(400).json({ 
-        success: false, 
-        message: `Only ${product.quantity} item${product.quantity === 1 ? '' : 's'} available` 
+      return res.status(400).json({
+        success: false,
+        message: `Only ${product.quantity} item${product.quantity === 1 ? '' : 's'} available`
       });
     }
 
     if (quantity > MAX_QUANTITY_PER_PRODUCT) {
       console.log('Exceeds max quantity:', { requested: quantity, max: MAX_QUANTITY_PER_PRODUCT });
-      return res.status(400).json({ 
-        success: false, 
-        message: `Cannot add more than ${MAX_QUANTITY_PER_PRODUCT} units of this product` 
+      return res.status(400).json({
+        success: false,
+        message: `Cannot add more than ${MAX_QUANTITY_PER_PRODUCT} units of this product`
       });
     }
 
@@ -145,8 +161,8 @@ exports.updateBuyNowQuantity = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in updateBuyNowQuantity:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Could not update quantity',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
@@ -167,8 +183,8 @@ exports.setCartQuantity = async (req, res) => {
     return res.json({ success: true, message: 'Quantity updated successfully', data: result.data });
   } catch (err) {
     console.error('Error in setCartQuantity:', err);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Could not update cart',
       error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });

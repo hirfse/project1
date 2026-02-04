@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Details</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair:ital,opsz,wght@0,5..1200,300..900;1,5..1200,300..900&display=swap"
+        rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
+
     <style>
-/* Improved styles for product details page */
+        /* Improved styles for product details page */
 
         * {
             margin: 0;
@@ -29,7 +33,8 @@
             --transition: all 0.3s ease;
         }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             margin: 0;
             scroll-behavior: smooth;
@@ -49,179 +54,7 @@
             list-style: none;
         }
 
-        /* Header Styling */
-        header {
-            background-color: rgba(255, 255, 255, 0);
-            /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); */
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .mainhead {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 20px;
-            align-items: center;
-        }
-
-        .logo {
-            text-decoration: none;
-            color: var(--primary-color);
-            font-weight: 700;
-            font-size: 1.5rem;
-            font-family: 'Playfair', serif;
-            letter-spacing: 1px;
-            transition: var(--transition);
-        }
-
-        .logo:hover {
-            transform: scale(1.05);
-        }
-
-        .subhead {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 0 20px;
-        }
-
-        .buttons .searchBar {
-            width: 18rem;
-            background-color: var(--light-bg);
-            border: 1px solid #ddd;
-            padding: 10px 15px;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-        }
-
-        .buttons .searchBar:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-        }
-
-        .buttons {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .buttons img {
-            height: 25px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .buttons img:hover {
-            transform: scale(1.15);
-        }
-
-        .buttons button {
-            padding: 10px 18px;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-
-        .buttons button:hover {
-            background-color: var(--accent-color);
-            transform: translateY(-2px);
-        }
-
-        .modal {
-            display: none;
-            position: absolute;
-            top: 60px;
-            right: 20px;
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            width: 300px;
-            box-shadow: var(--box-shadow);
-            text-align: center;
-        }
-
-        .modal-content p {
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-        }
-
-        .modal-content li {
-            padding: 8px 0;
-            border-bottom: 1px solid #eee;
-            transition: var(--transition);
-        }
-
-        .modal-content li:last-child {
-            border-bottom: none;
-        }
-
-        .modal-content li:hover {
-            background-color: var(--light-bg);
-            padding-left: 5px;
-        }
-
-        .modal-content a {
-            text-decoration: none;
-            color: var(--primary-color);
-            display: block;
-        }
-
-        nav ul {
-            display: flex;
-            list-style: none;
-        }
-
-        .subhead a {
-            text-decoration: none;
-            color: var(--primary-color);
-        }
-
-        .subhead li {
-            margin: 0 15px;
-            padding: 15px 5px;
-            position: relative;
-            font-weight: 500;
-            transition: var(--transition);
-        }
-
-        .subhead li::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 2px;
-            bottom: 0;
-            left: 0;
-            background-color: var(--primary-color);
-            transition: var(--transition);
-        }
-
-        .subhead li:hover::after {
-            width: 100%;
-        }
-
-        .active-nav {
-            font-weight: 600;
-        }
-
-        .active-nav::after {
-            content: '';
-            position: absolute;
-            width: 100% !important;
-            height: 2px;
-            bottom: 0;
-            left: 0;
-            background-color: var(--primary-color);
-        }
+        /* Header styles moved to /css/header.css */
 
         /* Main content */
         main {
@@ -281,7 +114,7 @@
             overflow: hidden;
             border-radius: var(--border-radius);
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
 
         .thumbnail {
@@ -298,25 +131,29 @@
         }
 
         .main-image-container {
-        position: relative;
+            position: relative;
         }
 
         .img-magnifier-glass {
-        position: absolute;
-        border: 2px solid #000;
-        cursor: none;
-        width: 200px; /* Increased size */
-        height: 200px; /* Square shape */
-        display: none;
-        z-index: 100;
-        background-color: rgba(255, 255, 255, 0.5); /* Optional: Add a semi-transparent background */
+            position: absolute;
+            border: 2px solid #000;
+            cursor: none;
+            width: 200px;
+            /* Increased size */
+            height: 200px;
+            /* Square shape */
+            display: none;
+            z-index: 100;
+            background-color: rgba(255, 255, 255, 0.5);
+            /* Optional: Add a semi-transparent background */
         }
 
         .main-image {
-        width: 100%;
-        height: auto;
-        display: block;
+            width: 100%;
+            height: auto;
+            display: block;
         }
+
         .thumbnail-container.active {
             box-shadow: 0 0 0 2px var(--primary-color);
         }
@@ -387,9 +224,17 @@
         }
 
         @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .product-meta {
@@ -466,13 +311,16 @@
             color: #555;
         }
 
-        .reviews, .add-review {
+        .reviews,
+        .add-review {
             margin-top: 40px;
             padding-top: 30px;
             border-top: 1px solid #eee;
         }
 
-        .reviews h3, .add-review h3, .related-products h3 {
+        .reviews h3,
+        .add-review h3,
+        .related-products h3 {
             font-size: 22px;
             margin-bottom: 20px;
             font-family: 'Playfair', serif;
@@ -857,11 +705,11 @@
             .container {
                 padding: 30px 20px;
             }
-            
+
             .product-header {
                 flex-direction: column;
             }
-            
+
             .related-products-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
@@ -873,31 +721,31 @@
                 gap: 15px;
                 text-align: center;
             }
-            
+
             .buttons {
                 flex-wrap: wrap;
                 justify-content: center;
             }
-            
+
             .buttons .searchBar {
                 width: 100%;
                 margin-bottom: 10px;
             }
-            
+
             .modal {
                 right: 50%;
                 transform: translateX(50%);
             }
-            
+
             .subhead nav ul {
                 flex-wrap: wrap;
                 justify-content: center;
             }
-            
+
             .actions {
                 flex-direction: column;
             }
-            
+
             .add-review button,
             .add-review select {
                 width: 100%;
@@ -911,213 +759,221 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Header (unchanged) -->
-    <header>
-        <div class="mainhead">
-            <a href="/" class="logo">U-Craft .</a>
-            <div class="buttons">
-                <input type="text" class="searchBar" placeholder="Search product...">
-                <img src="/images/project_icons/profile.png" alt="profile" onmouseover="profileViewModal()" class="profileImg">
-                <form action="/logout" method="POST" style="display:inline;">
-                    <button type="submit">Logout</button>
-                </form>
-            </div>
-            <div id="profileViewModal" class="modal">
-                <div class="modal-content" onmouseleave="closeViewModal()">
-                    <% if (userName) { %>
-                        <p>Welcome, <strong><%= userName.toUpperCase() %></strong>!</p>
-                    <% } else { %>
-                        <p><a href="/login">Login</a> | <a href="/signup">Signup</a></p>
-                    <% } %>
-                    <ul>
-                        <a href="/profile"><li>Profile</li></a>
-                        <a href="/wishlist"><li>Wish List</li></a>
-                        <a href="/cart"><li>Cart</li></a>
-                        <a href="/wallet"><li>Wallet</li></a>
-                    </ul>
-                </div>
-            </div>
-        </div>
-        <div class="subhead">
-            <nav>
-                <ul>
-                    <a href="/home"><li>Home</li></a>
-                    <a href="/productListing"><li class="active-nav">Shop</li></a>
-                    <a href="/customListing"><li>Custom</li></a>
-                    <a href="/about"><li>About</li></a>
-                    <a href="/contact"><li>Contact</li></a>
-                </ul>
-            </nav> 
-        </div>
-    </header>
-    <!-- Breadcrumbs -->
-    <nav id="breadcrumbs" style="margin: 18px 0 0 30px;"></nav>
-    <main>
-        <div class="container">
-            <div class="product-header">
-                <div class="product-images">
-                    <div class="main-image-container">
-                        <img id="mainImage" class="main-image" src="/uploads/product-images/<%= product.productImage[0] %>" alt="<%= product.productName %>">
-                    </div>
-                    <div class="image-gallery">
-                        <% product.productImage.forEach((image, index) => { %>
-                            <div class="thumbnail-container <%= index === 0 ? 'active' : '' %>">
-                                <img 
-                                    class="thumbnail" 
-                                    src="/uploads/product-images/<%= image %>" 
-                                    alt="<%= product.productName %> image <%= index+1 %>"
-                                    onclick="changeMainImage(this.src, this)"
-                                >
-                            </div>
-                        <% }) %>
-                    </div>
-                </div>
-                <div class="product-details">
-                    <h1><%= product.productName %></h1>
-                    <div class="category-tag"><%= product.category.name %></div>
-                    <div class="price">
-                        <% if (product.offer && product.discount > 0) { %>
-                            <span class="original-price">₹<%= product.originalPrice %></span>
-                            <span class="sale-price">₹<%= Math.round(product.discountedPrice) %></span>
-                            <div class="offer-info">
-                                <span class="offer-badge"><%= product.discountPercentage %>% OFF</span>
-                                <span class="offer-name"><%= product.offer.name %></span>
-                            </div>
-                        <% } else { %>
-                            <span class="original-price">₹<%= product.regularPrice %></span>
-                            <span class="sale-price">₹<%= product.salePrice %></span>
-                        <% } %>
-                    </div>
-                    
-                    <div class="product-meta">
-                        <p>
-                            <span>Stock Count:</span>
-                            <span id="stockCount"><%= product.quantity %></span>
-                        </p>
-                        <p>
-                            <span>Popularity Score:</span>
-                            <span><%= product.popularityScore %></span>
-                        </p>
-                        <p>
-                            <span>Average Rating:</span>
-                            <span><%= product.averageRating %> / 5</span>
-                        </p>
-                    </div>
-                    
-                    <div class="actions">
-                        <div class="quantity-selector">
-                            <button onclick="decreaseQuantity()" id="decreaseBtn" aria-label="Decrease quantity">-</button>
-                            <input 
-                                type="number" 
-                                id="quantityInput" 
-                                value="1" 
-                                min="1" 
-                                max="<%= product.quantity > 10 ? 10 : product.quantity %>" 
-                                aria-describedby="stockMessage"
-                                readonly
-                            >
-                            <button onclick="increaseQuantity()" id="increaseBtn" aria-label="Increase quantity">+</button>
-                            <span class="stock-message" id="stockMessage"></span>
+    <%- include('../partials/header', {currentPage: 'productListing' }) %>
+        <!-- Breadcrumbs -->
+        <nav id="breadcrumbs" style="margin: 18px 0 0 30px;"></nav>
+        <main>
+            <div class="container">
+                <div class="product-header">
+                    <div class="product-images">
+                        <div class="main-image-container">
+                            <img id="mainImage" class="main-image"
+                                src="/uploads/product-images/<%= product.productImage[0] %>"
+                                alt="<%= product.productName %>">
                         </div>
-                        <button onclick="addToCart('<%= product._id %>')" id="addToCartBtn" <%= (product.quantity <= 0 || (typeof cartProductIds !== 'undefined' && cartProductIds.includes(product._id.toString()))) ? 'disabled' : '' %> title="<%= (typeof cartProductIds !== 'undefined' && cartProductIds.includes(product._id.toString())) ? 'Already in Cart' : 'Add to Cart' %>">Add to Cart</button>
-                        <button class="wishlist" onclick="addToWishlist('<%= product._id %>')" id="wishlistBtn">Add to Wishlist</button>
-                    </div>
-                    <div class="buy-now">
-                        <form action="/buy-now/<%= product._id %>" method="POST" style="display:inline;">
-                            <input type="hidden" name="quantity" id="buyNowQuantityInput" value="1">
-                            <button type="submit" id="buyNowBtn" <%= product.quantity <= 0 ? 'disabled' : '' %>>Buy Now</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Rest of the main content (unchanged) -->
-            <div class="description">
-                <h2>Product Description</h2>
-                <p><%= product.description %></p>
-            </div>
-            <div class="reviews">
-                <h3>Reviews</h3>
-                <% if (product.reviews && product.reviews.length > 0) { %>
-                    <% product.reviews.forEach(review => { %>
-                        <p><strong><%= review.userName %>:</strong> <%= review.comment %></p>
-                    <% }) %>
-                <% } else { %>
-                    <p>No reviews available for this product.</p>
-                <% } %>
-            </div>
-            <div class="add-review">
-                <h3>Add a Review</h3>
-                <form method="POST" action="/product/<%= product._id %>/addReview">
-                    <textarea name="comment" placeholder="Write your review here..." required></textarea>
-                    <select name="rating" required>
-                        <option value="">Select Rating</option>
-                        <option value="1">1 - Poor</option>
-                        <option value="2">2 - Fair</option>
-                        <option value="3">3 - Good</option>
-                        <option value="4">4 - Very Good</option>
-                        <option value="5">5 - Excellent</option>
-                    </select>
-                    <button type="submit">Submit Review</button>
-                </form>
-            </div>
-            <div class="related-products">
-                <h3>Related Products</h3>
-                <div class="related-products-grid">
-                    <% relatedProducts.forEach(related => { %>
-                        <div class="related-product">
-                            <a href="/product/<%= related._id %>">
-                                <div class="related-product-image-container">
-                                    <img src="/uploads/product-images/<%= related.productImage[0] %>" alt="<%= related.productName %>">
+                        <div class="image-gallery">
+                            <% product.productImage.forEach((image, index)=> { %>
+                                <div class="thumbnail-container <%= index === 0 ? 'active' : '' %>">
+                                    <img class="thumbnail" src="/uploads/product-images/<%= image %>"
+                                        alt="<%= product.productName %> image <%= index+1 %>"
+                                        onclick="changeMainImage(this.src, this)">
                                 </div>
-                                <p class="related-product-name"><%= related.productName %></p>
-                                <% if (related.offer && related.discount > 0) { %>
-                                    <p class="related-product-price">
-                                        <span style="text-decoration: line-through; color: #888; font-size: 0.9rem;">Rs. <%= related.originalPrice %></span>
-                                        <span style="color: #e74c3c; font-weight: bold;">Rs. <%= Math.round(related.discountedPrice) %></span>
-                                    </p>
-                                <% } else { %>
-                                    <p class="related-product-price">Rs. <%= related.salePrice %></p>
-                                <% } %>
-                            </a>
+                                <% }) %>
                         </div>
-                    <% }) %>
+                    </div>
+                    <div class="product-details">
+                        <h1>
+                            <%= product.productName %>
+                        </h1>
+                        <div class="category-tag">
+                            <%= product.category.name %>
+                        </div>
+                        <div class="price">
+                            <% if (product.offer && product.discount> 0) { %>
+                                <span class="original-price">₹<%= product.originalPrice %></span>
+                                <span class="sale-price">₹<%= Math.round(product.discountedPrice) %></span>
+                                <div class="offer-info">
+                                    <span class="offer-badge">
+                                        <%= product.discountPercentage %>% OFF
+                                    </span>
+                                    <span class="offer-name">
+                                        <%= product.offer.name %>
+                                    </span>
+                                </div>
+                                <% } else { %>
+                                    <span class="original-price">₹<%= product.regularPrice %></span>
+                                    <span class="sale-price">₹<%= product.salePrice %></span>
+                                    <% } %>
+                        </div>
+
+                        <div class="product-meta">
+                            <p>
+                                <span>Stock Count:</span>
+                                <span id="stockCount">
+                                    <%= product.quantity %>
+                                </span>
+                            </p>
+                            <p>
+                                <span>Popularity Score:</span>
+                                <span>
+                                    <%= product.popularityScore %>
+                                </span>
+                            </p>
+                            <p>
+                                <span>Average Rating:</span>
+                                <span>
+                                    <%= product.averageRating %> / 5
+                                </span>
+                            </p>
+                        </div>
+
+                        <div class="actions">
+                            <div class="quantity-selector">
+                                <button onclick="decreaseQuantity()" id="decreaseBtn"
+                                    aria-label="Decrease quantity">-</button>
+                                <input type="number" id="quantityInput" value="1" min="1"
+                                    max="<%= product.quantity > 10 ? 10 : product.quantity %>"
+                                    aria-describedby="stockMessage" readonly>
+                                <button onclick="increaseQuantity()" id="increaseBtn"
+                                    aria-label="Increase quantity">+</button>
+                                <span class="stock-message" id="stockMessage"></span>
+                            </div>
+                            <button onclick="addToCart('<%= product._id %>')" id="addToCartBtn" <%=(product.quantity <=0
+                                || (typeof cartProductIds !=='undefined' &&
+                                cartProductIds.includes(product._id.toString()))) ? 'disabled' : '' %> title="<%=
+                                    (typeof cartProductIds !=='undefined' &&
+                                    cartProductIds.includes(product._id.toString())) ? 'Already in Cart' : 'Add to Cart'
+                                    %>">Add to Cart</button>
+                            <button class="wishlist" onclick="addToWishlist('<%= product._id %>')" id="wishlistBtn">Add
+                                to Wishlist</button>
+                        </div>
+                        <div class="buy-now">
+                            <form action="/buy-now/<%= product._id %>" method="POST" style="display:inline;">
+                                <input type="hidden" name="quantity" id="buyNowQuantityInput" value="1">
+                                <button type="submit" id="buyNowBtn" <%=product.quantity <=0 ? 'disabled' : '' %>>Buy
+                                    Now</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rest of the main content (unchanged) -->
+                <div class="description">
+                    <h2>Product Description</h2>
+                    <p>
+                        <%= product.description %>
+                    </p>
+                </div>
+                <div class="reviews">
+                    <h3>Reviews</h3>
+                    <% if (product.reviews && product.reviews.length> 0) { %>
+                        <% product.reviews.forEach(review=> { %>
+                            <p><strong>
+                                    <%= review.userName %>:
+                                </strong>
+                                <%= review.comment %>
+                            </p>
+                            <% }) %>
+                                <% } else { %>
+                                    <p>No reviews available for this product.</p>
+                                    <% } %>
+                </div>
+                <div class="add-review">
+                    <h3>Add a Review</h3>
+                    <form method="POST" action="/product/<%= product._id %>/addReview">
+                        <textarea name="comment" placeholder="Write your review here..." required></textarea>
+                        <select name="rating" required>
+                            <option value="">Select Rating</option>
+                            <option value="1">1 - Poor</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="3">3 - Good</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="5">5 - Excellent</option>
+                        </select>
+                        <button type="submit">Submit Review</button>
+                    </form>
+                </div>
+                <div class="related-products">
+                    <h3>Related Products</h3>
+                    <div class="related-products-grid">
+                        <% relatedProducts.forEach(related=> { %>
+                            <div class="related-product">
+                                <a href="/product/<%= related._id %>">
+                                    <div class="related-product-image-container">
+                                        <img src="/uploads/product-images/<%= related.productImage[0] %>"
+                                            alt="<%= related.productName %>">
+                                    </div>
+                                    <p class="related-product-name">
+                                        <%= related.productName %>
+                                    </p>
+                                    <% if (related.offer && related.discount> 0) { %>
+                                        <p class="related-product-price">
+                                            <span
+                                                style="text-decoration: line-through; color: #888; font-size: 0.9rem;">Rs.
+                                                <%= related.originalPrice %></span>
+                                            <span style="color: #e74c3c; font-weight: bold;">Rs. <%=
+                                                    Math.round(related.discountedPrice) %></span>
+                                        </p>
+                                        <% } else { %>
+                                            <p class="related-product-price">Rs. <%= related.salePrice %>
+                                            </p>
+                                            <% } %>
+                                </a>
+                            </div>
+                            <% }) %>
+                    </div>
                 </div>
             </div>
-        </div>
-    </main>
-    
-    <!-- Footer (unchanged) -->
-    <footer>
-        <div id="exclusive">
-            <p>Exclusive</p>
-            <p>Subscribe</p>
-            <input type="text" placeholder="Enter Your E-mail" />
-        </div>
-        <div id="support">
-            <p>Support</p>
-            <ul>
-                <a href="/help"><li>Help Center</li></a>
-                <a href="/contact"><li>Contact Us</li></a>
-            </ul>
-        </div>
-        <div id="account">
-            <p>Account</p>
-            <ul>
-                <a href="/login"><li>Login</li></a>
-                <a href="/signup"><li>Register</li></a>
-            </ul>
-        </div>
-        <div id="quickLinks">
-            <p>Quick Links</p>
-            <ul>
-                <a href="/productListing"><li>Shop</li></a>
-                <a href="/customListing"><li>Custom</li></a>
-                <a href="/faq"><li>FAQ</li></a>
-            </ul>
-        </div>
-    </footer>
-    <script src="/js/user.js" defer></script>
-  </body>
-  </html>
+        </main>
+
+        <!-- Footer (unchanged) -->
+        <footer>
+            <div id="exclusive">
+                <p>Exclusive</p>
+                <p>Subscribe</p>
+                <input type="text" placeholder="Enter Your E-mail" />
+            </div>
+            <div id="support">
+                <p>Support</p>
+                <ul>
+                    <a href="/help">
+                        <li>Help Center</li>
+                    </a>
+                    <a href="/contact">
+                        <li>Contact Us</li>
+                    </a>
+                </ul>
+            </div>
+            <div id="account">
+                <p>Account</p>
+                <ul>
+                    <a href="/login">
+                        <li>Login</li>
+                    </a>
+                    <a href="/signup">
+                        <li>Register</li>
+                    </a>
+                </ul>
+            </div>
+            <div id="quickLinks">
+                <p>Quick Links</p>
+                <ul>
+                    <a href="/productListing">
+                        <li>Shop</li>
+                    </a>
+                    <a href="/customListing">
+                        <li>Custom</li>
+                    </a>
+                    <a href="/faq">
+                        <li>FAQ</li>
+                    </a>
+                </ul>
+            </div>
+        </footer>
+        <script src="/js/user.js" defer></script>
+</body>
+
+</html>

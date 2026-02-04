@@ -1,5 +1,6 @@
 const User = require('../../models/user.model');
 const Category = require('../../models/category.model');
+const { INDIAN_STATES } = require('../../constants/indiaStates');
 const nodemailer = require('nodemailer');
 
 // Local OTP store for email verification
@@ -11,7 +12,12 @@ function generateOTP() {
 
 exports.getProfile = async (req, res) => {
     const userId = req.session.userId;
-    const user = await User.findOne({ _id: userId });
+    const user = await User.findOne({ _id: userId }).lean();
+    if (user) {
+        // Add properties expected by the header partial
+        user.userName = user.fullName;
+        user.userProfile = user.profileImage;
+    }
     res.render('user/profile', { user });
 };
 
@@ -124,7 +130,7 @@ exports.getVerifyEmailOTP = async (req, res) => {
     try {
         const { email } = req.query;
         console.log(`getVerifyEmailOTP called with email: ${email}`);
-        console.log(`Query params:`, req.query, );
+        console.log(`Query params:`, req.query,);
 
         if (!email) {
             console.log(`No email provided, redirecting to profile edit`);
@@ -282,7 +288,7 @@ exports.getAddresses = async (req, res) => {
 };
 
 exports.getAddAddress = (req, res) => {
-    res.render('user/addAddress', { error: null, success: null });
+    res.render('user/addAddress', { error: null, success: null, states: INDIAN_STATES });
 };
 
 exports.addAddress = async (req, res) => {
@@ -295,6 +301,11 @@ exports.addAddress = async (req, res) => {
             return res.status(400).json({ success: false, message: 'All required fields must be provided.' });
         }
 
+        const normalizedState = String(state).trim();
+        if (!INDIAN_STATES.includes(normalizedState)) {
+            return res.status(400).json({ success: false, message: 'Please select a valid Indian state/UT.' });
+        }
+
         let addressDoc = await Address.findOne({ userId });
         const newAddress = {
             addressType,
@@ -303,7 +314,7 @@ exports.addAddress = async (req, res) => {
             secPhone,
             houseName,
             city,
-            state,
+            state: normalizedState,
             pincode,
             landMark
         };

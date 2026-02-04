@@ -1,8 +1,10 @@
 const Product = require('../../models/product.model');
+const User = require('../../models/user.model');
 const Category = require('../../models/category.model');
 const Subcategory = require('../../models/subcategory.model');
 const Review = require('../../models/review.model');
 const Cart = require('../../models/cart.model');
+const Wishlist = require('../../models/wishlist.model');
 const mongoose = require('mongoose');
 const productService = require('../../services/productService');
 
@@ -11,9 +13,32 @@ exports.getProductListing = async (req, res) => {
     try {
         const { page = 1, category, subCategory, sort, search, minPrice, maxPrice } = req.query;
         const data = await productService.getProductListingData(req.query, req.session);
+
+        let userUser = null;
+        if (req.session.userId) {
+            const userDoc = await User.findById(req.session.userId).lean();
+            if (userDoc) {
+                userUser = {
+                    userName: userDoc.fullName,
+                    userProfile: userDoc.profileImage // can be null
+                };
+            }
+        }
+
+        // Collect wishlist product IDs for the logged-in user
+        let wishlistProductIds = [];
+        if (req.session.userId) {
+            const wishlist = await Wishlist.findOne(
+                { userId: req.session.userId },
+                'products'
+            ).lean();
+            wishlistProductIds = wishlist ? wishlist.products.map(p => p.toString()) : [];
+        }
+
         res.render('user/productList', {
             products: data.productsWithOffers,
             userName: req.session.userName || null,
+            user: userUser,
             error: req.query.error || null,
             currentPage: parseInt(page),
             totalPages: data.totalPages,
@@ -26,6 +51,7 @@ exports.getProductListing = async (req, res) => {
             maxPrice: maxPrice || '',
             subcategories: data.subcategories,
             cartProductIds: data.cartProductIds,
+            wishlistProductIds,
             cartCount: data.cartCount
         });
     } catch (error) {
@@ -52,12 +78,25 @@ exports.getProductDetails = async (req, res) => {
             }
             return res.status(403).render('user/productError', { message: 'This product is not available now.', userName: req.session.userName || null });
         }
+
+        let userUser = null;
+        if (req.session.userId) {
+            const userDoc = await User.findById(req.session.userId).lean();
+            if (userDoc) {
+                userUser = {
+                    userName: userDoc.fullName,
+                    userProfile: userDoc.profileImage
+                };
+            }
+        }
+
         const productWithOffer = data.productWithOffer;
         const product = data.product;
         res.render('user/productDetails', {
             product: { ...product.toObject(), ...productWithOffer },
             relatedProducts: data.relatedProductsWithOffers,
             userName: req.session.userName || null,
+            user: userUser,
             cartProductIds: data.cartProductIds,
             cartCount: data.cartCount
         });
@@ -74,18 +113,18 @@ exports.addReview = async (req, res) => {
     try {
         const { comment, rating } = req.body;
         const productId = req.params.id;
-        
+
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             console.error('Invalid product ID:', productId);
             return res.status(400).render('error', { message: 'Invalid product ID' });
         }
-        
+
         const product = await Product.findById(productId);
         if (!product) {
             console.error('Product not found:', productId);
             return res.status(404).render('error', { message: 'Product not found' });
         }
-        
+
         const newReview = new Review({
             userName: req.session.userName || 'Anonymous',
             userId: req.session.userId || null,
@@ -93,12 +132,12 @@ exports.addReview = async (req, res) => {
             rating: parseInt(rating, 10),
             comment
         });
-        
+
         await newReview.save();
-        
+
         product.reviews.push(newReview._id);
         await product.save();
-        
+
         res.redirect(`/product/${productId}`);
     } catch (error) {
         console.error('Error adding review:', error.message);
@@ -187,10 +226,10 @@ exports.bulkStockCheck = async (req, res) => {
                 isBlocked: product.isBlocked,
                 categoryListed: product.category ? product.category.isListed : false,
                 isAvailable: !product.isBlocked &&
-                           product.category &&
-                           product.category.isListed &&
-                           product.quantity > 0 &&
-                           actualStatus !== 'Out of Stock'
+                    product.category &&
+                    product.category.isListed &&
+                    product.quantity > 0 &&
+                    actualStatus !== 'Out of Stock'
             };
         });
 
