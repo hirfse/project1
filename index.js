@@ -12,6 +12,10 @@ require('dotenv').config();
 require('./config/passport-config'); // Import Passport configuration
 
 const PORT = process.env.PORT;
+
+//api router
+const apiRouter = require('./routes/api.routes.js')
+
 const userRouter = require('./routes/user.routes');
 const adminRouter = require('./routes/admin.routes.js');
 const connectDB = require('./config/db');
@@ -84,6 +88,8 @@ app.use((req, res, next) => {
     next();
 });
 
+//api route
+app.use('/api', apiRouter)
 
 app.use('/admin', adminRouter);
 app.use('/', userRouter);
