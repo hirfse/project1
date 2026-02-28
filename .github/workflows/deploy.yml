@@ -29,7 +29,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd /home/ubuntu/project1
+            cd /var/www/ucraft
             git pull origin main
             npm install
             pm2 restart all || pm2 start npm --name "ucraft" -- start
