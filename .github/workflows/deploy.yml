@@ -30,6 +30,9 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             cd /var/www/ucraft
+
+            git reset --hard
+            git clean -fd
             git pull origin main
-            npm install
-            pm2 restart all || pm2 start npm --name "ucraft" -- start
+            npm install --production
+            pm2 restart ucraft || pm2 start npm --name "ucraft" -- start
