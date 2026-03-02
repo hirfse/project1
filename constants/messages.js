@@ -9,6 +9,7 @@ const AUTH = {
     SIGNUP_REQUIRED_FIELDS: 'All fields are required',
     SIGNUP_PASSWORD_MISMATCH: 'Password and confirm password do not match',
     SIGNUP_EMAIL_EXISTS: 'Email already exists',
+    VERIFICATION_FAILED: 'OTP Verification failed',
     ACCOUNT_BLOCKED: 'Your account has been blocked. Please contact support.',
     USE_GOOGLE_AUTH: 'Please log in using Google Authentication',
     SIGNUP_PHONE_EXISTS: 'Phone number already registered',
