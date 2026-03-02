@@ -111,6 +111,33 @@ exports.verifyOTP = async (req, res) => {
   }
 };
 
+exports.resendOTP = async (req,res) => {
+    try{
+        const {email} = req.body
+
+        if (!email) {
+            return res.status(400).json({
+            success: false,
+            message: "Email is required"
+        });
+    }
+        const {otp} = await authService.generateSignupOTP(email)
+        console.log(otp)
+
+
+        return res.status(HTTP_STATUS.CREATED).json({
+            success: true,
+            message: "OTP resent",
+            data: {
+                email,
+                otp_dev_only: otp   // ⚠ remove in production
+            }
+        });
+    }catch(error){
+         return res.status(500).json({ success:false, message:"Server error" });
+    }
+}
+
 exports.handleAPILogin = async (req, res) => {
     try {
         const { email, password } = req.body;

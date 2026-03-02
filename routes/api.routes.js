@@ -9,6 +9,7 @@ const apiGoogleAuth = require('../controllers/api/apiGoogleAuth.controller');
 
 router.post('/signup',apiAuth.handleAPISignup)
 router.post('/verifyOTP',apiAuth.verifyOTP)
+router.post('/resendOTP',apiAuth.resendOTP)
 router.post('/auth/google', apiGoogleAuth.apiGoogleLogin);
 
 router.post('/login',apiAuth.handleAPILogin)
