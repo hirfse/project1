@@ -73,30 +73,23 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    const verification = authService.verifySignupOTP(
-    email.trim().toLowerCase(),  
-    otp
-    );
+    console.log("VERIFY request:", { email, otp });
 
-    console.log("VERIFY cleanEmail:", cleanEmail);
-    console.log("STORE keys:", [...signupOtpStore.keys()]);
-    console.log("Entered OTP:", otp);
-    console.log("Stored OTP:", data?.otp);
+    const verification = authService.verifySignupOTP(email, otp);
 
     if (!verification.valid) {
       return res.status(400).json({
         success: false,
-        message: verification.reason === 'expired'
-          ? "OTP expired"
-          : "Invalid OTP"
+        message:
+          verification.reason === "expired"
+            ? "OTP expired"
+            : "Invalid OTP"
       });
     }
 
-    // 🔒 Hash password
     const bcrypt = require("bcrypt");
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 💾 Create user
     const user = new User({
       fullName,
       email,
@@ -114,12 +107,12 @@ exports.verifyOTP = async (req, res) => {
     });
 
   } catch (err) {
-   console.error("Verify OTP Error:", err);
-   return res.status(500).json({ 
-       success:false, 
-       message: err.message 
-   });
-}
+    console.error("Verify OTP Error:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message
+    });
+  }
 };
 
 exports.resendOTP = async (req,res) => {

@@ -34,38 +34,70 @@ async function generateSignupOTP(email) {
 
 async function generateResetOTP(email) {
   const otp = generateOtp();
-  resetOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
-  await sendEmail(email, 'U-Craft password Reset OTP', `<p>Your OTP is: <strong>${otp}</strong></p>`);
+  const cleanEmail = email.trim().toLowerCase();
+
+  resetOtpStore.set(cleanEmail, {
+    otp,
+    expiresAt: Date.now() + 60000
+  });
+
+  await sendEmail(
+    cleanEmail,
+    'U-Craft password Reset OTP',
+    `<p>Your OTP is: <strong>${otp}</strong></p>`
+  );
+
   return { otp };
 }
 
 function verifySignupOTP(email, otp) {
+  const cleanEmail = email.trim().toLowerCase();
 
-  const cleanEmail = email.trim().toLowerCase();   
+  console.log("verifySignupOTP email:", email);
+  console.log("verifySignupOTP cleanEmail:", cleanEmail);
+  console.log("OTP Store keys:", [...signupOtpStore.keys()]);
 
-  if (!signupOtpStore.has(cleanEmail))
-    return { valid: false, reason: 'missing' };
+  if (!signupOtpStore.has(cleanEmail)) {
+    console.log("❌ OTP missing for", cleanEmail);
+    return { valid: false, reason: "missing" };
+  }
 
   const data = signupOtpStore.get(cleanEmail);
 
+  console.log("Entered OTP:", otp);
+  console.log("Stored OTP:", data.otp);
+
   if (Date.now() > data.expiresAt) {
     signupOtpStore.delete(cleanEmail);
-    return { valid: false, reason: 'expired' };
+    return { valid: false, reason: "expired" };
   }
 
-  if (String(data.otp) !== String(otp))
-    return { valid: false, reason: 'mismatch' };
+  if (String(data.otp) !== String(otp)) {
+    return { valid: false, reason: "mismatch" };
+  }
 
   signupOtpStore.delete(cleanEmail);
   return { valid: true };
 }
 
 function verifyResetOTP(email, otp) {
-  if (!resetOtpStore.has(email)) return { valid: false, reason: 'missing' };
-  const data = resetOtpStore.get(email);
-  if (Date.now() > data.expiresAt) { resetOtpStore.delete(email); return { valid: false, reason: 'expired' }; }
-  if (String(data.otp) !== String(otp)) return { valid: false, reason: 'mismatch' };
-  resetOtpStore.delete(email);
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (!resetOtpStore.has(cleanEmail))
+    return { valid: false, reason: 'missing' };
+
+  const data = resetOtpStore.get(cleanEmail);
+
+  if (Date.now() > data.expiresAt) {
+    resetOtpStore.delete(cleanEmail);
+    return { valid: false, reason: 'expired' };
+  }
+
+  if (String(data.otp) !== String(otp))
+    return { valid: false, reason: 'mismatch' };
+
+  resetOtpStore.delete(cleanEmail);
   return { valid: true };
 }
 
