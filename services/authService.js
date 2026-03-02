@@ -21,7 +21,7 @@ async function generateSignupOTP(email) {
   const otp = generateOtp();
   const cleanEmail = email.trim().toLowerCase();
 
-  signupOtpStore.set(cleanEmail, { otp, expiresAt: Date.now() + 60000 });
+  signupOtpStore.set(cleanEmail, { otp, expiresAt: Date.now() + 5 * 60 * 1000 });
 
   await sendEmail(
     cleanEmail,
@@ -40,11 +40,23 @@ async function generateResetOTP(email) {
 }
 
 function verifySignupOTP(email, otp) {
-  if (!signupOtpStore.has(email)) return { valid: false, reason: 'missing' };
-  const data = signupOtpStore.get(email);
-  if (Date.now() > data.expiresAt) { signupOtpStore.delete(email); return { valid: false, reason: 'expired' }; }
-  if (String(data.otp) !== String(otp)) return { valid: false, reason: 'mismatch' };
-  signupOtpStore.delete(email);
+
+  const cleanEmail = email.trim().toLowerCase();   
+
+  if (!signupOtpStore.has(cleanEmail))
+    return { valid: false, reason: 'missing' };
+
+  const data = signupOtpStore.get(cleanEmail);
+
+  if (Date.now() > data.expiresAt) {
+    signupOtpStore.delete(cleanEmail);
+    return { valid: false, reason: 'expired' };
+  }
+
+  if (String(data.otp) !== String(otp))
+    return { valid: false, reason: 'mismatch' };
+
+  signupOtpStore.delete(cleanEmail);
   return { valid: true };
 }
 

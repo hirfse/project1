@@ -4,8 +4,10 @@ module.exports = {
     {
       name: "ucraft",
       script: "./index.js",   // ✅ normal Node app
-      instances: "max",
-      exec_mode: "cluster",
+    //   instances: "max",
+    //   exec_mode: "cluster",
+    instances: 1,// temp for api
+    exec_mode: "fork", //temp
       watch: false,
       max_memory_restart: "500M",
       error_file: "./logs/err.log",

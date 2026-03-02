@@ -73,8 +73,15 @@ exports.verifyOTP = async (req, res) => {
       });
     }
 
-    // 🔐 Verify OTP
-    const verification = authService.verifySignupOTP(email, otp);
+    const verification = authService.verifySignupOTP(
+    email.trim().toLowerCase(),  
+    otp
+    );
+
+    console.log("VERIFY cleanEmail:", cleanEmail);
+    console.log("STORE keys:", [...signupOtpStore.keys()]);
+    console.log("Entered OTP:", otp);
+    console.log("Stored OTP:", data?.otp);
 
     if (!verification.valid) {
       return res.status(400).json({
@@ -121,7 +128,10 @@ exports.resendOTP = async (req,res) => {
             message: "Email is required"
         });
     }
-        const {otp} = await authService.generateSignupOTP(email)
+
+    const { otp } = await authService.generateSignupOTP(
+    email.trim().toLowerCase()
+    );
         console.log(otp)
 
 
