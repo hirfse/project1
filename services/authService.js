@@ -19,8 +19,15 @@ async function sendEmail(to, subject, html) {
 
 async function generateSignupOTP(email) {
   const otp = generateOtp();
-  signupOtpStore.set(email, { otp, expiresAt: Date.now() + 60000 });
-  // Intentionally not emailing on signup to preserve existing flow.
+
+  signupOtpStore.set(cleanEmail, { otp, expiresAt: Date.now() + 60000 });
+
+  await sendEmail(
+    cleanEmail,
+    'U-Craft Signup OTP',
+    `<h2>Your Signup OTP is: ${otp}</h2>`
+  );
+
   return { otp };
 }
 
