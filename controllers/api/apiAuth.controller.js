@@ -114,8 +114,12 @@ exports.verifyOTP = async (req, res) => {
     });
 
   } catch (err) {
-    return res.status(500).json({ success:false, message:"Server error" });
-  }
+   console.error("Verify OTP Error:", err);
+   return res.status(500).json({ 
+       success:false, 
+       message: err.message 
+   });
+}
 };
 
 exports.resendOTP = async (req,res) => {
