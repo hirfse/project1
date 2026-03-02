@@ -19,6 +19,7 @@ async function sendEmail(to, subject, html) {
 
 async function generateSignupOTP(email) {
   const otp = generateOtp();
+  const cleanEmail = email.trim().toLowerCase();
 
   signupOtpStore.set(cleanEmail, { otp, expiresAt: Date.now() + 60000 });
 
