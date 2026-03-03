@@ -15,9 +15,9 @@ router.post('/auth/google', apiGoogleAuth.apiGoogleLogin);
 
 router.post('/login',apiAuth.handleAPILogin)
 
-router.get('/home',apiAuth.getAPIHome)
+router.get('/home',productController.getAPIHome)
 router.get('/new-arrivals',productController.getAPINewArrivals)
-router.get('/featured',productController.getAPIFeaturedProducts)
+router.get('/trending',productController.getAPITrendingProducts)
 
 module.exports = router;
 

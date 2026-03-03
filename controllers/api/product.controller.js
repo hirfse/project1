@@ -1,36 +1,120 @@
-const Product = require('../../models/product.model')
+const Product = require('../../models/product.model');
 
-exports.getAPINewArrivals = async (req, res) => {
+
+// ================================
+// HOME API
+// ================================
+exports.getAPIHome = async (req, res) => {
   try {
-    const products = await Product.find({ isBlocked: false })
-      .sort({ createdAt: -1 })
-      .limit(10);
+    console.log("➡️ [HOME] API called");
 
-    res.status(200).json({
+    const [newArrivals, trending] = await Promise.all([
+
+      // New arrivals (latest)
+      Product.find({
+        isBlocked: false,
+        status: "Available"
+      })
+        .sort({ createdAt: -1 })
+        .limit(4)
+        .lean(),
+
+      // Trending (based on popularityScore)
+      Product.find({
+        isBlocked: false,
+        status: "Available"
+      })
+        .sort({ popularityScore: -1, createdAt: -1 })
+        .limit(4)
+        .lean()
+
+    ]);
+
+    console.log("✅ Home newArrivals:", newArrivals.length);
+    console.log("✅ Home trending:", trending.length);
+
+    return res.status(200).json({
       success: true,
-      data: products
+      data: {
+        newArrivals,
+        trending
+      }
     });
 
-  } catch (err) {
-    res.status(500).json({ success:false });
+  } catch (error) {
+    console.error("❌ Home API error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load home data"
+    });
   }
 };
 
-exports.getAPIFeaturedProducts = async (req, res) => {
+
+
+// ================================
+// NEW ARRIVALS LIST PAGE
+// ================================
+exports.getAPINewArrivals = async (req, res) => {
   try {
+    console.log("➡️ [NEW ARRIVALS] API called");
 
     const products = await Product.find({
       isBlocked: false,
-      isFeatured: true
+      status: "Available"
     })
-    .limit(20);
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean();
 
-    res.status(200).json({
+    console.log("✅ New arrivals count:", products.length);
+
+    return res.status(200).json({
       success: true,
       data: products
     });
 
   } catch (err) {
-    res.status(500).json({ success:false });
+    console.error("❌ New arrivals API error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load new arrivals"
+    });
+  }
+};
+
+
+
+// ================================
+// TRENDING LIST PAGE
+// ================================
+exports.getAPITrendingProducts = async (req, res) => {
+  try {
+    console.log("➡️ [TRENDING] API called");
+
+    const products = await Product.find({
+      isBlocked: false,
+      status: "Available"
+    })
+      .sort({ popularityScore: -1, createdAt: -1 })
+      .limit(10)
+      .lean();
+
+    console.log("✅ Trending products count:", products.length);
+
+    return res.status(200).json({
+      success: true,
+      data: products
+    });
+
+  } catch (err) {
+    console.error("❌ Trending API error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to load trending products"
+    });
   }
 };
