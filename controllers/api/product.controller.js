@@ -130,6 +130,42 @@ exports.searchProducts = async (req, res) => {
     // Accept name from POST body or from query params (?search= or ?name=)
     const name = (req.body && req.body.name) || req.query.search || req.query.name;
 
+    // Debug mode: return a sample of available products to inspect stored names/status
+    if (req.query.debug === '1' || req.query._debug === '1') {
+      const samples = await Product.find({ isBlocked: false })
+        .select('productName status isBlocked')
+        .limit(20)
+        .lean();
+      return res.status(200).json({ success: true, debug: true, count: samples.length, samples });
+    }
+
+    // Deeper debug: run the regex match with and without filters and return counts/samples
+    if (req.query.debug === '2') {
+      if (!name || typeof name !== 'string' || name.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Product name is required for debug search' });
+      }
+      const termDebug = name.trim();
+      const regexDebug = new RegExp(termDebug, 'i');
+      const withFilters = await Product.find({ productName: regexDebug, isBlocked: false, status: 'Available' }).select('productName status isBlocked').limit(50).lean();
+      const withoutStatus = await Product.find({ productName: regexDebug, isBlocked: false }).select('productName status isBlocked').limit(50).lean();
+      const withoutBlocked = await Product.find({ productName: regexDebug }).select('productName status isBlocked').limit(50).lean();
+      return res.status(200).json({
+        success: true,
+        debug: 2,
+        term: termDebug,
+        counts: {
+          withFilters: withFilters.length,
+          withoutStatus: withoutStatus.length,
+          withoutBlocked: withoutBlocked.length
+        },
+        samples: {
+          withFilters: withFilters.slice(0, 10),
+          withoutStatus: withoutStatus.slice(0, 10),
+          withoutBlocked: withoutBlocked.slice(0, 10)
+        }
+      });
+    }
+
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({
         success: false,
@@ -141,12 +177,20 @@ exports.searchProducts = async (req, res) => {
     // build case-insensitive regex to match anywhere in the name
     const regex = new RegExp(term, 'i');
 
-    const products = await Product.find({
-      name: regex,
-      isBlocked: false,
-      status: 'Available'
-    })
-      .lean();
+    const includeUnavailable = req.query.includeUnavailable === '1' || req.query.includeUnavailable === 'true' ||
+      req.body && (req.body.includeUnavailable === true || req.body.includeUnavailable === '1' || req.body.includeUnavailable === 'true');
+
+    const query = {
+      productName: regex
+    };
+
+    // always exclude blocked products unless explicitly overridden (rare)
+    query.isBlocked = false;
+
+    // if includeUnavailable is not set, restrict to Available status only
+    if (!includeUnavailable) query.status = 'Available';
+
+    const products = await Product.find(query).lean();
 
     console.log(`✅ Search results for "${term}":`, products.length);
 

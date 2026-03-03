@@ -33,8 +33,8 @@ app.use(nocache())
 // });
 app.use(express.json()); // Required for JSON requests
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
-app.use('/images',express.static(path.join(__dirname,'folder')))
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Ensure the uploads directory exists
@@ -107,5 +107,10 @@ process.on('unhandledRejection', (err) => {
     // Close server & exit process
     server.close(() => process.exit(1));
 });
+
+console.log(
+  "STATIC DIR =>",
+  path.join(__dirname, "public/uploads/product-images")
+);
 
 const server = app.listen(PORT, () => console.log(`Server started @ port ${PORT}`));
