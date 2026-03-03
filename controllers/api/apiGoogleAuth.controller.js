@@ -1,7 +1,9 @@
+
+
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../../models/user.model');
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const client = new OAuth2Client();
 
 exports.apiGoogleLogin = async (req, res) => {
   try {
@@ -14,13 +16,24 @@ exports.apiGoogleLogin = async (req, res) => {
       });
     }
 
-    // ✅ Verify token with Google
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: process.env.GOOGLE_CLIENT_ID
+      audience: [
+        process.env.GOOGLE_IOS_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_ID
+      ]
     });
 
     const payload = ticket.getPayload();
+
+    console.log("----- GOOGLE TOKEN DEBUG -----");
+    console.log("email:", payload.email);
+    console.log("aud:", payload.aud);
+    console.log("azp:", payload.azp);
+    console.log("iss:", payload.iss);
+    console.log("sub:", payload.sub);
+    console.log("--------------------------------");
+
 
     const {
       sub: googleId,
