@@ -16,7 +16,7 @@ exports.getAPIHome = async (req, res) => {
         status: "Available"
       })
         .sort({ createdAt: -1 })
-        .limit(4)
+        .limit(6)
         .lean(),
 
       // Trending (based on popularityScore)
@@ -24,7 +24,7 @@ exports.getAPIHome = async (req, res) => {
         isBlocked: false,
         status: "Available"
       })
-        .sort({ popularityScore: -1, createdAt: -1 })
+        .sort({ popularityScore: -1})
         .limit(4)
         .lean()
 
