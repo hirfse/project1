@@ -19,6 +19,9 @@ router.get('/home',productController.getAPIHome)
 router.get('/new-arrivals',productController.getAPINewArrivals)
 router.get('/trending',productController.getAPITrendingProducts)
 
+// search by product name
+router.post('/search-products', productController.searchProducts)
+
 module.exports = router;
 
 

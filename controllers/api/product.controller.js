@@ -118,3 +118,44 @@ exports.getAPITrendingProducts = async (req, res) => {
     });
   }
 };
+
+
+// ================================
+// SEARCH PRODUCTS
+// ================================
+exports.searchProducts = async (req, res) => {
+  try {
+    console.log("➡️ [SEARCH] API called");
+    const { name } = req.body;
+
+    if (!name || typeof name !== 'string' || name.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Product name is required for search'
+      });
+    }
+
+    // build case-insensitive regex to match anywhere in the name
+    const regex = new RegExp(name.trim(), 'i');
+
+    const products = await Product.find({
+      name: regex,
+      isBlocked: false,
+      status: 'Available'
+    })
+      .lean();
+
+    console.log(`✅ Search results for "${name}":`, products.length);
+
+    return res.status(200).json({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error("❌ Search API error:", error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to perform product search'
+    });
+  }
+};
