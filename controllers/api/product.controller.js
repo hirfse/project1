@@ -8,9 +8,9 @@ exports.getAPIHome = async (req, res) => {
   try {
     console.log("➡️ [HOME] API called");
 
-    const [newArrivals, trending] = await Promise.all([
+    const [newArrivals, trending, featuredCollection] = await Promise.all([
 
-      // New arrivals (latest)
+      // 1️⃣ New Arrivals (latest products)
       Product.find({
         isBlocked: false,
         status: "Available"
@@ -19,25 +19,36 @@ exports.getAPIHome = async (req, res) => {
         .limit(6)
         .lean(),
 
-      // Trending (based on popularityScore)
+      // 2️⃣ Trending (based on popularityScore)
       Product.find({
         isBlocked: false,
         status: "Available"
       })
-        .sort({ popularityScore: -1})
+        .sort({ popularityScore: -1 })
         .limit(4)
+        .lean(),
+
+      // 3️⃣ Featured Collection (sorted by price - Low to High)
+      Product.find({
+        isBlocked: false,
+        status: "Available",
+      })
+        .sort({ salePrice: 1 })  // 1 = Low → High, -1 = High → Low
+        .limit(6)
         .lean()
 
     ]);
 
     console.log("✅ Home newArrivals:", newArrivals.length);
     console.log("✅ Home trending:", trending.length);
+    console.log("✅ Home featured:", featuredCollection.length);
 
     return res.status(200).json({
       success: true,
       data: {
         newArrivals,
-        trending
+        trending,
+        featuredCollection
       }
     });
 
