@@ -126,7 +126,9 @@ exports.getAPITrendingProducts = async (req, res) => {
 exports.searchProducts = async (req, res) => {
   try {
     console.log("➡️ [SEARCH] API called");
-    const { name } = req.body;
+
+    // Accept name from POST body or from query params (?search= or ?name=)
+    const name = (req.body && req.body.name) || req.query.search || req.query.name;
 
     if (!name || typeof name !== 'string' || name.trim() === '') {
       return res.status(400).json({
@@ -135,8 +137,9 @@ exports.searchProducts = async (req, res) => {
       });
     }
 
+    const term = name.trim();
     // build case-insensitive regex to match anywhere in the name
-    const regex = new RegExp(name.trim(), 'i');
+    const regex = new RegExp(term, 'i');
 
     const products = await Product.find({
       name: regex,
@@ -145,7 +148,7 @@ exports.searchProducts = async (req, res) => {
     })
       .lean();
 
-    console.log(`✅ Search results for "${name}":`, products.length);
+    console.log(`✅ Search results for "${term}":`, products.length);
 
     return res.status(200).json({
       success: true,
