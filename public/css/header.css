@@ -78,6 +78,10 @@ header {
     color: #000;
 }
 
+.mainhead a:visited {
+  color: black;
+}
+
 .active-nav {
     font-weight: 600;
 }
@@ -112,8 +116,8 @@ header {
 .buttons .searchBar,
 .buttons input[type="text"] {
     width: 18rem;
-    background-color: #f8f8f8;
-    border: 1px solid #ddd;
+    background-color: #f8f8f800;
+    border: 1.5px solid #000000;
     padding: 10px 15px;
     border-radius: 8px;
     transition: all 0.3s ease;

@@ -108,9 +108,5 @@ process.on('unhandledRejection', (err) => {
     server.close(() => process.exit(1));
 });
 
-console.log(
-  "STATIC DIR =>",
-  path.join(__dirname, "public/uploads/product-images")
-);
 
 const server = app.listen(PORT, () => console.log(`Server started @ port ${PORT}`));

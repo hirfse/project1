@@ -13,19 +13,6 @@ const userService = require('../../services/userService');
 // const signupOtpStore = new Map();
 
 
-exports.getLandingPage = async (req, res) => {
-    try {
-        const products = await Product.find().limit(4);
-        res.render('user/landingPage', { error: null, products, userName: null });
-    } catch (error) {
-        console.error(error);
-        res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).render('user/landingPage', {
-            error: MESSAGES.PRODUCT.NOT_FOUND,
-            products: [],
-            userName: null
-        });
-    }
-};
 
 // Referral landing: store referral code in session and redirect to signup
 exports.referralLanding = async (req, res) => {
@@ -343,20 +330,26 @@ exports.handleResetPassword = async (req, res) => {
 exports.getHomePage = async (req, res) => {
     try {
         const { products } = await userService.getHomePageData();
-        const user = await User.findById(req.session.userId)
+
+        let user = null;
+
+        if (req.session.userId) {
+            user = await User.findById(req.session.userId);
+        }
+
         res.render('user/home', {
             products,
             user: {
-                userName: user.fullName,
-                userProfile: user.profileImage || "/images/project_icons/profile.png"
+                userName: user ? user.fullName : null,
+                userProfile: user?.profileImage || "/images/project_icons/profile.png"
             }
         });
 
     } catch (error) {
         console.error(error);
+
         res.render('user/home', {
             products: [],
-            error: 'Failed to fetch products.',
             user: {
                 userName: null,
                 userProfile: null

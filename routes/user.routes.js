@@ -42,7 +42,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 //   Public Routes (No authentication required)
-router.get('/', authController.getLandingPage);
+router.get('/', authController.getHomePage);
 
 // Referral landing: store code in session and redirect to signup/home
 router.get('/r/:code', authController.referralLanding);
