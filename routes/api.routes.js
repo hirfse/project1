@@ -15,13 +15,24 @@ router.post('/auth/google', apiGoogleAuth.apiGoogleLogin);
 
 router.post('/login',apiAuth.handleAPILogin)
 
+//HOME
+
 router.get('/home',productController.getAPIHome)
 router.get('/new-arrivals',productController.getAPINewArrivals)
 router.get('/trending',productController.getAPITrendingProducts)
 
-// search by product name (POST with JSON body) and GET with query param (?search=...)
+//SEARCH
+
 router.post('/search-products', productController.searchProducts)
 router.get('/search-products', productController.searchProducts)
+
+//PRODUCT 
+
+router.get('/explore',productController.getExplore)
+router.get('/product/:id',productController.getProductDetail)
+
+//CART
+router.post('/cart/add/:id',)
 
 module.exports = router;
 
