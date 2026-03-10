@@ -1,3 +1,4 @@
+const User = require('../../models/user.model');
 const Product = require('../../models/product.model');
 const Review = require('../../models/review.model')
 
@@ -223,8 +224,8 @@ exports.searchProducts = async (req, res) => {
 // EXPLORE PAGE
 // ================================
 
-exports.getExplore = async (req,res) => {
-  try{
+exports.getExplore = async (req, res) => {
+  try {
     console.log(" [EXPLORE] API called...!")
     const products = await Product.find().lean()
     return res.status(200).json({
@@ -232,7 +233,7 @@ exports.getExplore = async (req,res) => {
       count: products.length,
       data: products
     });
-  }catch(error){
+  } catch (error) {
     console.error("❌ EXPLORE API error:", error);
     return res.status(500).json({
       success: false,
@@ -244,20 +245,20 @@ exports.getExplore = async (req,res) => {
 // ================================
 // PRODUCT DETAIL PAGE
 // ================================
-exports.getProductDetail = async(req,res) => {
-  try{
+exports.getProductDetail = async (req, res) => {
+  try {
     const id = req.params.id
     const product = await Product.findById(id)
 
     return res.status(200).json({
-      success:true,
-      product:product
+      success: true,
+      product: product
     })
 
-  }catch(error){
-    console.error(' PRODUCT DETAIL API error:',error);
+  } catch (error) {
+    console.error(' PRODUCT DETAIL API error:', error);
     return res.status(500).json({
-      success:false,
+      success: false,
       message: "Product not found"
     })
   }
@@ -267,11 +268,72 @@ exports.getProductDetail = async(req,res) => {
 // ADD REVIEW
 // ================================
 
-exports.addReview = async (req,res) => {
-  try{
-    console.log(req.body.userName)
+exports.addReview = async (req, res) => {
+  try {
 
-  }catch(error){
+    const { email, productId, rating, comment } = req.body
 
+    //Validation
+
+    if (!email || !productId || !rating || !comment) {
+      console.log('Every feild is required');
+      return res.status(400).json({
+        success: false,
+        message: "Email, productId, rating, comment is required.. !"
+      })
+    }
+
+
+    //Find user
+    const user = await User.findOne({ email }).lean()
+
+    if (!user) {
+      console.log('User not fond')
+      return res.status(404).json({
+        success: false,
+        message: "User not fond...!"
+      })
+    }
+
+    //Find Product
+    const product = await Product.findById(productId)
+
+    if (!product) {
+      console.log('Product not found')
+      return res.status(404).json({
+        success: false,
+        message: 'Product not fond'
+      })
+    }
+
+
+    const numericRating = Number(rating);
+
+    if (numericRating < 1 || numericRating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be between 1 and 5"
+      });
+    }
+
+    const newReview = new Review({
+      userName: user.fullName,
+      userId: user._id,
+      productId,
+      rating: numericRating,
+      comment
+    });
+
+    await newReview.save()
+
+
+    return res.status(200).json({
+      success: true,
+      message: "Successfully added review..!"
+    })
+
+
+  } catch (error) {
+    console.error(error)
   }
 }
