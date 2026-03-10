@@ -1,4 +1,5 @@
 const Product = require('../../models/product.model');
+const Review = require('../../models/review.model')
 
 
 // ================================
@@ -130,49 +131,7 @@ exports.getAPITrendingProducts = async (req, res) => {
   }
 };
 
-// ================================
-// EXPLORE PAGE
-// ================================
 
-exports.getExplore = async (req,res) => {
-  try{
-    console.log(" [EXPLORE] API called...!")
-    const products = await Product.find().lean()
-    return res.status(200).json({
-      success: true,
-      count: products.length,
-      data: products
-    });
-  }catch(error){
-    console.error("❌ EXPLORE API error:", error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to get explore page'
-    });
-  }
-}
-
-// ================================
-// PRODUCT DETAIL PAGE
-// ================================
-exports.getProductDetail = async(req,res) => {
-  try{
-    const id = req.params.id
-    const product = await Product.findById(id)
-
-    return res.status(200).json({
-      success:true,
-      product:product
-    })
-
-  }catch(error){
-    console.error(' PRODUCT DETAIL API error:',error);
-    return res.status(500).json({
-      success:false,
-      message: "Product not found"
-    })
-  }
-}
 // ================================
 // SEARCH PRODUCTS
 // ================================
@@ -259,3 +218,60 @@ exports.searchProducts = async (req, res) => {
     });
   }
 };
+
+// ================================
+// EXPLORE PAGE
+// ================================
+
+exports.getExplore = async (req,res) => {
+  try{
+    console.log(" [EXPLORE] API called...!")
+    const products = await Product.find().lean()
+    return res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+  }catch(error){
+    console.error("❌ EXPLORE API error:", error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get explore page'
+    });
+  }
+}
+
+// ================================
+// PRODUCT DETAIL PAGE
+// ================================
+exports.getProductDetail = async(req,res) => {
+  try{
+    const id = req.params.id
+    const product = await Product.findById(id)
+
+    return res.status(200).json({
+      success:true,
+      product:product
+    })
+
+  }catch(error){
+    console.error(' PRODUCT DETAIL API error:',error);
+    return res.status(500).json({
+      success:false,
+      message: "Product not found"
+    })
+  }
+}
+
+// ================================
+// ADD REVIEW
+// ================================
+
+exports.addReview = async (req,res) => {
+  try{
+    console.log(req.body.userName)
+
+  }catch(error){
+
+  }
+}

@@ -31,6 +31,10 @@ router.get('/search-products', productController.searchProducts)
 router.get('/explore',productController.getExplore)
 router.get('/product/:id',productController.getProductDetail)
 
+//REVIEW
+
+router.post('/addReview',productController.addReview)
+
 //CART
 router.post('/cart/add/:id',)
 
