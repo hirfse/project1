@@ -5,21 +5,17 @@ const cartService = require("../services/cartService");
 module.exports = async (req, res, next) => {
   try {
 
-    // Skip if admin
-    if (!req.session.user || req.session.user === "admin") {
+    const userId = req.session.userId;
+
+    // Skip if no user or invalid ObjectId
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
       res.locals.cartCount = 0;
       return next();
     }
 
-    // Validate ObjectId before DB query
-    if (req.session.userId && mongoose.Types.ObjectId.isValid(req.session.userId)) {
+    const cartData = await cartService.getCartData(userId);
 
-      const cartData = await cartService.getCartData(req.session.userId);
-      res.locals.cartCount = cartData?.cartCount || 0;
-
-    } else {
-      res.locals.cartCount = 0;
-    }
+    res.locals.cartCount = cartData?.cartCount || 0;
 
     next();
 
