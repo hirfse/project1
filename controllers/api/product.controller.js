@@ -245,28 +245,40 @@ exports.getExplore = async (req, res) => {
 // ================================
 // PRODUCT DETAIL PAGE
 // ================================
+const mongoose = require("mongoose");
+
 exports.getProductDetail = async (req, res) => {
   try {
-    const id = req.params.id
-    const product = await Product.findById(id)
-    const reviews = await Review.find({ productId: id }).lean();
 
+    const productId = new mongoose.Types.ObjectId(req.params.id);
+
+    const product = await Product.findById(productId);
+
+    const reviews = await Review
+      .find({ productId: productId })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    console.log("Product ID:", productId);
+    console.log("Reviews:", reviews);
 
     return res.status(200).json({
       success: true,
-      product: product,
+      product,
       reviews
-    })
+    });
 
   } catch (error) {
-    console.error(' PRODUCT DETAIL API error:', error);
+
+    console.error("PRODUCT DETAIL API error:", error);
+
     return res.status(500).json({
       success: false,
       message: "Product not found"
-    })
-  }
-}
+    });
 
+  }
+};
 // ================================
 // ADD REVIEW
 // ================================
@@ -328,6 +340,7 @@ exports.addReview = async (req, res) => {
     });
 
     await newReview.save()
+    console.log(newReview)
 
 
     return res.status(200).json({
