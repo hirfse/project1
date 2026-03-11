@@ -262,6 +262,7 @@ exports.getProductDetail = async (req, res) => {
     console.log("Product ID:", productId);
     console.log("Reviews:", reviews);
 
+    console.log('Haii')
     return res.status(200).json({
       success: true,
       product,
