@@ -343,6 +343,9 @@ exports.addReview = async (req, res) => {
     await newReview.save()
     console.log(newReview)
 
+    product.reviews.push(newReview._id)
+    await product.save()
+
 
     return res.status(200).json({
       success: true,
