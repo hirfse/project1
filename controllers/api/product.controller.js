@@ -249,10 +249,13 @@ exports.getProductDetail = async (req, res) => {
   try {
     const id = req.params.id
     const product = await Product.findById(id)
+    const reviews = await Review.find({ productId: id }).lean();
+
 
     return res.status(200).json({
       success: true,
-      product: product
+      product: product,
+      reviews
     })
 
   } catch (error) {
