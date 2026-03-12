@@ -8,7 +8,8 @@ const apiGoogleAuth = require('../controllers/api/apiGoogleAuth.controller');
 const productController = require('../controllers/api/product.controller')
 
 const cartController = require('../controllers/api/apiCart.controller')
-
+ 
+const wishlistController = require('../controllers/api/apiWishlist.controller')
 
 router.post('/signup',apiAuth.handleAPISignup)
 router.post('/verifyOTP',apiAuth.verifyOTP)
@@ -38,8 +39,14 @@ router.get('/product/:id',productController.getProductDetail)
 router.post('/addReview',productController.addReview)
 
 //CART
-router.post('/cart/add/:id',cartController.addToCart)
+
+router.post('/cart/add',cartController.addToCart)
 router.get('/cart/:userId',cartController.getCart)
+
+//WISHLIST
+
+router.get('/wishlist/:userId',wishlistController.getWishlist)
+
 
 module.exports = router;
 
