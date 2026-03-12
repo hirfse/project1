@@ -39,6 +39,7 @@ router.post('/addReview',productController.addReview)
 
 //CART
 router.post('/cart/add/:id',cartController.addToCart)
+router.get('/cart/:userId',cartController.getCart)
 
 module.exports = router;
 

@@ -25,3 +25,29 @@ exports.addToCart = async (req,res) => {
     });
     }
 }
+
+exports.getCart = async (req, res) => {
+    try{
+
+        const userId = req.params.userId
+
+        console.log('Cart API is called .... ')
+
+        const result = await cartService.getCartData(userId)
+
+        if(!result.success){
+            return res.json(404).json(result)
+        }
+
+        return res.status(200).json(result)
+
+    }catch(error){
+
+    console.error(" CART API ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+    }
+}
