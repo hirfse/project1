@@ -1,28 +1,27 @@
-const Product = require('../../models/cart.model')
-const Cart = require('../../models/cart.model')
+const cartService = require('../../services/cartService');
 
 
-// this will not work accroding to cart model
-// exports.addToCart = async (req,res) => {
-//     try{
-//         const id = req.params.id
-        
-//         const cart = {
-//             productId:id,
-//             quantity:1
-//         }
+exports.addToCart = async (req,res) => {
+    try{
+        const {userId, productId, quantity} = req.body
+        console.log(req.body,userId, productId, quantity, 'Add To Cart API is called...!')
 
-//         await Cart.save(cart)
-//         return res.status(201).json({
-//             success:true,
-//             message:"Successfully added to cart"
-//         })
+        const result =  await cartService.addToCart(userId,productId,quantity)
 
-//     }catch(error){
-//         console.error(`Error while adding to cart ${error}`)
-//         return res.status(500).json({
-//             success:false,
-//             error:'Failed , add to cart!'
-//         })
-//     }
-// } 
+        if(!result.success){
+            return res.status(404).json(result)
+
+        }
+
+        return res.status(201).json(result)
+
+    }catch(error){
+
+    console.error("ADD TO CART API ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+    }
+}

@@ -3,9 +3,11 @@ const express = require('express')
 const router = express.Router()
 
 const apiAuth = require('../controllers/api/apiAuth.controller')
+const apiGoogleAuth = require('../controllers/api/apiGoogleAuth.controller');
+
 const productController = require('../controllers/api/product.controller')
 
-const apiGoogleAuth = require('../controllers/api/apiGoogleAuth.controller');
+const cartController = require('../controllers/api/apiCart.controller')
 
 
 router.post('/signup',apiAuth.handleAPISignup)
@@ -36,7 +38,7 @@ router.get('/product/:id',productController.getProductDetail)
 router.post('/addReview',productController.addReview)
 
 //CART
-router.post('/cart/add/:id',)
+router.post('/cart/add/:id',cartController.addToCart)
 
 module.exports = router;
 
