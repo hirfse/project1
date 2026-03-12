@@ -9,7 +9,10 @@ exports.addToCart = async (req,res) => {
         const result =  await cartService.addToCart(userId,productId,quantity)
 
         if(!result.success){
-            return res.status(404).json(result)
+            return res.status(404).json({
+                success:false,
+                message:'Error while adding the product'
+            })
 
         }
 
