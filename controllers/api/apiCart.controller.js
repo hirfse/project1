@@ -8,6 +8,8 @@ exports.addToCart = async (req,res) => {
 
         const result =  await cartService.addToCart(userId,productId,quantity)
 
+        console.log(result)
+
         if(!result.success){
             return res.status(404).json({
                 success:false,
