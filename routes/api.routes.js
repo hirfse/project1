@@ -46,6 +46,8 @@ router.get('/cart/:userId',cartController.getCart)
 //WISHLIST
 
 router.get('/wishlist/:userId',wishlistController.getWishlist)
+router.post('/wishlist/add',wishlistController.addToWishlist)
+
 
 
 module.exports = router;
