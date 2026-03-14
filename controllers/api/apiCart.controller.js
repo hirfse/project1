@@ -56,3 +56,33 @@ exports.getCart = async (req, res) => {
     });
     }
 }
+
+exports.removeCart = async (req,res) => {
+    try{
+
+        const {userId , productId} = req.body
+        const result = await cartService.removeFromCart(userId,productId)
+
+        console.log(result)
+
+        if(!result.success){
+            return res.status(404).json({
+                success:false,
+                message:'Error while adding the product'
+            })
+
+        }
+
+        return res.status(201).json(result)
+    }catch(error){
+
+    console.error(" CART API ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+    }
+        
+    
+}

@@ -40,14 +40,15 @@ router.post('/addReview',productController.addReview)
 
 //CART
 
-router.post('/cart/add',cartController.addToCart)
 router.get('/cart/:userId',cartController.getCart)
+router.post('/cart/add',cartController.addToCart)
+router.post('/cart/remove',cartController.removeCart)
 
 //WISHLIST
 
 router.get('/wishlist/:userId',wishlistController.getWishlist)
 router.post('/wishlist/add',wishlistController.addToWishlist)
-
+router.post('/wishlist/remove',wishlistController.removeWishlist)
 
 
 module.exports = router;

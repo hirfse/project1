@@ -69,3 +69,41 @@ exports.addToWishlist = async (req,res) => {
         })
     }
 }
+
+exports.removeWishlist = async( req, res) => {
+    try{
+        const {userId, productId} = req.body
+
+        const user = await User.findById(userId)
+        const product = await Product.findById(productId)
+
+
+        if(!user || !product){
+            return res.status(404).json({
+                success: false,
+                message: 'User or Product is not valid'
+            })
+        }
+
+        const updatedWishlist = await Wishlist.findOneAndUpdate(
+            {userId},
+            {$pull:{product:productId}},
+            {new:true}
+        )
+
+        console.log('Removed the product from wishlist...!')
+
+        return res.status(201).json({
+            success:true,
+            message:'Successfully removed the Product from wishlist...!',
+            updatedWishlist
+        })
+
+    }catch(error){
+        console.log('There is a error while removing product from wishlist... !')
+        return res.status(500).json({
+            success: false,
+            message: 'Error while remove from wishlist'
+        })
+    }
+};
