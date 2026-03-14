@@ -22,5 +22,9 @@ exports.getProfile = async (req,res) => {
 
     }catch(error){
 
+        return res.status(500).json({
+            success:false,
+            message:"failed to load the profile..!"
+        })
     }
 }
