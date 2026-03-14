@@ -87,7 +87,7 @@ exports.removeWishlist = async( req, res) => {
 
         const updatedWishlist = await Wishlist.findOneAndUpdate(
             {userId},
-            {$pull:{product:productId}},
+            {$pull:{products: new mongoose.Types.ObjectId(productId)}},
             {new:true}
         )
 
