@@ -56,6 +56,7 @@ router.post('/wishlist/remove',wishlistController.removeWishlist)
 //PROFILE
 
 router.get('/profile/:userId',profileController.getProfile)
+router.get('/address/:userId',profileController.getAddress)
 
 
 module.exports = router;

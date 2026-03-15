@@ -1,4 +1,5 @@
 const User = require('../../models/user.model')
+const Address = require('../../models/address.model')
 
 exports.getProfile = async (req,res) => {
     try{
@@ -25,6 +26,27 @@ exports.getProfile = async (req,res) => {
         return res.status(500).json({
             success:false,
             message:"failed to load the profile..!"
+        })
+    }
+}
+
+exports.getAddress = async (req, res) => {
+    try{
+        const userId = req.params.userId
+        const user = await User.findById(userId)
+
+        console.log('address API is callled... !')
+
+        if (!user) return res.status(404).json({success:false, messgae:'User not found'})
+        
+        const address = await Address.findOne({userId:userId})
+
+        return res.status(200).json({success:true, message:'Address fetched successfullly..',address})
+    }catch(error){
+        console.log('Error while fecting address..!',error)
+        return res.status(500).json({
+            success:false,
+            message:'Failed to load address...!'
         })
     }
 }
