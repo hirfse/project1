@@ -50,3 +50,56 @@ exports.getAddress = async (req, res) => {
         })
     }
 }
+
+exports.addAddress = async (req, res) => {
+    try{
+
+        const userId = req.params.userId
+        const {addressType, fullName, phone, houseName, city, state, pincode, landmark} = req.body
+        const user = await User.findById(userId)
+
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                messgae:'User not Fond'
+            })
+        }
+
+        const updatedAddress = await Address.findOneAndUpdate(
+        { userId },
+        {
+            $push: {
+            address: {
+                addressType,
+                fullName,
+                phone,
+                secPhone,
+                houseName,
+                city,
+                state,
+                pincode,
+                landMark
+            }
+            }
+        },
+        {
+            new: true,
+            upsert: true
+        }
+        );
+
+        return res.status(200).json({
+        success: true,
+        message: "Address added successfully",
+        address: updatedAddress
+        });
+
+
+    }catch(error){
+        console.log('There is error while adding the address..!',error)
+        return res.status(500).json({
+            success: false,
+            message:'Error while adding address'
+            })
+    }
+}

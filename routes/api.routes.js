@@ -12,7 +12,7 @@ const cartController = require('../controllers/api/apiCart.controller')
 const wishlistController = require('../controllers/api/apiWishlist.controller')
 
 const profileController = require('../controllers/api/apiProfile.controller');
-const { profile } = require('winston');
+
 
 router.post('/signup',apiAuth.handleAPISignup)
 router.post('/verifyOTP',apiAuth.verifyOTP)
@@ -57,6 +57,7 @@ router.post('/wishlist/remove',wishlistController.removeWishlist)
 
 router.get('/profile/:userId',profileController.getProfile)
 router.get('/address/:userId',profileController.getAddress)
+router.post('/address/add/:userId',profileController.addAddress)
 
 
 module.exports = router;
