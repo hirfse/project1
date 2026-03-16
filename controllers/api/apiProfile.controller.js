@@ -55,7 +55,7 @@ exports.addAddress = async (req, res) => {
     try{
 
         const userId = req.params.userId
-        const {addressType, fullName, phone, houseName, city, state, pincode, landmark} = req.body
+        const {addressType, fullName, phone, houseName, city, state, pincode, landMark} = req.body
         const user = await User.findById(userId)
 
         if(!user){
@@ -73,7 +73,6 @@ exports.addAddress = async (req, res) => {
                 addressType,
                 fullName,
                 phone,
-                secPhone,
                 houseName,
                 city,
                 state,
