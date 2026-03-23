@@ -29,6 +29,7 @@ exports.orderHandling = async(req,res) => {
         
 
     }catch(error){
-
+        console.log('Error while handling order...!',error)
+        return res.status(500).json({msg:'Error while handling order'})
     }
 }
