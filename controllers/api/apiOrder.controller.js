@@ -8,7 +8,7 @@ exports.orderHandling = async(req,res) => {
         const {userId, porductId} = req.body
         
         const user = await User.findById(userId)
-
+        console.log(userId, productId)
         if(!user){
             return res.status(404).json({
                 success: false,
