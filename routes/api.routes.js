@@ -12,6 +12,8 @@ const cartController = require('../controllers/api/apiCart.controller')
 const wishlistController = require('../controllers/api/apiWishlist.controller')
 
 const profileController = require('../controllers/api/apiProfile.controller');
+const apiPaymentController = require('../controllers/api/apiPayment.controller');
+const apiOrderController = require('../controllers/api/apiOrder.controller');
 
 
 router.post('/signup',apiAuth.handleAPISignup)
@@ -43,8 +45,15 @@ router.post('/addReview',productController.addReview)
 
 
 //ORDER
-router.get('/order')
-router.post('/order')
+router.get('/order', apiOrderController.getUserOrders)
+router.get('/order/details', apiOrderController.getOrderDetails)
+router.post('/order/cancel', apiOrderController.cancelOrder)
+router.post('/order/return', apiOrderController.returnOrder)
+router.post('/order', apiOrderController.orderHandling)
+
+//PAYMENT
+router.post('/payment/create-order', apiPaymentController.createRazorpayOrder)
+router.post('/payment/verify', apiPaymentController.verifyPaymentAndCreateOrder)
 
 //CART
 
