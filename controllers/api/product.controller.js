@@ -227,7 +227,24 @@ exports.searchProducts = async (req, res) => {
 exports.getExplore = async (req, res) => {
   try {
     console.log(" [EXPLORE] API called...!")
-    const products = await Product.find().lean()
+
+    let page = parseInt(req.query.page) || 1;
+    let limit = parseInt(req.query.limit) || 10;
+
+    if (page < 1) page = 1;
+
+    const skip = (page - 1) * limit;
+
+    const totalItems = await Product.countDocuments();
+
+    const products = await Product.find()
+      .sort({ createdAt: -1 }) // latest first
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+
+
     return res.status(200).json({
       success: true,
       count: products.length,
