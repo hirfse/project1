@@ -72,6 +72,7 @@ router.post('/wishlist/remove',wishlistController.removeWishlist)
 router.get('/profile/:userId',profileController.getProfile)
 router.get('/address/:userId',profileController.getAddress)
 router.post('/address/add/:userId',profileController.addAddress)
+router.post('/address/delete/:userId',profileController.deleteAddress)
 
 
 module.exports = router;

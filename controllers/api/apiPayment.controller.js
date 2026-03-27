@@ -133,6 +133,7 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
                 orderNumber: result.orderNumber
             });
         } else {
+            console.log("Order creation failed:", result.message);
             res.status(400).json({
                 success: false,
                 message: result.message

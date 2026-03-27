@@ -104,3 +104,66 @@ exports.addAddress = async (req, res) => {
             })
     }
 }
+
+exports.deleteAddress = async (req, res) => {
+    try {
+        const { userId } = req.params
+        const { addressId } = req.body
+
+        if (!userId || !addressId) {
+            return res.status(400).json({
+                success: false,
+                message: 'userId and addressId are required'
+            })
+        }
+
+        const user = await User.findById(userId)
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            })
+        }
+
+        const addressDoc = await Address.findOne({ userId })
+        if (!addressDoc) {
+            return res.status(404).json({
+                success: false,
+                message: 'Address document not found'
+            })
+        }
+
+        // Check if address exists
+        const addressExists = addressDoc.address.some(addr => addr._id.toString() === addressId)
+        if (!addressExists) {
+            return res.status(404).json({
+                success: false,
+                message: 'Address not found'
+            })
+        }
+
+        // Remove the address
+        const updatedAddress = await Address.findOneAndUpdate(
+            { userId },
+            {
+                $pull: {
+                    address: { _id: addressId }
+                }
+            },
+            { new: true }
+        )
+
+        return res.status(200).json({
+            success: true,
+            message: 'Address deleted successfully',
+            address: updatedAddress
+        })
+
+    } catch (error) {
+        console.log('Error while deleting address..!', error)
+        return res.status(500).json({
+            success: false,
+            message: 'Error while deleting address'
+        })
+    }
+}
