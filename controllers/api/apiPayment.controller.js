@@ -49,13 +49,22 @@ exports.createRazorpayOrder = async (req, res) => {
 
             // Apply product or category offer
             const productDiscount = product.offerPercentage ? (itemTotal * product.offerPercentage) / 100 : 0;
-            const categoryDiscount = product.category ? (itemTotal * product.category.categoryOffer) / 100 : 0;
+            const categoryDiscount = product.category && product.category.categoryOffer ? (itemTotal * product.category.categoryOffer) / 100 : 0;
             discount += Math.max(productDiscount, categoryDiscount);
         }
 
         const tax = subtotal * 0.05;
         const shipping = 50;
         const total = Math.round(subtotal + tax + shipping - discount);
+
+        // Validate calculated amount
+        if (isNaN(total) || total <= 0) {
+            console.error('Invalid calculated amount:', { total, subtotal, tax, shipping, discount });
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid amount calculation'
+            });
+        }
 
         console.log('Calculated amounts:', {
             subtotal,
@@ -244,7 +253,7 @@ async function processOrderCreationFromCart(userId, selectedAddressId, appliedOf
 
             // Apply product or category offer
             const productDiscount = product.offerPercentage ? (itemTotal * product.offerPercentage) / 100 : 0;
-            const categoryDiscount = product.category.categoryOffer ? (itemTotal * product.category.categoryOffer) / 100 : 0;
+            const categoryDiscount = product.category && product.category.categoryOffer ? (itemTotal * product.category.categoryOffer) / 100 : 0;
             discount += Math.max(productDiscount, categoryDiscount);
 
             orderItems.push({
