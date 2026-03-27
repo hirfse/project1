@@ -126,6 +126,8 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
             { razorpayPaymentId: razorpay_payment_id }
         );
 
+        console.log(result)
+
         if (result.success) {
             res.json({
                 success: true,
