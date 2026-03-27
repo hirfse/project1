@@ -38,7 +38,7 @@ exports.createRazorpayOrder = async (req, res) => {
         const options = {
             amount: amountInPaise,
             currency: "INR",
-            receipt: `receipt_order_${Date.now()}_${userId}`
+            receipt:  userId.toString().slice(-10)
         };
 
         if (!global.razorpayInstance) {
