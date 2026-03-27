@@ -2,6 +2,16 @@ const express = require('express')
 
 const router = express.Router()
 
+// Add logging middleware for all API routes
+router.use((req, res, next) => {
+    console.log(`=== API REQUEST ===`);
+    console.log(`${req.method} ${req.originalUrl}`);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+    console.log('==================');
+    next();
+});
+
 const apiAuth = require('../controllers/api/apiAuth.controller')
 const apiGoogleAuth = require('../controllers/api/apiGoogleAuth.controller');
 

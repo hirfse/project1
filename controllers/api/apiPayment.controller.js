@@ -17,6 +17,9 @@ const generateOrderID = () => {
 // Create Razorpay Order
 exports.createRazorpayOrder = async (req, res) => {
     try {
+        console.log('=== CREATE RAZORPAY ORDER REQUEST ===');
+        console.log('Request body:', JSON.stringify(req.body, null, 2));
+        
         const { userId, amount } = req.body;
 
         if (!userId || !amount) {
@@ -38,7 +41,7 @@ exports.createRazorpayOrder = async (req, res) => {
         const options = {
             amount: amountInPaise,
             currency: "INR",
-            receipt:  userId.toString().slice(-10)
+            receipt: `receipt_order_${Date.now()}_${userId}`
         };
 
         if (!global.razorpayInstance) {
@@ -49,6 +52,7 @@ exports.createRazorpayOrder = async (req, res) => {
         }
 
         const razorpayOrder = await global.razorpayInstance.orders.create(options);
+        console.log('Razorpay order created:', razorpayOrder);
 
         res.json({
             success: true,
@@ -67,6 +71,9 @@ exports.createRazorpayOrder = async (req, res) => {
 // Verify Payment & Create Order
 exports.verifyPaymentAndCreateOrder = async (req, res) => {
     try {
+        console.log('=== PAYMENT VERIFY REQUEST START ===');
+        console.log('Request body:', JSON.stringify(req.body, null, 2));
+        
         const {
             userId,
             razorpay_order_id,
@@ -79,8 +86,20 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
             appliedOffer
         } = req.body;
 
+        console.log('Extracted parameters:', {
+            userId: userId ? 'present' : 'missing',
+            razorpay_order_id: razorpay_order_id ? 'present' : 'missing',
+            razorpay_payment_id: razorpay_payment_id ? 'present' : 'missing',
+            razorpay_signature: razorpay_signature ? 'present' : 'missing',
+            selectedAddressId: selectedAddressId ? 'present' : 'missing',
+            isBuyNow,
+            itemsCount: items ? items.length : 'missing',
+            buyNowProduct: buyNowProduct ? 'present' : 'missing'
+        });
+
         // Validate required fields
         if (!userId || !razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !selectedAddressId) {
+            console.log('VALIDATION FAILED - Missing required fields');
             return res.status(400).json({
                 success: false,
                 message: 'Missing required fields'
@@ -88,6 +107,7 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
         }
 
         if (!isBuyNow && !items) {
+            console.log('VALIDATION FAILED - Items required for cart orders');
             return res.status(400).json({
                 success: false,
                 message: 'Items are required for cart orders'
@@ -95,27 +115,42 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
         }
 
         if (isBuyNow && !buyNowProduct) {
+            console.log('VALIDATION FAILED - Buy now product required');
             return res.status(400).json({
                 success: false,
                 message: 'Buy now product is required for buy now orders'
             });
         }
 
+        console.log('VALIDATION PASSED');
+
         // Verify Razorpay signature
+        console.log('VERIFYING RAZORPAY SIGNATURE...');
         const body = razorpay_order_id + "|" + razorpay_payment_id;
         const expectedSignature = crypto
             .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
             .update(body.toString())
             .digest('hex');
 
+        console.log('Signature verification:', {
+            body,
+            expectedSignature: expectedSignature.substring(0, 20) + '...',
+            receivedSignature: razorpay_signature.substring(0, 20) + '...',
+            signaturesMatch: expectedSignature === razorpay_signature
+        });
+
         if (expectedSignature !== razorpay_signature) {
+            console.log('SIGNATURE VERIFICATION FAILED');
             return res.status(400).json({
                 success: false,
                 message: 'Invalid payment signature'
             });
         }
 
+        console.log('SIGNATURE VERIFIED SUCCESSFULLY');
+
         // Process order creation
+        console.log('PROCESSING ORDER CREATION...');
         const result = await processOrderCreation(
             userId,
             selectedAddressId,
@@ -126,24 +161,28 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
             { razorpayPaymentId: razorpay_payment_id }
         );
 
-        console.log(result)
+        console.log('ORDER CREATION RESULT:', result);
 
         if (result.success) {
+            console.log('ORDER CREATED SUCCESSFULLY');
             res.json({
                 success: true,
                 orderId: result.orderId,
                 orderNumber: result.orderNumber
             });
         } else {
-            console.log("Order creation failed:", result.message);
+            console.log("ORDER CREATION FAILED:", result.message);
             res.status(400).json({
                 success: false,
                 message: result.message
             });
         }
 
+        console.log('=== PAYMENT VERIFY REQUEST END ===');
+
     } catch (error) {
-        console.error('Verify payment and create order error:', error);
+        console.error('VERIFY PAYMENT ERROR:', error);
+        console.error('Error stack:', error.stack);
         res.status(500).json({
             success: false,
             message: 'Internal server error'
