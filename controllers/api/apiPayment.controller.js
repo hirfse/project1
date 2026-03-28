@@ -57,8 +57,8 @@ exports.createRazorpayOrder = async (req, res) => {
         const shipping = 50;
         const total = Math.round(subtotal + tax + shipping - discount);
 
-        // Validate calculated amount
-        if (isNaN(total) || total <= 0) {
+        // Validate calculated amount before calling Razorpay
+        if (!Number.isFinite(total) || total <= 0) {
             console.error('Invalid calculated amount:', { total, subtotal, tax, shipping, discount });
             return res.status(400).json({
                 success: false,
@@ -74,13 +74,24 @@ exports.createRazorpayOrder = async (req, res) => {
             total
         });
 
-        const amountInPaise = total * 100;
+        const amountInPaise = Math.round(total * 100);
+
+        // Additional validation for amountInPaise
+        if (!Number.isFinite(amountInPaise) || amountInPaise <= 0) {
+            console.error('Invalid amountInPaise:', { amountInPaise, total });
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid payment amount'
+            });
+        }
 
         const options = {
             amount: amountInPaise,
             currency: "INR",
             receipt: `ORD_${Date.now().toString().slice(-6)}`
         };
+
+        console.log('Razorpay options:', { amount: amountInPaise, currency: "INR", receipt: options.receipt });
 
         if (!global.razorpayInstance) {
             return res.status(500).json({
@@ -90,7 +101,7 @@ exports.createRazorpayOrder = async (req, res) => {
         }
 
         const razorpayOrder = await global.razorpayInstance.orders.create(options);
-        console.log('Razorpay order created:', razorpayOrder);
+        console.log('Razorpay order created successfully:', razorpayOrder.id);
 
         res.json({
             success: true,
@@ -100,6 +111,16 @@ exports.createRazorpayOrder = async (req, res) => {
 
     } catch (error) {
         console.error('Create Razorpay order error:', error);
+        
+        // Handle Razorpay specific errors
+        if (error.error && error.error.description) {
+            return res.status(400).json({
+                success: false,
+                message: error.error.description,
+                error: error.error
+            });
+        }
+        
         res.status(500).json({
             success: false,
             message: 'Internal server error'
