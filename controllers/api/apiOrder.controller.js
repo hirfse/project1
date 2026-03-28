@@ -2,10 +2,13 @@ const Order = require('../../models/order.model')
 const Product = require('../../models/product.model')
 const User = require('../../models/user.model')
 
-// Get user orders
+// Get user orders with pagination
 exports.getUserOrders = async (req, res) => {
     try {
         const { userId } = req.query
+        const page = parseInt(req.query.page) || 1
+        const limit = parseInt(req.query.limit) || 10
+        const status = req.query.status // Optional filter by status
 
         if (!userId) {
             return res.status(400).json({
@@ -22,13 +25,40 @@ exports.getUserOrders = async (req, res) => {
             })
         }
 
-        const orders = await Order.find({ userId })
-            .populate('items.productId')
+        // Build query
+        const query = { userId }
+        if (status) {
+            query.status = status
+        }
+
+        // Calculate pagination
+        const skip = (page - 1) * limit
+
+        // Get total count for pagination info
+        const totalOrders = await Order.countDocuments(query)
+
+        // Get orders with pagination
+        const orders = await Order.find(query)
+            .populate('items.productId', 'productName images salePrice')
             .sort({ orderDate: -1 })
+            .skip(skip)
+            .limit(limit)
+
+        // Pagination metadata
+        const pagination = {
+            currentPage: page,
+            totalPages: Math.ceil(totalOrders / limit),
+            totalOrders,
+            hasNextPage: page < Math.ceil(totalOrders / limit),
+            hasPrevPage: page > 1,
+            limit
+        }
 
         res.json({
             success: true,
-            orders
+            orders,
+            pagination,
+            message: 'Orders retrieved successfully'
         })
 
     } catch (error) {
@@ -40,7 +70,7 @@ exports.getUserOrders = async (req, res) => {
     }
 }
 
-// Get order details
+// Get single order details with full population
 exports.getOrderDetails = async (req, res) => {
     try {
         const { userId, orderId } = req.query
@@ -53,7 +83,8 @@ exports.getOrderDetails = async (req, res) => {
         }
 
         const order = await Order.findOne({ _id: orderId, userId })
-            .populate('items.productId')
+            .populate('items.productId', 'productName images salePrice description category')
+            .populate('items.productId.category', 'categoryName')
 
         if (!order) {
             return res.status(404).json({
@@ -62,9 +93,37 @@ exports.getOrderDetails = async (req, res) => {
             })
         }
 
+        // Add additional calculated fields for frontend
+        const orderWithDetails = {
+            ...order.toObject(),
+            // Add formatted dates
+            formattedOrderDate: order.orderDate.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            formattedUpdatedAt: order.updatedAt.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            // Add status timeline
+            statusTimeline: [
+                { status: 'Pending', date: order.orderDate, completed: true },
+                { status: 'Confirmed', completed: order.status === 'Confirmed' || ['Shipped', 'Out for Delivery', 'Delivered'].includes(order.status) },
+                { status: 'Shipped', completed: order.status === 'Shipped' || ['Out for Delivery', 'Delivered'].includes(order.status) },
+                { status: 'Out for Delivery', completed: order.status === 'Out for Delivery' || order.status === 'Delivered' },
+                { status: 'Delivered', completed: order.status === 'Delivered' },
+                { status: 'Canceled', completed: order.status === 'Canceled' },
+                { status: 'Return Requested', completed: order.status === 'Return Requested' },
+                { status: 'Returned', completed: order.status === 'Returned' }
+            ].filter(step => step.completed || step.status === order.status)
+        }
+
         res.json({
             success: true,
-            order
+            order: orderWithDetails,
+            message: 'Order details retrieved successfully'
         })
 
     } catch (error) {

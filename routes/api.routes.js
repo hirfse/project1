@@ -55,7 +55,7 @@ router.post('/addReview',productController.addReview)
 
 
 //ORDER
-router.get('/order', apiOrderController.getUserOrders)
+router.get('/orders', apiOrderController.getUserOrders)
 router.get('/order/details', apiOrderController.getOrderDetails)
 router.post('/order/cancel', apiOrderController.cancelOrder)
 router.post('/order/return', apiOrderController.returnOrder)
