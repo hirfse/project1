@@ -80,6 +80,7 @@ router.post('/wishlist/remove',wishlistController.removeWishlist)
 //PROFILE
 
 router.get('/profile/:userId',profileController.getProfile)
+router.post('/profile/edit/:userId',profileController.editProfile)
 router.get('/address/:userId',profileController.getAddress)
 router.post('/address/add/:userId',profileController.addAddress)
 router.post('/address/delete/:userId',profileController.deleteAddress)
