@@ -232,20 +232,24 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
             });
         }
 
-        if (!isBuyNow && !req.body.items) {
-            console.log('VALIDATION FAILED - Items required for cart orders');
-            return res.status(400).json({
-                success: false,
-                message: 'Items are required for cart orders'
-            });
-        }
-
         if (isBuyNow && !buyNowProduct) {
             console.log('VALIDATION FAILED - Buy now product required');
             return res.status(400).json({
                 success: false,
                 message: 'Buy now product is required for buy now orders'
             });
+        }
+
+        // For cart orders, validate cart is not empty (fetch from DB)
+        if (!isBuyNow) {
+            const cart = await Cart.findOne({ userId });
+            if (!cart || cart.items.length === 0) {
+                console.log('VALIDATION FAILED - Cart is empty');
+                return res.status(400).json({
+                    success: false,
+                    message: 'Cart is empty'
+                });
+            }
         }
 
         console.log('VALIDATION PASSED');
@@ -281,7 +285,7 @@ exports.verifyPaymentAndCreateOrder = async (req, res) => {
             userId,
             selectedAddressId,
             isBuyNow,
-            isBuyNow ? null : req.body.items, // Items for cart orders
+            null, // Items for cart orders - will be fetched from DB
             isBuyNow ? buyNowProduct : null, // Product for buy now
             appliedOffer,
             { razorpayPaymentId: razorpay_payment_id }
