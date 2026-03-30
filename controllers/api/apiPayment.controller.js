@@ -32,6 +32,8 @@ exports.createRazorpayOrder = async (req, res) => {
         let subtotal = 0;
         let discount = 0;
         let total = 0;
+        let tax = 0;
+        let shipping = 50;
 
         if (isBuyNow) {
             // Handle buy now - single product
@@ -72,8 +74,7 @@ exports.createRazorpayOrder = async (req, res) => {
             const categoryDiscount = product.category && product.category.categoryOffer ? (itemTotal * product.category.categoryOffer) / 100 : 0;
             discount = Math.max(productDiscount, categoryDiscount);
 
-            const tax = subtotal * 0.05;
-            const shipping = 50;
+            tax = subtotal * 0.05;
             total = Math.round(subtotal + tax + shipping - discount);
 
             console.log('Buy Now calculation:', {
@@ -109,8 +110,7 @@ exports.createRazorpayOrder = async (req, res) => {
                 discount += Math.max(productDiscount, categoryDiscount);
             }
 
-            const tax = subtotal * 0.05;
-            const shipping = 50;
+            tax = subtotal * 0.05;
             total = Math.round(subtotal + tax + shipping - discount);
 
             console.log('Cart calculation:', {
