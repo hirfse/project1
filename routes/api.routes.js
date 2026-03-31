@@ -32,6 +32,14 @@ router.post('/resendOTP',apiAuth.resendOTP)
 router.post('/auth/google', apiGoogleAuth.apiGoogleLogin);
 
 router.post('/login',apiAuth.handleAPILogin)
+router.get('/login', (req, res) => {
+    res.status(405).json({
+        success: false,
+        message: 'Method not allowed. Use POST method for login.',
+        method: 'POST',
+        endpoint: '/api/login'
+    });
+});
 
 //HOME
 

@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 const User = require('../models/user.model');
 
 exports.checkUserStatus = async (req, res, next) => {
+  // Skip status check for API routes - they use JWT tokens
+  if (req.originalUrl.startsWith('/api')) {
+    return next();
+  }
+  
   if (req.session.userId) {
     try {
       // Skip validation for admin sessions
@@ -51,6 +56,11 @@ exports.preventBackAfterLogout = (req, res, next) => {
 
 // For regular users
 exports.checkUserSession = (req, res, next) => {
+  // Skip session check for API routes - they use JWT tokens
+  if (req.originalUrl.startsWith('/api')) {
+    return next();
+  }
+  
   if (!req.session.userId || req.session.userId === 'admin' || req.session.role === 'admin') {
     return res.redirect('/login');
   }
