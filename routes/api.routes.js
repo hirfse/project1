@@ -1,5 +1,5 @@
 const express = require('express')
-
+const { authorize } = require('../middlewares/jwt.middleware');
 const router = express.Router()
 
 // Add logging middleware for all API routes
@@ -35,7 +35,7 @@ router.post('/login',apiAuth.handleAPILogin)
 
 //HOME
 
-router.get('/home',productController.getAPIHome)
+router.get('/home',authorize,productController.getAPIHome)
 router.get('/new-arrivals',productController.getAPINewArrivals)
 router.get('/trending',productController.getAPITrendingProducts)
 
