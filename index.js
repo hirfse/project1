@@ -9,6 +9,10 @@ const fs = require('fs');
 const nocache = require("nocache");
 const Razorpay = require('razorpay')
 require('dotenv').config();
+
+console.log("JWT_SECRET:", process.env.JWT_SECRET); // debug for JWT_SECRET
+console.log("JWT_REFRESH_SECRET:", process.env.JWT_REFRESH_SECRET); // debug for JWT_REFRESH_SECRET
+
 require('./config/passport-config'); // Import Passport configuration
 
 const PORT = process.env.PORT;
